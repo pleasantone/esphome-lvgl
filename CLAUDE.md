@@ -122,7 +122,13 @@ The dialog lives in the layout under `lvgl: msgboxes:` rather than in a widget f
 question into the `confirm_body` label, then shows the box. The OK button calls
 `homeassistant.turn_off`, which is domain-agnostic, so it acts on whatever `confirm_entity` holds.
 `close_button: false` makes a tap anywhere outside the box cancel, so there are two ways out and one
-way through. `lvgl.widget.show` / `hide` on a msgbox id resolves to its full-screen outer overlay
+way through. The footer buttons carry an explicit `width: 46%` / `height: 64`: a msgbox footer button
+defaults to roughly text-plus-padding, which is about half a fingertip on a 320px wall panel. They
+set `radius` to their own height the way the AMS tray pills do — LVGL clamps radius to half the
+shorter side, so any value at or above half gives a full pill. Cancel sets no colour or font at all
+and inherits the theme (`0x5A6173`, `roboto_md`); only the destructive button is recoloured, to
+`0xFF3B30`, the red `status/alarm/` already uses for a triggered alarm. Reach for a colour the
+palette already has rather than introducing one. `lvgl.widget.show` / `hide` on a msgbox id resolves to its full-screen outer overlay
 (`widget.outer or widget` in `lvgl/automation.py`), which is what dims the page behind it.
 
 `widgets/status/` holds tiles that report without controlling. They plug in under `obj:` rather than
