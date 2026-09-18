@@ -104,6 +104,13 @@ lvgl:
         container_pad_left: 6, container_pad_right: 6,
         pad_row: 8, slider_height: 40, back_height: 60 }}
 
+    - id: detail_rgb
+      <<: !include { file: widgets/detail/rgb_page.yaml, vars: {
+        page_pad_top: 50, page_pad_bottom: 50,
+        container_pad_left: 6, container_pad_right: 6,
+        pad_row: 8, slider_height: 40, arc_size: 130,
+        roller_height: 90, back_height: 50 }}
+
     - id: living_room
       <<: *page_styles
       on_load:
@@ -164,7 +171,7 @@ lvgl:
 
               - button: # tv backlight
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/rgb.yaml
                     vars:
                       uid: tv_backlight
                       entity_id: light.tv_backlight
@@ -585,7 +592,7 @@ packages:
     entity_id: light.floor_lamp_2
   }}
 
-  tv_backlight_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+  tv_backlight_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/rgb_sensors.yaml, vars: {
     uid: tv_backlight,
     entity_id: light.tv_backlight
   }}
