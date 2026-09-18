@@ -439,9 +439,9 @@ lvgl:
                       icon_closed: "\U000F06D9"
                       <<: *button_widget_vars
 
-              - obj: # clothes dryer
+              - obj: # clothes dryer -- on while it is actually drawing power
                   <<: !include
-                    file: widgets/status/binary/widget.yaml
+                    file: widgets/status/threshold/widget.yaml
                     vars:
                       uid: clothes_dryer
                       text: Dryer
@@ -849,9 +849,12 @@ packages:
     text: Door
   }}
 
-  clothes_dryer_widget_sensors: !include { file: widgets/status/binary/sensors.yaml, vars: {
+  # 5W is the blueprint's end_appliance_power in automation.clothes_dryer -- the
+  # value that fires its "finished" notification, so the tile and the message agree
+  clothes_dryer_widget_sensors: !include { file: widgets/status/threshold/sensors.yaml, vars: {
     uid: clothes_dryer,
-    entity_id: switch.clothes_dryer
+    entity_id: sensor.clothes_dryer_power,
+    threshold: '5'
   }}
 
   sump_flooding_widget_sensors: !include { file: widgets/status/binary/sensors.yaml, vars: {
