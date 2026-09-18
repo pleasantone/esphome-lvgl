@@ -99,7 +99,7 @@ lvgl:
     # Shared confirm dialog. The entity to act on is stashed in confirm_entity
     # by the tile that opened it, so one dialog serves every guarded tile.
     - id: confirm_box
-      width: 280
+      width: 300
       close_button: false
       title: Are you sure?
       widgets:
@@ -109,12 +109,24 @@ lvgl:
             long_mode: WRAP
             text: ""
       buttons:
+        # 64px tall and nearly half the box wide: a wall panel is operated with a
+        # fingertip, and the default footer button is about half that. radius is
+        # set to the height, as the AMS tray pills do -- LVGL clamps it to half,
+        # which is a full pill. Cancel takes the theme's button colour; only the
+        # destructive one is recoloured, in the same red status/alarm uses.
         - id: confirm_cancel
           text: Cancel
+          width: 46%
+          height: 64
+          radius: 64
           on_click:
             - lvgl.widget.hide: confirm_box
         - id: confirm_ok
           text: Turn Off
+          width: 46%
+          height: 64
+          radius: 64
+          bg_color: 0xFF3B30
           on_click:
             - homeassistant.action:
                 action: homeassistant.turn_off
