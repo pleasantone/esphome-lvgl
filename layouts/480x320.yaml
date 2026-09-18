@@ -567,7 +567,7 @@ packages:
   # living_room
   watching_tv_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/stateful_sensors.yaml, vars: {
     uid: watching_tv,
-    entity_id: light.main_floor_lights
+    entity_id: light.living_room_chandelier
   }}
 
   living_room_chandelier_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
