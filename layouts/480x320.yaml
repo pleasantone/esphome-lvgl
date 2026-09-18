@@ -85,109 +85,6 @@ lvgl:
         - delay: 250ms # page.show is dropped if called during this on_load
         - script.execute: go_home
 
-    - id: bedroom
-      <<: *page_styles
-      on_load:
-        - lvgl.label.update:
-            id: page_title
-            text: Bedroom
-      widgets:
-        - obj:
-            <<: *container_styles
-            layout:
-              <<: *button_layout
-            widgets:
-              - button: # ceiling light
-                  <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/widget.yaml
-                    vars:
-                      uid: bedroom_light_1
-                      entity_id: light.bedroom_light_1
-                      text: Ceiling
-                      <<: *button_widget_vars
-
-              - button: # volume up
-                  <<: !include
-                    file: widgets/buttons/icon_buttons/volume_buttons/vol_up.yaml
-                    vars:
-                      uid: bedroom_tv_vol_up
-                      entity_id: media_player.bedroom_android_tv
-                      <<: *button_widget_vars
-
-              - button: # rachel light
-                  <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/widget.yaml
-                    vars:
-                      uid: bedroom_light_3
-                      entity_id: light.bedroom_light_3
-                      text: Rachel
-                      <<: *button_widget_vars
-
-              - button: # volume down
-                  <<: !include
-                    file: widgets/buttons/icon_buttons/volume_buttons/vol_down.yaml
-                    vars:
-                      uid: bedroom_tv_vol_down
-                      entity_id: media_player.bedroom_android_tv
-                      <<: *button_widget_vars
-
-              - button: # ryan light
-                  <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/widget.yaml
-                    vars:
-                      uid: bedroom_light_2
-                      entity_id: light.bedroom_light_2
-                      text: Ryan
-                      <<: *button_widget_vars
-
-              - button: # play content
-                  <<: !include
-                    file: widgets/buttons/text_buttons/stateless.yaml
-                    vars:
-                      uid: play_content_futurama
-                      text: Futurama
-                      <<: *button_widget_vars
-                  on_short_click:
-                    - homeassistant.action:
-                        action: script.play_content_on_bedroom_chromecast
-                        data: { content: Futurama }
-                  on_long_press:
-                    - homeassistant.action:
-                        action: homeassistant.toggle
-                        data: { entity_id: media_player.bedroom_android_tv }
-
-              - button: # play content
-                  <<: !include
-                    file: widgets/buttons/text_buttons/stateless.yaml
-                    vars:
-                      uid: play_content_adventure_time
-                      text: "Adventure\nTime"
-                      <<: *button_widget_vars
-                  on_short_click:
-                    - homeassistant.action:
-                        action: script.play_content_on_bedroom_chromecast
-                        data: { content: Adventure Time }
-                  on_long_press:
-                    - homeassistant.action:
-                        action: homeassistant.toggle
-                        data: { entity_id: media_player.bedroom_android_tv }
-
-              - button: # play content
-                  <<: !include
-                    file: widgets/buttons/text_buttons/stateless.yaml
-                    vars:
-                      uid: play_content_american_dad
-                      text: American Dad
-                      <<: *button_widget_vars
-                  on_short_click:
-                    - homeassistant.action:
-                        action: script.play_content_on_bedroom_chromecast
-                        data: { content: American Dad }
-                  on_long_press:
-                    - homeassistant.action:
-                        action: homeassistant.toggle
-                        data: { entity_id: media_player.bedroom_android_tv }
-
     - id: living_room
       <<: *page_styles
       on_load:
@@ -200,106 +97,70 @@ lvgl:
             layout:
               <<: *button_layout
             widgets:
-              - button: # light 1
+              - button: # chandelier
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/widget.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
                     vars:
-                      uid: living_room_light_1
-                      entity_id: light.living_room_light_1
-                      text: Light 1
+                      uid: living_room_chandelier
+                      entity_id: light.living_room_chandelier
+                      text: Chandelier
+                      icon_on: "\U000F1793"
+                      icon_off: "\U000F1793"
                       <<: *button_widget_vars
 
-              - button: # light 2
+              - button: # watching tv scene
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/widget.yaml
+                    file: widgets/buttons/icon_text_buttons/stateless.yaml
                     vars:
-                      uid: living_room_light_2
-                      entity_id: light.living_room_light_2
-                      text: Light 2
-                      <<: *button_widget_vars
-
-              # - button: # dim scene
-              #     <<: !include
-              #       file: widgets/buttons/text_buttons/stateless.yaml
-              #       vars:
-              #         uid: dim
-              #         text: Dim Lights
-              #         <<: *button_widget_vars
-              #     on_short_click:
-              #       - homeassistant.action:
-              #           action: homeassistant.turn_on
-              #           data: { entity_id: scene.living_room_lights_tv_watching }
-              #     on_long_press:
-              #       - homeassistant.action:
-              #           action: light.turn_on
-              #           data: { entity_id: light.all_living_room_lights, brightness_pct: '100' }
-
-              - button: # tv power
-                  <<: !include
-                    file: widgets/buttons/icon_text_buttons/stateful.yaml
-                    vars:
-                      uid: living_room_tv
-                      icon_on: "\U000F0425"
-                      icon_off: "\U000F0425"
-                      text: TV
+                      uid: watching_tv
+                      icon: "\U000F0502"
+                      text: Watching TV
                       <<: *button_widget_vars
                   on_short_click:
                     - homeassistant.action:
-                        action: media_player.toggle
-                        data: { entity_id: media_player.living_room_tv }
+                        action: scene.turn_on
+                        data: { entity_id: scene.watching_tv }
 
-              - button: # tv power
+              - button: # floor lamp
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/stateful.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
                     vars:
-                      uid: living_room_xbox
-                      icon_on: "\U000F0425"
-                      icon_off: "\U000F0425"
-                      text: Xbox
-                      <<: *button_widget_vars
-                  on_short_click:
-                    - homeassistant.action:
-                        action: media_player.toggle
-                        data: { entity_id: media_player.ryan_s_xbox }
-
-              - button: # play / pause
-                  <<: !include
-                    file: widgets/buttons/icon_buttons/stateless.yaml
-                    vars:
-                      uid: living_room_tv_playpause
-                      icon: "\U000F040E"
-                      <<: *button_widget_vars
-                  on_short_click:
-                    - homeassistant.action:
-                        action: media_player.media_play_pause
-                        data: { entity_id: media_player.living_room_tv }
-
-              - button: # volume up
-                  <<: !include
-                    file: widgets/buttons/icon_buttons/volume_buttons/vol_up.yaml
-                    vars:
-                      uid: living_room_tv_vol_up
-                      entity_id: media_player.living_room_tv
+                      uid: floor_lamp
+                      entity_id: light.floor_lamp
+                      text: Floor Lamp
+                      icon_on: "\U000F08DD"
+                      icon_off: "\U000F08DD"
                       <<: *button_widget_vars
 
-              - button: # stop
+              - button: # floor lamp 2
                   <<: !include
-                    file: widgets/buttons/icon_buttons/stateless.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
                     vars:
-                      uid: living_room_tv_stop
-                      icon: "\U000F04DB"
+                      uid: floor_lamp_2
+                      entity_id: light.floor_lamp_2
+                      text: Floor Lamp 2
+                      icon_on: "\U000F08DD"
+                      icon_off: "\U000F08DD"
                       <<: *button_widget_vars
-                  on_short_click:
-                    - homeassistant.action:
-                        action: media_player.media_stop
-                        data: { entity_id: media_player.living_room_tv }
 
-              - button: # volume down
+              - button: # tv backlight
                   <<: !include
-                    file: widgets/buttons/icon_buttons/volume_buttons/vol_down.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
                     vars:
-                      uid: living_room_tv_vol_down
-                      entity_id: media_player.living_room_tv
+                      uid: tv_backlight
+                      entity_id: light.tv_backlight
+                      text: TV Backlight
+                      icon_on: "\U000F1051"
+                      icon_off: "\U000F1051"
+                      <<: *button_widget_vars
+
+              - obj: # temperature
+                  <<: !include
+                    file: widgets/status/value/widget.yaml
+                    vars:
+                      uid: living_room_temp
+                      text: Temperature
+                      icon: "\U000F050F"
                       <<: *button_widget_vars
 
     - id: lighting_main
@@ -689,46 +550,32 @@ packages:
   # boot screen
   boot_screen_sensors: !include { file: widgets/boot_screen/sensors.yaml }
 
-  # bedroom
-  bedroom_tv_widget_sensors: !include { file: widgets/bedroom_tv.sensor.yaml }
-
-  bedroom_light_1_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
-    uid: bedroom_light_1,
-    entity_id: light.bedroom_light_1
-  }}
-
-  bedroom_light_2_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
-    uid: bedroom_light_2,
-    entity_id: light.bedroom_light_2
-  }}
-
-  bedroom_light_3_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
-    uid: bedroom_light_3,
-    entity_id: light.bedroom_light_3
-  }}
-
   # living_room
-  living_room_light_1_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
-    uid: living_room_light_1,
-    entity_id: light.living_room_light_1
+  living_room_chandelier_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+    uid: living_room_chandelier,
+    entity_id: light.living_room_chandelier
   }}
 
-  living_room_light_2_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
-    uid: living_room_light_2,
-    entity_id: light.living_room_light_2
+  floor_lamp_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+    uid: floor_lamp,
+    entity_id: light.floor_lamp
   }}
 
-  living_room_tv_widget_sensors: !include { file: widgets/buttons/icon_buttons/stateful_sensors.yaml, vars: {
-    uid: living_room_tv,
-    entity_id: media_player.living_room_tv
+  floor_lamp_2_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+    uid: floor_lamp_2,
+    entity_id: light.floor_lamp_2
   }}
 
-  living_room_xbox_widget_sensors: !include { file: widgets/buttons/icon_buttons/stateful_sensors.yaml, vars: {
-    uid: living_room_xbox,
-    entity_id: media_player.ryan_s_xbox
+  tv_backlight_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+    uid: tv_backlight,
+    entity_id: light.tv_backlight
   }}
 
-  living_room_tv_extra_widgets_sensors: !include { file: widgets/living_room_tv.sensor.yaml }
+  living_room_temp_widget_sensors: !include { file: widgets/status/value/sensors.yaml, vars: {
+    uid: living_room_temp,
+    entity_id: sensor.living_room_temperature,
+    unit: "°"
+  }}
 
   # lighting - main floor
   main_floor_lights_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_group_buttons/sensors.yaml, vars: {

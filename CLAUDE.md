@@ -108,8 +108,11 @@ actuates on `on_long_press` alone — a stray touch on a wall panel must not mov
 `widgets/status/` holds tiles that report without controlling. They plug in under `obj:` rather than
 `button:`, which the theme renders darker (`0x42495A` vs `0x5A6173`) so they read as not pressable.
 `status/binary/` reuses the buttons' `stateful_sensors.yaml` and takes `icon_on` / `icon_off` /
-`color_on`; `status/alarm/` maps an `alarm_control_panel` state string to a label and recolours its
-shield.
+`color_on`; `status/value/` shows a rounded numeric sensor plus a `unit` suffix; `status/alarm/` maps
+an `alarm_control_panel` state string to a label and recolours its shield.
+
+The `roboto_*` fonts set no `glyphs:`, so they carry ESPHome's `GF_Latin_Kernel` default — `°` is in
+it, unlike the MDI subset. Only `mdi_*` is restricted to `glyphs.yaml`.
 
 ## Printer tiles (`layouts/widgets/printers/`)
 
@@ -207,9 +210,13 @@ entity to read; targeting `floor_id:` in the action would toggle but never light
 Home Assistant's Main Floor area and is shown on the Outside page anyway — a display choice, not an area
 change.
 
-`bedroom` and `living_room` are upstream's pages and reference entities that do not exist here
-(`light.bedroom_light_1`, `media_player.ryan_s_xbox`, `script.play_content_on_bedroom_chromecast`, …).
-They are knowingly left broken.
+Upstream's `bedroom` page is dropped here — its lights are already on the Second Floor page and none
+of its media entities exist in this house. `living_room` is rebuilt around the real lights, the
+`scene.watching_tv` button and a temperature tile. `widgets/bedroom_tv.sensor.yaml` and
+`widgets/living_room_tv.sensor.yaml` stay because `layouts/320x240.yaml` still includes them.
+
+`light.living_room_chandelier` appears on both the Main Floor and Living Room pages, with its own `uid`
+on each. That is deliberate, and it is why widget ids derive from `uid` rather than from `entity_id`.
 
 ## Conventions worth preserving
 
