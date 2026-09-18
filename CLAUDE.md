@@ -105,6 +105,26 @@ shows for the entity.
 binary_sensor maps only the literal `"on"` to true, so a cover's `open` would read as false. It
 actuates on `on_long_press` alone — a stray touch on a wall panel must not move a garage door.
 
+`toggle_buttons/` is the domain-agnostic pair: `widget.yaml` takes a `domain` var and fires
+`${domain}.toggle`, which covers a `switch`, a `fan` with no speed control, and an on/off-only
+`light` without a file for each. Its `sensors.yaml` is a one-line wrapper around the shared
+`icon_text_buttons/stateful_sensors.yaml`, since an on/off entity needs nothing extra.
+
+`toggle_buttons/confirm_off.yaml` is that tile with a guard: turning the entity **off** opens a
+confirm dialog, turning it back on is immediate. Only the destructive direction asks, which is why
+it reads the tile's own `${uid}_widget_sensor` in the click handler rather than sending a blind
+`toggle`. It is what the printer plugs use — a stray touch on a wall panel must not cut power to a
+running print.
+
+The dialog lives in the layout under `lvgl: msgboxes:` rather than in a widget file, because
+`msgboxes:` is a top-level LVGL key. One `confirm_box` serves every guarded tile, on the
+`detail_light` pattern: the tile stashes the entity in the `confirm_entity` global and writes the
+question into the `confirm_body` label, then shows the box. The OK button calls
+`homeassistant.turn_off`, which is domain-agnostic, so it acts on whatever `confirm_entity` holds.
+`close_button: false` makes a tap anywhere outside the box cancel, so there are two ways out and one
+way through. `lvgl.widget.show` / `hide` on a msgbox id resolves to its full-screen outer overlay
+(`widget.outer or widget` in `lvgl/automation.py`), which is what dims the page behind it.
+
 `widgets/status/` holds tiles that report without controlling. They plug in under `obj:` rather than
 `button:`, which the theme renders darker (`0x42495A` vs `0x5A6173`) so they read as not pressable.
 `status/binary/` reuses the buttons' `stateful_sensors.yaml` and takes `icon_on` / `icon_off` /

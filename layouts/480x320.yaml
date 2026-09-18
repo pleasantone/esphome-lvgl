@@ -77,6 +77,10 @@ globals:
     restore_value: false
     initial_value: '0'
 
+  - id: confirm_entity # which entity the shared confirm dialog would turn off
+    type: std::string
+    restore_value: false
+
 script:
   - id: go_home
     then:
@@ -91,6 +95,32 @@ lvgl:
       - <<: !include { file: widgets/header/widget.yaml, vars: { <<: *nav_widget_vars } }
       - <<: !include { file: widgets/footer/widget.yaml, vars: { <<: *nav_widget_vars } }
       - <<: !include { file: widgets/boot_screen/widget.yaml }
+  msgboxes:
+    # Shared confirm dialog. The entity to act on is stashed in confirm_entity
+    # by the tile that opened it, so one dialog serves every guarded tile.
+    - id: confirm_box
+      width: 280
+      close_button: false
+      title: Are you sure?
+      widgets:
+        - label:
+            id: confirm_body
+            width: 100%
+            long_mode: WRAP
+            text: ""
+      buttons:
+        - id: confirm_cancel
+          text: Cancel
+          on_click:
+            - lvgl.widget.hide: confirm_box
+        - id: confirm_ok
+          text: Turn Off
+          on_click:
+            - homeassistant.action:
+                action: homeassistant.turn_off
+                data:
+                  entity_id: !lambda return id(confirm_entity);
+            - lvgl.widget.hide: confirm_box
   pages:
     - id: splash
       skip: true
@@ -580,6 +610,115 @@ lvgl:
                         <<: !include { file: widgets/printers/tile_progress.yaml, vars: {
                           uid: printer_2, <<: *printer_bar_vars } }
 
+    - id: printer_control
+      <<: *page_styles
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Printer Control
+      widgets:
+        - obj:
+            <<: *container_styles
+            layout:
+              <<: *button_layout
+            widgets:
+              - button: # x1c plug
+                  <<: !include
+                    file: widgets/buttons/icon_text_buttons/toggle_buttons/confirm_off.yaml
+                    vars:
+                      uid: x1c_plug
+                      entity_id: switch.x1c_plug
+                      domain: switch
+                      text: X1C Plug
+                      icon_on: "\U000F06A5"
+                      icon_off: "\U000F06A6"
+                      confirm_text: Cut power to the X1C? A print in progress will be lost.
+                      <<: *button_widget_vars
+
+              - button: # h2c plug
+                  <<: !include
+                    file: widgets/buttons/icon_text_buttons/toggle_buttons/confirm_off.yaml
+                    vars:
+                      uid: h2c_plug
+                      entity_id: switch.h2c_plug
+                      domain: switch
+                      text: H2C Plug
+                      icon_on: "\U000F06A5"
+                      icon_off: "\U000F06A6"
+                      confirm_text: Cut power to the H2C? A print in progress will be lost.
+                      <<: *button_widget_vars
+
+              - button: # x1c chamber
+                  <<: !include
+                    file: widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: x1c_chamber_light
+                      entity_id: light.x1c_x1c_00m09d460801484_chamber_light
+                      domain: light
+                      text: X1C Chamber
+                      icon_on: "\U000F06E8"
+                      icon_off: "\U000F0336"
+                      <<: *button_widget_vars
+
+              - button: # h2c chamber
+                  <<: !include
+                    file: widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: h2c_chamber_light
+                      entity_id: light.h2c_h2c_31b8ap630100072_chamber_light
+                      domain: light
+                      text: H2C Chamber
+                      icon_on: "\U000F06E8"
+                      icon_off: "\U000F0336"
+                      <<: *button_widget_vars
+
+              - button: # riser lights
+                  <<: !include
+                    file: widgets/buttons/icon_text_buttons/light_buttons/rgb.yaml
+                    vars:
+                      uid: riser_lights
+                      entity_id: light.riser_lights
+                      text: Riser
+                      icon_on: "\U000F1051"
+                      icon_off: "\U000F1051"
+                      <<: *button_widget_vars
+
+              - button: # exhaust
+                  <<: !include
+                    file: widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: window_exhaust
+                      entity_id: fan.window_exhaust
+                      domain: fan
+                      text: Exhaust
+                      icon_on: "\U000F0210"
+                      icon_off: "\U000F081D"
+                      <<: *button_widget_vars
+
+              - button: # bento box
+                  <<: !include
+                    file: widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: bento_box
+                      entity_id: fan.bento_box
+                      domain: fan
+                      text: Bento Box
+                      icon_on: "\U000F0D43"
+                      icon_off: "\U000F0D43"
+                      <<: *button_widget_vars
+
+              - button: # heater
+                  <<: !include
+                    file: widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: chamber_heater
+                      entity_id: fan.chamber_heater
+                      domain: fan
+                      text: Heater
+                      icon_on: "\U000F0438"
+                      icon_off: "\U000F0AD8"
+                      <<: *button_widget_vars
+
 packages:
   # header
   header_sensors: !include { file: widgets/header/sensors.yaml }
@@ -829,4 +968,45 @@ packages:
     uid: printer_2,
     entity_id_prefix: h2c_h2c_31b8ap630100072,
     ams_id: "128"
+  }}
+
+  # printer control
+  x1c_plug_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: x1c_plug,
+    entity_id: switch.x1c_plug
+  }}
+
+  h2c_plug_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: h2c_plug,
+    entity_id: switch.h2c_plug
+  }}
+
+  x1c_chamber_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: x1c_chamber_light,
+    entity_id: light.x1c_x1c_00m09d460801484_chamber_light
+  }}
+
+  h2c_chamber_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: h2c_chamber_light,
+    entity_id: light.h2c_h2c_31b8ap630100072_chamber_light
+  }}
+
+  window_exhaust_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: window_exhaust,
+    entity_id: fan.window_exhaust
+  }}
+
+  bento_box_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: bento_box,
+    entity_id: fan.bento_box
+  }}
+
+  chamber_heater_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: chamber_heater,
+    entity_id: fan.chamber_heater
+  }}
+
+  riser_lights_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/rgb_sensors.yaml, vars: {
+    uid: riser_lights,
+    entity_id: light.riser_lights
   }}
