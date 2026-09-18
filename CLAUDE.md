@@ -133,10 +133,17 @@ Three things here are load-bearing and easy to get wrong:
   `'100'` on toggle, which would undo the slider on the next tap. Lights restore their own last
   brightness without it.
 
+RGB lights get `detail_rgb` instead, via `light_buttons/rgb.yaml`: the same brightness slider plus a
+hue arc, a saturation arc and a roller of curated WLED effects. **An `arc` defaults to
+`adjustable: false`**, which renders it with no knob and no touch response — set it explicitly or the
+page looks right and does nothing. Colour and effect are write-only here: HA reports `hs_color` as a
+list and `effect` as a name, and a `homeassistant` sensor can feed back neither.
+
 `homeassistant.action` `data:` values are templatable (`cv.templatable` in `api/__init__.py`), which
 is what lets one page drive any light via `entity_id: !lambda return id(detail_entity);`. Values are
 sent as strings, so scalars like `brightness_pct` work but a list-valued key such as `hs_color` does
-not — that needs `data_template:` with `variables:`.
+not — that needs `data_template:` with `variables:`, which HA renders into a real list, as the hue/sat
+arcs do with `hs_color: "{{ [hue | int, sat | int] }}"`.
 
 The `roboto_*` fonts set no `glyphs:`, so they carry ESPHome's `GF_Latin_Kernel` default — `°` is in
 it, unlike the MDI subset. Only `mdi_*` is restricted to `glyphs.yaml`.
