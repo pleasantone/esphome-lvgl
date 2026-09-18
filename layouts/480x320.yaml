@@ -97,20 +97,6 @@ lvgl:
             layout:
               <<: *button_layout
             widgets:
-              - button: # watching tv scene
-                  <<: !include
-                    file: widgets/buttons/icon_text_buttons/stateful.yaml
-                    vars:
-                      uid: watching_tv
-                      icon_on: "\U000F0502"
-                      icon_off: "\U000F0502"
-                      text: Watching TV
-                      <<: *button_widget_vars
-                  on_short_click:
-                    - homeassistant.action:
-                        action: scene.turn_on
-                        data: { entity_id: scene.watching_tv }
-
               - button: # movie time scene
                   <<: !include
                     file: widgets/buttons/icon_text_buttons/stateless.yaml
@@ -565,11 +551,6 @@ packages:
   boot_screen_sensors: !include { file: widgets/boot_screen/sensors.yaml }
 
   # living_room
-  watching_tv_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/stateful_sensors.yaml, vars: {
-    uid: watching_tv,
-    entity_id: light.living_room_chandelier
-  }}
-
   living_room_chandelier_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
     uid: living_room_chandelier,
     entity_id: light.living_room_chandelier
