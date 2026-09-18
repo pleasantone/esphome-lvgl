@@ -147,15 +147,15 @@ lvgl:
                       icon_off: "\U000F0502"
                       <<: *button_widget_vars
 
-              - button: # chandelier
+              - button: # tv backlight
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/rgb.yaml
                     vars:
-                      uid: living_room_chandelier
-                      entity_id: light.living_room_chandelier
-                      text: Chandelier
-                      icon_on: "\U000F1793"
-                      icon_off: "\U000F1793"
+                      uid: tv_backlight
+                      entity_id: light.tv_backlight
+                      text: TV Backlight
+                      icon_on: "\U000F1051"
+                      icon_off: "\U000F1051"
                       <<: *button_widget_vars
 
               - button: # floor lamp
@@ -180,15 +180,15 @@ lvgl:
                       icon_off: "\U000F08DD"
                       <<: *button_widget_vars
 
-              - button: # tv backlight
+              - button: # chandelier
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/rgb.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
-                      uid: tv_backlight
-                      entity_id: light.tv_backlight
-                      text: TV Backlight
-                      icon_on: "\U000F1051"
-                      icon_off: "\U000F1051"
+                      uid: living_room_chandelier
+                      entity_id: light.living_room_chandelier
+                      text: Chandelier
+                      icon_on: "\U000F1793"
+                      icon_off: "\U000F1793"
                       <<: *button_widget_vars
 
               - obj: # temperature
