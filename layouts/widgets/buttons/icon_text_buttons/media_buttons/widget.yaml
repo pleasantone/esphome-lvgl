@@ -1,0 +1,24 @@
+# required vars:
+# - uid
+# - entity_id
+# - width
+# - height
+# - text
+# - icon_on
+# - icon_off
+
+# button:
+  <<: !include
+    file: ../stateful.yaml
+    vars:
+      uid: ${uid}
+      width: ${width}
+      height: ${height}
+      icon_on: ${icon_on}
+      icon_off: ${icon_off}
+      text: ${text}
+  on_short_click:
+    - homeassistant.action:
+        action: media_player.toggle
+        data:
+          entity_id: ${entity_id}
