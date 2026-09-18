@@ -93,8 +93,23 @@ missing-ID error at validation time, not a silent failure.
 
 The button tree specializes by shape and then by function: `buttons/{icon,text,icon_text}_buttons/` provide
 generic `stateless.yaml` / `stateful.yaml` bases, and subdirectories (`light_buttons/`,
-`light_group_buttons/`, `volume_buttons/`) wrap a base via `<<: !include ../stateful.yaml` and bind the
-Home Assistant action. Prefer extending this chain over writing a new standalone widget.
+`light_group_buttons/`, `volume_buttons/`, `cover_buttons/`) wrap a base via `<<: !include ../stateful.yaml`
+and bind the Home Assistant action. Prefer extending this chain over writing a new standalone widget.
+
+`light_buttons/themed.yaml` is the light button with `icon_on` / `icon_off` as vars;
+`light_buttons/widget.yaml` is that same file pinned to the lightbulb pair, so the original
+five-var contract still holds. Pass the icons only where a tile wants to match what Home Assistant
+shows for the entity.
+
+`cover_buttons/` is driven by a `text_sensor`, not a `binary_sensor`: ESPHome's `homeassistant`
+binary_sensor maps only the literal `"on"` to true, so a cover's `open` would read as false. It
+actuates on `on_long_press` alone — a stray touch on a wall panel must not move a garage door.
+
+`widgets/status/` holds tiles that report without controlling. They plug in under `obj:` rather than
+`button:`, which the theme renders darker (`0x42495A` vs `0x5A6173`) so they read as not pressable.
+`status/binary/` reuses the buttons' `stateful_sensors.yaml` and takes `icon_on` / `icon_off` /
+`color_on`; `status/alarm/` maps an `alarm_control_panel` state string to a label and recolours its
+shield.
 
 ## Printer tiles (`layouts/widgets/printers/`)
 
@@ -183,6 +198,18 @@ carries a bare `encryption:` block that inherits that same key, so plaintext OTA
 `time: platform: homeassistant`, and `common.yaml` captures the HA IP into the `homeassistant_ip` global on
 API connect. The `entity_id`s throughout `layouts/` are the author's own (lights, TVs, Bambu printers)
 and are meant to be edited.
+
+The four lighting pages (`lighting_main`, `lighting_second`, `lighting_ground`, `lighting_outside`,
+in that order) lean on helpers that live only in Home Assistant, not in this repo — the `light` group
+helpers `main_floor_lights` / `second_floor_lights` / `outside_lights`, and a `switch_as_x` turning
+`switch.porch_light` into `light.back_yard_light`. The group buttons are stateful, so they need a real
+entity to read; targeting `floor_id:` in the action would toggle but never light up. Front Porch sits in
+Home Assistant's Main Floor area and is shown on the Outside page anyway — a display choice, not an area
+change.
+
+`bedroom` and `living_room` are upstream's pages and reference entities that do not exist here
+(`light.bedroom_light_1`, `media_player.ryan_s_xbox`, `script.play_content_on_bedroom_chromecast`, …).
+They are knowingly left broken.
 
 ## Conventions worth preserving
 
