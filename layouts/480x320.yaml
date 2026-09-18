@@ -136,6 +136,19 @@ lvgl:
                         action: scene.turn_on
                         data: { entity_id: scene.movie_time }
 
+              - button: # movie over scene
+                  <<: !include
+                    file: widgets/buttons/icon_text_buttons/stateless.yaml
+                    vars:
+                      uid: movie_over
+                      icon: "\U000F1703"
+                      text: Movie Over
+                      <<: *button_widget_vars
+                  on_short_click:
+                    - homeassistant.action:
+                        action: scene.turn_on
+                        data: { entity_id: scene.movie_over }
+
               - button: # tv
                   <<: !include
                     file: widgets/buttons/icon_text_buttons/media_buttons/widget.yaml
