@@ -137,6 +137,20 @@ palette already has rather than introducing one. `lvgl.widget.show` / `hide` on 
 `color_on`; `status/value/` shows a rounded numeric sensor plus a `unit` suffix; `status/alarm/` maps
 an `alarm_control_panel` state string to a label and recolours its shield.
 
+`status/threshold/` is `status/binary/`'s tree driven by a numeric sensor instead of an on/off
+entity: above `threshold` is on, at or below it is off, and NAN (an unavailable entity) keeps the
+unknown glyph rather than reading as off. It exists because **a smart plug's `switch` state answers
+the wrong question** — `switch.clothes_dryer` is on whenever the outlet is live, so the Dryer tile
+was lit while the dryer sat idle drawing 1.1W. The tile now reads `sensor.clothes_dryer_power`
+against 5W.
+
+That 5W is `end_appliance_power` in the Blackshome appliance-notifications blueprint behind
+`automation.clothes_dryer`, which is what fires the "finished" notification, so tile and message
+agree. Both power setpoints there are blueprint **defaults** and appear nowhere in the automation's
+own config — the only value it overrides is `running_dead_zone: 10`, which is ten *minutes* of
+start-up grace, not a wattage. Read the blueprint's inputs, not just the automation, before matching
+a threshold to it.
+
 ### The shared light detail page
 
 Long-pressing a dimmable light opens `detail_light` — one `skip: true` page shared by all 13 of them,
