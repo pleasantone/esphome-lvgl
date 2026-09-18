@@ -136,6 +136,17 @@ lvgl:
                         action: scene.turn_on
                         data: { entity_id: scene.movie_time }
 
+              - button: # tv
+                  <<: !include
+                    file: widgets/buttons/icon_text_buttons/media_buttons/widget.yaml
+                    vars:
+                      uid: living_room_tv
+                      entity_id: media_player.lg_webos_tv
+                      text: TV
+                      icon_on: "\U000F0502"
+                      icon_off: "\U000F0502"
+                      <<: *button_widget_vars
+
               - button: # chandelier
                   <<: !include
                     file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
@@ -577,6 +588,11 @@ packages:
   boot_screen_sensors: !include { file: widgets/boot_screen/sensors.yaml }
 
   # living_room
+  living_room_tv_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/media_buttons/sensors.yaml, vars: {
+    uid: living_room_tv,
+    entity_id: media_player.lg_webos_tv
+  }}
+
   living_room_chandelier_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: living_room_chandelier,
     entity_id: light.living_room_chandelier
