@@ -147,6 +147,17 @@ lvgl:
                       icon_off: "\U000F0502"
                       <<: *button_widget_vars
 
+              - button: # chandelier
+                  <<: !include
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: living_room_chandelier
+                      entity_id: light.living_room_chandelier
+                      text: Chandelier
+                      icon_on: "\U000F1793"
+                      icon_off: "\U000F1793"
+                      <<: *button_widget_vars
+
               - button: # tv backlight
                   <<: !include
                     file: widgets/buttons/icon_text_buttons/light_buttons/rgb.yaml
@@ -178,17 +189,6 @@ lvgl:
                       text: Floor Lamp 2
                       icon_on: "\U000F08DD"
                       icon_off: "\U000F08DD"
-                      <<: *button_widget_vars
-
-              - button: # chandelier
-                  <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
-                    vars:
-                      uid: living_room_chandelier
-                      entity_id: light.living_room_chandelier
-                      text: Chandelier
-                      icon_on: "\U000F1793"
-                      icon_off: "\U000F1793"
                       <<: *button_widget_vars
 
               - obj: # temperature
