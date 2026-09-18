@@ -13,8 +13,11 @@ web_server:
 
 ota:
   - platform: esphome
+    encryption: # inherits the api key; requires encrypted OTA
 
 api:
+  encryption:
+    key: !secret api_encryption_key
   on_client_connected:
     - globals.set:
         id: homeassistant_ip
