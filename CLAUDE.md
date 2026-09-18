@@ -248,6 +248,13 @@ The Living Room page's Movie Time button fires `scene.movie_time`, which lives o
 Deleting or renaming that scene there silently breaks the button — `homeassistant.action` has nothing to
 validate against at build time.
 
+Brightness crosses this boundary in two units. **Author in percent everywhere; raw 0-255 only where
+Home Assistant forces it**, which is scene storage — a scene holds attributes, and there is no
+`brightness_pct` attribute for it to hold, so `scene.movie_time` keeps `brightness: 38`. Automations
+gate on `sensor.living_room_chandelier_brightness`, a template sensor exposing percent, rather than on
+the raw `brightness` attribute, so a threshold and an action can no longer disagree about the unit.
+The panel's own raw-to-percent conversion lives only in `light_buttons/dimmable.yaml` and its sensors.
+
 Upstream's `bedroom` page is dropped here — its lights are already on the Second Floor page and none
 of its media entities exist in this house. `living_room` is rebuilt around the real lights, the
 `scene.watching_tv` button and a temperature tile. `widgets/bedroom_tv.sensor.yaml` and
