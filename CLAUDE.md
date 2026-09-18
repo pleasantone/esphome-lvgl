@@ -210,6 +210,10 @@ entity to read; targeting `floor_id:` in the action would toggle but never light
 Home Assistant's Main Floor area and is shown on the Outside page anyway — a display choice, not an area
 change.
 
+The Living Room page's Movie Time button fires `scene.movie_time`, which lives only in Home Assistant.
+Deleting or renaming that scene there silently breaks the button — `homeassistant.action` has nothing to
+validate against at build time.
+
 Upstream's `bedroom` page is dropped here — its lights are already on the Second Floor page and none
 of its media entities exist in this house. `living_room` is rebuilt around the real lights, the
 `scene.watching_tv` button and a temperature tile. `widgets/bedroom_tv.sensor.yaml` and
