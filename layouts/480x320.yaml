@@ -65,12 +65,25 @@ font: !include
     ams_tray_height: 20
     ams_tray_padding: 5
 
+globals:
+  - id: detail_entity # which light the shared detail page is currently editing
+    type: std::string
+    restore_value: false
+  - id: detail_title
+    type: std::string
+    restore_value: false
+  - id: detail_origin # page index to return to
+    type: int
+    restore_value: false
+    initial_value: '0'
+
 script:
   - id: go_home
     then:
       - lvgl.page.show: ${home_page}
 
 lvgl:
+  id: main_lvgl # needed by the detail page's Back button
   default_font: roboto_md
   theme: !include themes/main.yaml
   top_layer:
@@ -84,6 +97,12 @@ lvgl:
       on_load:
         - delay: 250ms # page.show is dropped if called during this on_load
         - script.execute: go_home
+
+    - id: detail_light
+      <<: !include { file: widgets/detail/light_page.yaml, vars: {
+        page_styles_pad_top: 50, page_styles_pad_bottom: 50,
+        container_pad_left: 6, container_pad_right: 6,
+        pad_row: 8, slider_height: 40, back_height: 60 }}
 
     - id: living_room
       <<: *page_styles
@@ -112,7 +131,7 @@ lvgl:
 
               - button: # chandelier
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: living_room_chandelier
                       entity_id: light.living_room_chandelier
@@ -145,7 +164,7 @@ lvgl:
 
               - button: # tv backlight
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: tv_backlight
                       entity_id: light.tv_backlight
@@ -186,7 +205,7 @@ lvgl:
 
               - button: # kitchen light
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: kitchen_light
                       entity_id: light.kitchen_main_lights
@@ -197,7 +216,7 @@ lvgl:
 
               - button: # dining room light
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: dining_room_light
                       entity_id: light.dining_room_main_lights
@@ -208,7 +227,7 @@ lvgl:
 
               - button: # living room chandelier
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: living_room_light
                       entity_id: light.living_room_chandelier
@@ -219,7 +238,7 @@ lvgl:
 
               - button: # office light
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: office_light
                       entity_id: light.office_main_lights
@@ -230,7 +249,7 @@ lvgl:
 
               - button: # foyer light
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: foyer_light
                       entity_id: light.front_foyer_main_lights
@@ -241,7 +260,7 @@ lvgl:
 
               - button: # hallway light
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: hallway_light
                       entity_id: light.hallway_main_lights
@@ -273,7 +292,7 @@ lvgl:
 
               - button: # bedroom light
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: bedroom_main_light
                       entity_id: light.bedroom_light
@@ -284,7 +303,7 @@ lvgl:
 
               - button: # bedroom closet light
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: bedroom_closet_light
                       entity_id: light.bedroom_closet_light
@@ -295,7 +314,7 @@ lvgl:
 
               - button: # deb's office light
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: deb_light
                       entity_id: light.deb_main_lights
@@ -306,7 +325,7 @@ lvgl:
 
               - button: # stairway light
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: stairway_light
                       entity_id: light.stairs_main_lights
@@ -340,7 +359,7 @@ lvgl:
             widgets:
               - button: # garage wall light
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: garage_light
                       entity_id: light.garage_wall_lights
@@ -427,7 +446,7 @@ lvgl:
 
               - button: # front porch light
                   <<: !include
-                    file: widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    file: widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
                     vars:
                       uid: front_porch_light
                       entity_id: light.front_porch_main_lights
@@ -551,7 +570,7 @@ packages:
   boot_screen_sensors: !include { file: widgets/boot_screen/sensors.yaml }
 
   # living_room
-  living_room_chandelier_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  living_room_chandelier_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: living_room_chandelier,
     entity_id: light.living_room_chandelier
   }}
@@ -566,7 +585,7 @@ packages:
     entity_id: light.floor_lamp_2
   }}
 
-  tv_backlight_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  tv_backlight_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: tv_backlight,
     entity_id: light.tv_backlight
   }}
@@ -583,32 +602,32 @@ packages:
     entity_id: light.main_floor_lights
   }}
 
-  kitchen_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  kitchen_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: kitchen_light,
     entity_id: light.kitchen_main_lights
   }}
 
-  dining_room_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  dining_room_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: dining_room_light,
     entity_id: light.dining_room_main_lights
   }}
 
-  living_room_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  living_room_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: living_room_light,
     entity_id: light.living_room_chandelier
   }}
 
-  office_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  office_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: office_light,
     entity_id: light.office_main_lights
   }}
 
-  foyer_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  foyer_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: foyer_light,
     entity_id: light.front_foyer_main_lights
   }}
 
-  hallway_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  hallway_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: hallway_light,
     entity_id: light.hallway_main_lights
   }}
@@ -619,22 +638,22 @@ packages:
     entity_id: light.second_floor_lights
   }}
 
-  bedroom_main_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  bedroom_main_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: bedroom_main_light,
     entity_id: light.bedroom_light
   }}
 
-  bedroom_closet_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  bedroom_closet_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: bedroom_closet_light,
     entity_id: light.bedroom_closet_light
   }}
 
-  deb_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  deb_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: deb_light,
     entity_id: light.deb_main_lights
   }}
 
-  stairway_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  stairway_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: stairway_light,
     entity_id: light.stairs_main_lights
   }}
@@ -645,7 +664,7 @@ packages:
   }}
 
   # lighting - ground floor
-  garage_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  garage_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: garage_light,
     entity_id: light.garage_wall_lights
   }}
@@ -682,7 +701,7 @@ packages:
     entity_id: light.outside_lights
   }}
 
-  front_porch_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+  front_porch_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: front_porch_light,
     entity_id: light.front_porch_main_lights
   }}

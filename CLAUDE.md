@@ -111,6 +111,33 @@ actuates on `on_long_press` alone — a stray touch on a wall panel must not mov
 `color_on`; `status/value/` shows a rounded numeric sensor plus a `unit` suffix; `status/alarm/` maps
 an `alarm_control_panel` state string to a label and recolours its shield.
 
+### The shared light detail page
+
+Long-pressing a dimmable light opens `detail_light` — one `skip: true` page shared by all 13 of them,
+not a page each. The long-press handler in `light_buttons/dimmable.yaml` stashes the entity, the title
+and `get_current_page()` in globals, seeds the slider from that light's own `${uid}_brightness` sensor,
+then shows the page. Back calls `main_lvgl->show_page(id(detail_origin), ...)`, because
+`lvgl.page.show` takes a `cv.use_id` and cannot be templated.
+
+Three things here are load-bearing and easy to get wrong:
+
+- **`on_change` / `on_release`, never `on_value`.** `on_value` is wired to `VALUE_CHANGED` *and*
+  ESPHome's private `UPDATE_EVENT`, which `lvgl.*.update` fires — so a slider on `on_value` would
+  echo every state HA pushed back to it. `on_change` and `on_release` see only real user input
+  (`lvgl/schemas.py`, `TRIGGER_EVENT_MAP`).
+- **`attribute: brightness` publishes NAN while a light is off**, because HA sends the string
+  `"None"` and the sensor logs a warning and publishes NaN. Every inbound lambda guards with
+  `std::isnan(x)`; without it the NaN reaches `lv_slider_set_value(int32_t)` as undefined behaviour.
+  The warnings at boot are expected and harmless.
+- **`dimmable.yaml` drops `brightness_pct` from its short click.** `themed.yaml` still sends
+  `'100'` on toggle, which would undo the slider on the next tap. Lights restore their own last
+  brightness without it.
+
+`homeassistant.action` `data:` values are templatable (`cv.templatable` in `api/__init__.py`), which
+is what lets one page drive any light via `entity_id: !lambda return id(detail_entity);`. Values are
+sent as strings, so scalars like `brightness_pct` work but a list-valued key such as `hs_color` does
+not — that needs `data_template:` with `variables:`.
+
 The `roboto_*` fonts set no `glyphs:`, so they carry ESPHome's `GF_Latin_Kernel` default — `°` is in
 it, unlike the MDI subset. Only `mdi_*` is restricted to `glyphs.yaml`.
 
