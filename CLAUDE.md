@@ -124,6 +124,18 @@ The five ways a pair breaks, and what catches each:
 The last two share one symptom — a tile stuck on the unknown glyph — so treat that glyph as "check the
 entity_id", not "check the wiring".
 
+An on tile carries a gold left edge as well as a gold glyph — state held in hue alone is invisible to a
+colourblind user and hard to read across a room, and an edge appearing is a shape cue rather than a colour
+one. **The edge is reserved in the widget tree and revealed by `border_opa`, never by `border_width`.**
+LVGL's `lv_obj_get_style_space_left()` adds `border_width` to the content inset whenever `border_side`
+includes `LEFT`, and does so whether or not the border is painted, so toggling the width slides the icon
+and the label 4px sideways on every state change. Each tree that can light an edge therefore sets
+`border_width: 4` / `border_side: LEFT` / `border_color: 0xFFD700` / `border_opa: TRANSP` statically —
+including the unknown state, so a tile whose entity never reports does not sit 4px off from its
+neighbours — and every sensors file flips only `COVER` / `TRANSP`. Families that light no edge
+(`icon_buttons/`, `text_buttons/`, used only by `320x240`) reserve nothing, which is self-consistent;
+what must never happen is a tree that reserves the space while its sensors never draw in it.
+
 The button tree specializes by shape and then by function: `buttons/{icon,text,icon_text}_buttons/` provide
 generic `stateless.yaml` / `stateful.yaml` bases, and subdirectories (`light_buttons/`,
 `light_group_buttons/`, `volume_buttons/`, `cover_buttons/`) wrap a base via `<<: !include ../stateful.yaml`
