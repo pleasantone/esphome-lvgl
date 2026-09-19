@@ -539,6 +539,13 @@ lvgl:
                       icon_off: "\U000F0C4C"
                       <<: *button_widget_vars
 
+              - obj: # alarm state
+                  <<: !include
+                    file: widgets/status/alarm/widget.yaml
+                    vars:
+                      uid: home_alarm
+                      <<: *button_widget_vars
+
               - obj: # doorbell
                   <<: !include
                     file: widgets/status/binary/widget.yaml
@@ -559,13 +566,6 @@ lvgl:
                       icon_on: "\U000F03D7"
                       icon_off: "\U000F03D7"
                       color_on: 0xFFD700
-                      <<: *button_widget_vars
-
-              - obj: # alarm state
-                  <<: !include
-                    file: widgets/status/alarm/widget.yaml
-                    vars:
-                      uid: home_alarm
                       <<: *button_widget_vars
 
     - id: printers
