@@ -557,7 +557,7 @@ lvgl:
                       color_on: 0xFFD700
                       <<: *button_widget_vars
 
-              - obj: # package delivered
+              - obj: # package still sitting on the porch
                   <<: !include
                     file: widgets/status/binary/widget.yaml
                     vars:
@@ -902,7 +902,7 @@ packages:
 
   package_widget_sensors: !include { file: widgets/status/binary/sensors.yaml, vars: {
     uid: package,
-    entity_id: binary_sensor.front_porch_package_delivered
+    entity_id: binary_sensor.front_porch_package_stranded
   }}
 
   home_alarm_widget_sensors: !include { file: widgets/status/alarm/sensors.yaml, vars: {
