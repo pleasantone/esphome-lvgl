@@ -58,17 +58,14 @@ font: !include
     bar_height: 4
 
   - &ams_row_vars
-    # 'AMS HT' measures 59px at roboto_sm 16, and the humidity group is
-    # heater 20 + 2 + '99' 18 + 2 + glyph 20. ams_tray_padding is also the gap
-    # between the three column groups, so 3 is what makes the row fit 298px:
-    # 59 + 3 + 62 + 3 + 169 = 296. The pills cannot give anything back --
-    # '100%' is 39px inside a 40px pill.
-    ams_label_width: 59
+    # 'HT' is 21px at roboto_sm 16; the humidity group is heater 20 + 2 + '99'
+    # 18 + 2 + glyph 20. Row total 24 + 5 + 62 + 5 + 175 = 271 of 298.
+    ams_label_width: 24
     ams_hum_width: 62
-    ams_strip_width: 169 # 4 * ams_tray_width + 3 * ams_tray_padding
+    ams_strip_width: 175 # 4 * ams_tray_width + 3 * ams_tray_padding
     ams_tray_width: 40
     ams_tray_height: 20
-    ams_tray_padding: 3
+    ams_tray_padding: 5
 
 globals:
   - id: detail_entity # which light the shared detail page is currently editing
@@ -596,7 +593,7 @@ lvgl:
                         text: 1 - X1C
                     - obj: # AMS 1
                         <<: !include { file: widgets/printers/ams_row.yaml, vars: {
-                          uid: printer_1, ams_id: "1", label: "AMS 1", <<: *ams_row_vars } }
+                          uid: printer_1, ams_id: "1", label: "1", <<: *ams_row_vars } }
                     - obj: # status / times
                         <<: !include { file: widgets/printers/tile_status.yaml, vars: {
                           uid: printer_1 } }
@@ -615,13 +612,13 @@ lvgl:
                         text: 2 - H2C
                     - obj: # AMS 1
                         <<: !include { file: widgets/printers/ams_row.yaml, vars: {
-                          uid: printer_2, ams_id: "1", label: "AMS 1", <<: *ams_row_vars } }
+                          uid: printer_2, ams_id: "1", label: "1", <<: *ams_row_vars } }
                     - obj: # AMS 2
                         <<: !include { file: widgets/printers/ams_row.yaml, vars: {
-                          uid: printer_2, ams_id: "2", label: "AMS 2", <<: *ams_row_vars } }
+                          uid: printer_2, ams_id: "2", label: "2", <<: *ams_row_vars } }
                     - obj: # AMS HT
                         <<: !include { file: widgets/printers/ams_row_single.yaml, vars: {
-                          uid: printer_2, ams_id: "128", label: "AMS HT", <<: *ams_row_vars } }
+                          uid: printer_2, ams_id: "128", label: "HT", <<: *ams_row_vars } }
                     - obj: # status / times
                         <<: !include { file: widgets/printers/tile_status.yaml, vars: {
                           uid: printer_2 } }
