@@ -764,8 +764,8 @@ lvgl:
                     file: widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
                     vars:
                       uid: chamber_heater
-                      entity_id: fan.chamber_heater
-                      domain: fan
+                      entity_id: switch.chamber_heater
+                      domain: switch
                       text: Heater
                       icon_on: "\U000F0438"
                       icon_off: "\U000F0AD8"
@@ -1219,7 +1219,7 @@ packages:
 
   chamber_heater_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
     uid: chamber_heater,
-    entity_id: fan.chamber_heater
+    entity_id: switch.chamber_heater
   }}
 
   riser_lights_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/light_buttons/rgb_sensors.yaml, vars: {
