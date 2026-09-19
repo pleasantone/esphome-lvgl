@@ -1,4 +1,5 @@
-# Status / remaining time / end time row of a printer tile.
+# Remaining time and end time row of a printer tile. The status word sits on
+# the title line instead -- see tile_title.yaml.
 #
 # required vars:
 # - uid
@@ -14,11 +15,6 @@
     flex_flow: ROW
     flex_align_main: SPACE_BETWEEN
   widgets:
-    - label: # the word, not just the bar colour: idle, offline and printing
-             # were otherwise distinguishable only by a 4px hairline
-        width: SIZE_CONTENT
-        id: ${uid}_print_status_lbl
-        text: " "
     - label:
         width: SIZE_CONTENT
         id: ${uid}_remaining_time_lbl
