@@ -219,7 +219,21 @@ the flex row and shifts the pill columns out of alignment.
 
 Right-justification is done by giving each column its own container with `flex_align_main: END`.
 **Do not use `text_align` for this** — it is a valid property but was observed not to take effect here,
-which is what left a wide gap between the humidity value and its glyph.
+which is what left a wide gap between the humidity value and its glyph. The unit title is the exception:
+its column uses `flex_align_main: START` so the titles line up on the left.
+
+The humidity column holds three labels — heater icon, value, `water-percent` glyph — packed right. The
+heater label starts empty and is written **only** by `ams_row_drying.sensors.yaml`, which is what gives it
+three states without a "has a heater" var: blank when that package is absent, grey `0x9AA0AE` when the unit
+has drying hardware but is idle, amber `0xFFAF00` while it dries. An empty label is zero-width, so a row
+with no heater still lines its value up with the rows that have one.
+
+`ams_tray_padding` is doing double duty: it is the gap between pills *and* the gap between the three column
+groups, so raising it costs four times over. On `480x320` the row is 298px against 296px of content, which
+is what forced it down to 3 — `AMS HT` is 59px at `roboto_sm` and the pills cannot give anything back,
+since `100%` is 39px inside a 40px pill. The `800x480` layout keeps the short `1` / `2` / `HT` titles for
+the same reason in reverse: at `roboto_sm` 26 `AMS HT` is 95px, which will not fit beside 70px pills on its
+444px row.
 
 Row alignment across AMS units relies on `ams_strip_width` — a fixed-width pill strip (`4 * ams_tray_width
 + 3 * ams_tray_padding`) with its pills left-aligned inside. That is what makes a 1-pill AMS HT row sit
