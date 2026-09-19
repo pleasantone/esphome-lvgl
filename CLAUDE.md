@@ -104,9 +104,25 @@ and never fire one. ESPHome resolves that id at config time, so the pair is now 
 pairing the wrong sensors file with a family fails too (plain light sensors under a `dimmable` tile trips
 on the missing `${uid}_brightness`). It costs 736 bytes of RAM for the trigger objects.
 
-**An undefined `${var}` is only a warning**, not an error, so a tile missing its `entity_id` still
-subscribes to the literal string and shows the unknown glyph. Same symptom, different cause, not caught by
-the guard.
+The pair exists because the two halves live in different top-level sections: a fragment merged into
+`lvgl:` cannot also contribute `binary_sensor:` entries — only a **package** can contribute both. That is
+what makes the duplication structural rather than lazy, and it is worth knowing before anyone tries to
+remove it again. Converting tiles to one-package-each does work (`!extend` reaches a named grid, and
+substitutions cross package boundaries where anchors cannot), but it appends rather than inserts, so tile
+order silently becomes package order, and it does not close the gaps below. It was tried and reverted.
+
+The five ways a pair breaks, and what catches each:
+
+| failure | caught by |
+|---|---|
+| sensors package forgotten | the guard, since 2026-09-19 |
+| wrong sensors file for the family | the guard, via the id it fails to find |
+| `uid` typo in the sensors file | always has been — the sensors name widget ids |
+| `entity_id` var omitted | **nothing.** An undefined `${var}` is only a warning, so the tile subscribes to the literal string |
+| `entity_id` typo'd to an absent entity | **nothing.** Home Assistant sends nothing for an entity that does not exist, and says nothing about it |
+
+The last two share one symptom — a tile stuck on the unknown glyph — so treat that glyph as "check the
+entity_id", not "check the wiring".
 
 The button tree specializes by shape and then by function: `buttons/{icon,text,icon_text}_buttons/` provide
 generic `stateless.yaml` / `stateful.yaml` bases, and subdirectories (`light_buttons/`,
