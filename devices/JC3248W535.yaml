@@ -52,6 +52,12 @@ display:
 touchscreen:
   - id: main_touchscreen
     platform: axs15231
+    on_touch:
+      # wakes the panel; lvgl.pause with resume_on_input swallows this touch, so
+      # the tap that wakes a dark screen never actuates whatever it landed on
+      - light.turn_on:
+          id: backlight
+          brightness: 100%
     # on_touch:
     #   - lambda: |-
     #         ESP_LOGI("cal", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
@@ -60,3 +66,16 @@ touchscreen:
     #           touch.x_raw,
     #           touch.y_raw
     #         );
+
+lvgl:
+  on_idle:
+    - timeout: 90s
+      then:
+        - light.turn_on:
+            id: backlight
+            brightness: 25%
+    - timeout: 10min
+      then:
+        - light.turn_off: backlight
+        - lvgl.pause:
+            show_snow: false
