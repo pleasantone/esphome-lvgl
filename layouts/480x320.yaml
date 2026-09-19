@@ -461,26 +461,28 @@ lvgl:
                       color_on: 0xFF3B30
                       <<: *button_widget_vars
 
-              - obj: # front sump pump
+              - button: # front sump pump
                   <<: !include
-                    file: widgets/status/binary/widget.yaml
+                    file: widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
                     vars:
                       uid: front_sump_pump
+                      entity_id: switch.front_sump_pump
+                      domain: switch
                       text: Front Sump
                       icon_on: "\U000F058F"
                       icon_off: "\U000F058F"
-                      color_on: 0xFFD700
                       <<: *button_widget_vars
 
-              - obj: # rear sump pump
+              - button: # rear sump pump
                   <<: !include
-                    file: widgets/status/binary/widget.yaml
+                    file: widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
                     vars:
                       uid: rear_sump_pump
+                      entity_id: switch.rear_sump_pump
+                      domain: switch
                       text: Rear Sump
                       icon_on: "\U000F058F"
                       icon_off: "\U000F058F"
-                      color_on: 0xFFD700
                       <<: *button_widget_vars
 
     - id: lighting_outside
@@ -862,12 +864,12 @@ packages:
     entity_id: binary_sensor.home_alarm_rear_yard_sump_flooding
   }}
 
-  front_sump_pump_widget_sensors: !include { file: widgets/status/binary/sensors.yaml, vars: {
+  front_sump_pump_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
     uid: front_sump_pump,
     entity_id: switch.front_sump_pump
   }}
 
-  rear_sump_pump_widget_sensors: !include { file: widgets/status/binary/sensors.yaml, vars: {
+  rear_sump_pump_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
     uid: rear_sump_pump,
     entity_id: switch.rear_sump_pump
   }}
