@@ -57,7 +57,7 @@ touchscreen:
       # the tap that wakes a dark screen never actuates whatever it landed on
       - light.turn_on:
           id: backlight
-          brightness: 100%
+          brightness: !lambda return id(active_brightness);
     # on_touch:
     #   - lambda: |-
     #         ESP_LOGI("cal", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
@@ -67,13 +67,53 @@ touchscreen:
     #           touch.y_raw
     #         );
 
+# The panel has no ambient light sensor, so it borrows Home Assistant's view of
+# the sun. Everything else here is already useless without HA, and a stale
+# elevation only matters if HA stays down across a sunset -- a restart moves the
+# sun by nothing. Defaults to full brightness, so a cold boot with no HA is
+# bright rather than dark.
+globals:
+  - id: active_brightness # the ceiling; idle dims relative to it
+    type: float
+    restore_value: false
+    initial_value: '1.0'
+  - id: sun_band # 2 day, 1 dusk, 0 night -- only a change re-applies brightness
+    type: int
+    restore_value: false
+    initial_value: '2'
+
+sensor:
+  - id: sun_elevation
+    platform: homeassistant
+    entity_id: sun.sun
+    attribute: elevation
+    on_value:
+      - lambda: |-
+          if (std::isnan(x)) {
+            return;
+          }
+          int band = x > 6.0f ? 2 : (x > -6.0f ? 1 : 0);
+          if (band == id(sun_band)) {
+            return;
+          }
+          id(sun_band) = band;
+          id(active_brightness) = band == 2 ? 1.0f : (band == 1 ? 0.6f : 0.35f);
+          // only follow the change if the panel is awake; if it is idling or
+          // dark, the next touch picks the new ceiling up
+          if (id(backlight).current_values.is_on() &&
+              id(backlight).current_values.get_brightness() > id(active_brightness) * 0.5f) {
+            auto call = id(backlight).turn_on();
+            call.set_brightness(id(active_brightness));
+            call.perform();
+          }
+
 lvgl:
   on_idle:
     - timeout: 5min
       then:
         - light.turn_on:
             id: backlight
-            brightness: 25%
+            brightness: !lambda return id(active_brightness) * 0.25f;
     - timeout: 30min
       then:
         - light.turn_off: backlight
