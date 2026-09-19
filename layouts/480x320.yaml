@@ -66,6 +66,7 @@ font: !include
     # 18 + 2 + glyph 20. Row total 30 + 5 + 62 + 5 + 175 = 277 of 298.
     ams_label_width: 30 # fits 'HT2'
     ams_hum_width: 62
+    ams_hum_value_width: 18 # fits '99'; keeps the heater icon in one place
     ams_strip_width: 175 # 4 * ams_tray_width + 3 * ams_tray_padding
     ams_tray_width: 40
     ams_tray_height: 20
