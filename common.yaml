@@ -13,7 +13,7 @@ web_server:
 
 ota:
   - platform: esphome
-    encryption: # inherits the api key; requires encrypted OTA
+    encryption: # inherits the api key
 
 api:
   encryption:
