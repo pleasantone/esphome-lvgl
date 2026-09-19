@@ -35,6 +35,9 @@
         text: ${text}
         align: BOTTOM_LEFT
   on_long_press: # long press only, so a stray touch cannot move the door
+    # build-time proof that this tile's sensors package was included: a missing
+    # one used to leave the tile showing the unknown glyph forever, silently
+    - lambda: (void) id(${uid}_widget_sensor);
     - homeassistant.action:
         action: cover.toggle
         data:

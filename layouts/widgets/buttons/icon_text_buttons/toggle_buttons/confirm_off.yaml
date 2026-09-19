@@ -28,6 +28,9 @@
       icon_off: ${icon_off}
       text: ${text}
   on_short_click:
+    # build-time proof that this tile's sensors package was included: a missing
+    # one used to leave the tile showing the unknown glyph forever, silently
+    - lambda: (void) id(${uid}_widget_sensor);
     - if:
         condition:
           - binary_sensor.is_on: ${uid}_widget_sensor

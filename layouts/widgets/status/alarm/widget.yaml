@@ -5,6 +5,9 @@
 
 # obj: # status only; arming from the panel would need a code entry screen
   id: ${uid}_widget
+  on_click: # never fires -- an obj is not pressable. It exists so a missing
+            # sensors package is a build error rather than a tile stuck on "..."
+    - lambda: (void) id(${uid}_widget_sensor);
   width: ${width}
   height: ${height}
   border_width: 0
