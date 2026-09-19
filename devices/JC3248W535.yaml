@@ -69,12 +69,12 @@ touchscreen:
 
 lvgl:
   on_idle:
-    - timeout: 90s
+    - timeout: 5min
       then:
         - light.turn_on:
             id: backlight
             brightness: 25%
-    - timeout: 10min
+    - timeout: 30min
       then:
         - light.turn_off: backlight
         - lvgl.pause:
