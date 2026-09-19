@@ -128,7 +128,7 @@ lvgl:
           width: 46%
           height: 64
           radius: 64
-          bg_color: 0xFF3B30
+          bg_color: 0xD32F2F # white on this is 4.98:1; the brighter red was 3.55
           on_click:
             - homeassistant.action:
                 action: homeassistant.turn_off
@@ -484,7 +484,7 @@ lvgl:
                       text: Flooding
                       icon_on: "\U000F1502"
                       icon_off: "\U000F1502"
-                      color_on: 0xFF3B30
+                      color_on: 0xFF6B60
                       <<: *button_widget_vars
 
     - id: lighting_outside
