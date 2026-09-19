@@ -58,8 +58,9 @@ font: !include
     bar_height: 8
 
   - &ams_row_vars
-    ams_label_width: 36
-    ams_hum_width: 60
+    ams_label_width: 36 # '1' / '2' / 'HT'; 'AMS HT' is 95px at roboto_sm 26 and
+                        # will not fit beside 70px pills on a 444px row
+    ams_hum_width: 85 # heater 26 + 2 + '99' 29 + 2 + glyph 26
     ams_strip_width: 295
     ams_tray_width: 70
     ams_tray_height: 35
