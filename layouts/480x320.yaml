@@ -1191,28 +1191,20 @@ packages:
     entity_id: switch.h2c_plug
   }}
 
-  # the printers freeze their entities when they go offline -- ha-bambulab keeps
-  # reporting the last chamber light state -- so these two tiles are gated on the
-  # printer's own online sensor. A plug takes about 30s to bring a printer up,
-  # and the tile reads "..." for that window rather than guessing
-  x1c_chamber_light_available: !include { file: widgets/buttons/icon_text_buttons/availability.sensors.yaml, vars: {
+  # gated: the printer freezes this entity at its last value when it goes
+  # offline, so the tile asks whether the printer is reachable too
+  x1c_chamber_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/gated_sensors.yaml, vars: {
     uid: x1c_chamber_light,
-    entity_id: binary_sensor.x1c_x1c_00m09d460801484_online
+    entity_id: light.x1c_x1c_00m09d460801484_chamber_light,
+    available_entity_id: binary_sensor.x1c_x1c_00m09d460801484_online
   }}
 
-  h2c_chamber_light_available: !include { file: widgets/buttons/icon_text_buttons/availability.sensors.yaml, vars: {
+  # gated: the printer freezes this entity at its last value when it goes
+  # offline, so the tile asks whether the printer is reachable too
+  h2c_chamber_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/gated_sensors.yaml, vars: {
     uid: h2c_chamber_light,
-    entity_id: binary_sensor.h2c_h2c_31b8ap630100072_online
-  }}
-
-  x1c_chamber_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
-    uid: x1c_chamber_light,
-    entity_id: light.x1c_x1c_00m09d460801484_chamber_light
-  }}
-
-  h2c_chamber_light_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
-    uid: h2c_chamber_light,
-    entity_id: light.h2c_h2c_31b8ap630100072_chamber_light
+    entity_id: light.h2c_h2c_31b8ap630100072_chamber_light,
+    available_entity_id: binary_sensor.h2c_h2c_31b8ap630100072_online
   }}
 
   window_exhaust_widget_sensors: !include { file: widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
