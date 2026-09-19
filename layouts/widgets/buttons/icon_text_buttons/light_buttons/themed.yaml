@@ -19,14 +19,6 @@
       icon_off: ${icon_off}
       text: ${text}
   on_short_click:
-    # say "asking" until Home Assistant answers: the tile otherwise shows the
-    # old state until the round trip lands, so a dropped command looks like
-    # success. The sensor callback overwrites this the moment a state arrives
-    - lvgl.widget.hide:
-        - ${uid}_widget_on
-        - ${uid}_widget_off
-    - lvgl.widget.show:
-        - ${uid}_widget_unknown
     - homeassistant.action:
         action: light.toggle
         data:
