@@ -17,9 +17,20 @@ binary_sensor:
                 - ${uid}_widget_off
             - lvgl.widget.show:
                 - ${uid}_widget_on
+            # a gold edge, not just a gold glyph: state carried only by hue is
+            # invisible to a colourblind user and hard to read at 2m, and an
+            # edge appearing is a shape cue rather than a colour one
+            - lvgl.widget.update:
+                id: ${uid}_widget
+                border_width: 4
+                border_side: LEFT
+                border_color: 0xFFD700
           else:
             - lvgl.widget.hide:
                 - ${uid}_widget_unknown
                 - ${uid}_widget_on
             - lvgl.widget.show:
                 - ${uid}_widget_off
+            - lvgl.widget.update:
+                id: ${uid}_widget
+                border_width: 0
