@@ -91,6 +91,23 @@ All widget child IDs are derived from `uid` (`${uid}_widget`, `${uid}_widget_on`
 `${uid}_widget_unknown`, …); the sensor file shows/hides those IDs by name. A mismatched `uid` produces a
 missing-ID error at validation time, not a silent failure.
 
+That check only ran in one direction — the sensors file naming a widget that does not exist. The reverse,
+**a widget whose sensors package was never included**, used to render fine and sit on the unknown glyph
+forever with nothing said at build time. Every stateful widget therefore names its own sensor once:
+
+```yaml
+- lambda: (void) id(${uid}_widget_sensor);
+```
+
+placed first in a handler the widget already has, or in an `on_click` on the status tiles, which are `obj:`
+and never fire one. ESPHome resolves that id at config time, so the pair is now enforced both ways, and
+pairing the wrong sensors file with a family fails too (plain light sensors under a `dimmable` tile trips
+on the missing `${uid}_brightness`). It costs 736 bytes of RAM for the trigger objects.
+
+**An undefined `${var}` is only a warning**, not an error, so a tile missing its `entity_id` still
+subscribes to the literal string and shows the unknown glyph. Same symptom, different cause, not caught by
+the guard.
+
 The button tree specializes by shape and then by function: `buttons/{icon,text,icon_text}_buttons/` provide
 generic `stateless.yaml` / `stateful.yaml` bases, and subdirectories (`light_buttons/`,
 `light_group_buttons/`, `volume_buttons/`, `cover_buttons/`) wrap a base via `<<: !include ../stateful.yaml`
