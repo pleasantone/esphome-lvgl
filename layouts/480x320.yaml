@@ -188,7 +188,7 @@ lvgl:
                       entity_id: media_player.lg_webos_tv
                       text: TV
                       icon_on: "\U000F0502"
-                      icon_off: "\U000F0502"
+                      icon_off: "\U000F083B"
                       <<: *button_widget_vars
 
               - button: # chandelier
@@ -198,8 +198,8 @@ lvgl:
                       uid: living_room_chandelier
                       entity_id: light.living_room_chandelier
                       text: Chandelier
-                      icon_on: "\U000F1793"
-                      icon_off: "\U000F1793"
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
                       <<: *button_widget_vars
 
               - button: # tv backlight
@@ -210,7 +210,7 @@ lvgl:
                       entity_id: light.tv_backlight
                       text: TV Backlight
                       icon_on: "\U000F1051"
-                      icon_off: "\U000F1051"
+                      icon_off: "\U000F1A4B"
                       <<: *button_widget_vars
 
               - button: # floor lamp
@@ -221,7 +221,7 @@ lvgl:
                       entity_id: light.floor_lamp
                       text: Floor Lamp
                       icon_on: "\U000F08DD"
-                      icon_off: "\U000F08DD"
+                      icon_off: "\U000F17C8"
                       <<: *button_widget_vars
 
               - button: # floor lamp 2
@@ -232,7 +232,7 @@ lvgl:
                       entity_id: light.floor_lamp_2
                       text: Floor Lamp 2
                       icon_on: "\U000F08DD"
-                      icon_off: "\U000F08DD"
+                      icon_off: "\U000F17C8"
                       <<: *button_widget_vars
 
               - obj: # temperature
@@ -272,8 +272,8 @@ lvgl:
                       uid: kitchen_light
                       entity_id: light.kitchen_main_lights
                       text: Kitchen
-                      icon_on: "\U000F1793"
-                      icon_off: "\U000F1793"
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
                       <<: *button_widget_vars
 
               - button: # dining room light
@@ -283,8 +283,8 @@ lvgl:
                       uid: dining_room_light
                       entity_id: light.dining_room_main_lights
                       text: Dining
-                      icon_on: "\U000F1793"
-                      icon_off: "\U000F1793"
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
                       <<: *button_widget_vars
 
               - button: # living room chandelier
@@ -294,8 +294,8 @@ lvgl:
                       uid: living_room_light
                       entity_id: light.living_room_chandelier
                       text: Living Rm
-                      icon_on: "\U000F1793"
-                      icon_off: "\U000F1793"
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
                       <<: *button_widget_vars
 
               - button: # office light
@@ -305,8 +305,8 @@ lvgl:
                       uid: office_light
                       entity_id: light.office_main_lights
                       text: Office
-                      icon_on: "\U000F1793"
-                      icon_off: "\U000F1793"
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
                       <<: *button_widget_vars
 
               - button: # foyer light
@@ -316,8 +316,8 @@ lvgl:
                       uid: foyer_light
                       entity_id: light.front_foyer_main_lights
                       text: Foyer
-                      icon_on: "\U000F1793"
-                      icon_off: "\U000F1793"
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
                       <<: *button_widget_vars
 
               - button: # hallway light
@@ -327,8 +327,8 @@ lvgl:
                       uid: hallway_light
                       entity_id: light.hallway_main_lights
                       text: Hallway
-                      icon_on: "\U000F1793"
-                      icon_off: "\U000F1793"
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
                       <<: *button_widget_vars
 
     - id: lighting_second
@@ -359,8 +359,8 @@ lvgl:
                       uid: bedroom_main_light
                       entity_id: light.bedroom_light
                       text: Bedroom
-                      icon_on: "\U000F1793"
-                      icon_off: "\U000F1793"
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
                       <<: *button_widget_vars
 
               - button: # bedroom closet light
@@ -371,7 +371,7 @@ lvgl:
                       entity_id: light.bedroom_closet_light
                       text: Closet
                       icon_on: "\U000F091C"
-                      icon_off: "\U000F091C"
+                      icon_off: "\U000F17CB"
                       <<: *button_widget_vars
 
               - button: # deb's office light
@@ -381,8 +381,8 @@ lvgl:
                       uid: deb_light
                       entity_id: light.deb_main_lights
                       text: Deb
-                      icon_on: "\U000F1793"
-                      icon_off: "\U000F1793"
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
                       <<: *button_widget_vars
 
               - button: # stairway light
@@ -392,8 +392,8 @@ lvgl:
                       uid: stairway_light
                       entity_id: light.stairs_main_lights
                       text: Stairway
-                      icon_on: "\U000F1793"
-                      icon_off: "\U000F1793"
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
                       <<: *button_widget_vars
 
               - button: # main bathroom light
@@ -403,8 +403,8 @@ lvgl:
                       uid: main_bathroom_light
                       entity_id: light.main_bathroom_light
                       text: Bathroom
-                      icon_on: "\U000F179B"
-                      icon_off: "\U000F179B"
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
                       <<: *button_widget_vars
 
     - id: lighting_ground
@@ -427,7 +427,7 @@ lvgl:
                       entity_id: light.garage_wall_lights
                       text: Garage
                       icon_on: "\U000F091C"
-                      icon_off: "\U000F091C"
+                      icon_off: "\U000F17CB"
                       <<: *button_widget_vars
 
               - button: # garage door
@@ -450,7 +450,7 @@ lvgl:
                       domain: switch
                       text: Front Sump
                       icon_on: "\U000F058F"
-                      icon_off: "\U000F058F"
+                      icon_off: "\U000F0F93"
                       <<: *button_widget_vars
 
               - button: # rear sump pump
@@ -462,7 +462,7 @@ lvgl:
                       domain: switch
                       text: Rear Sump
                       icon_on: "\U000F058F"
-                      icon_off: "\U000F058F"
+                      icon_off: "\U000F0F93"
                       <<: *button_widget_vars
 
               - obj: # clothes dryer -- on while it is actually drawing power
@@ -472,7 +472,7 @@ lvgl:
                       uid: clothes_dryer
                       text: Dryer
                       icon_on: "\U000F0917"
-                      icon_off: "\U000F0917"
+                      icon_off: "\U000F11BB"
                       color_on: 0xFFD700
                       <<: *button_widget_vars
 
@@ -483,7 +483,7 @@ lvgl:
                       uid: sump_flooding
                       text: Flooding
                       icon_on: "\U000F1502"
-                      icon_off: "\U000F1502"
+                      icon_off: "\U000F1503"
                       color_on: 0xFF6B60
                       <<: *button_widget_vars
 
@@ -516,7 +516,7 @@ lvgl:
                       entity_id: light.front_porch_main_lights
                       text: Front Porch
                       icon_on: "\U000F091C"
-                      icon_off: "\U000F091C"
+                      icon_off: "\U000F17CB"
                       <<: *button_widget_vars
 
               - button: # rope lights
@@ -527,7 +527,7 @@ lvgl:
                       entity_id: light.rope_lights
                       text: Rope Lights
                       icon_on: "\U000F12BA"
-                      icon_off: "\U000F12BA"
+                      icon_off: "\U000F12BB"
                       <<: *button_widget_vars
 
               - button: # back yard light
@@ -537,8 +537,8 @@ lvgl:
                       uid: back_yard_light
                       entity_id: light.back_yard_light
                       text: Back Yard
-                      icon_on: "\U000F0C4C"
-                      icon_off: "\U000F0C4C"
+                      icon_on: "\U000F091D"
+                      icon_off: "\U000F17C9"
                       <<: *button_widget_vars
 
               - obj: # alarm state
@@ -554,8 +554,8 @@ lvgl:
                     vars:
                       uid: doorbell
                       text: Doorbell
-                      icon_on: "\U000F12E6"
-                      icon_off: "\U000F12E6"
+                      icon_on: "\U000F009E"
+                      icon_off: "\U000F009C"
                       color_on: 0xFFD700
                       <<: *button_widget_vars
 
@@ -732,7 +732,7 @@ lvgl:
                       entity_id: light.riser_lights
                       text: Riser
                       icon_on: "\U000F1051"
-                      icon_off: "\U000F1051"
+                      icon_off: "\U000F1A4B"
                       <<: *button_widget_vars
 
               - button: # exhaust
@@ -755,8 +755,8 @@ lvgl:
                       entity_id: fan.bento_box
                       domain: fan
                       text: Bento Box
-                      icon_on: "\U000F0D43"
-                      icon_off: "\U000F0D43"
+                      icon_on: "\U000F0D44"
+                      icon_off: "\U000F1B57"
                       <<: *button_widget_vars
 
               - button: # heater
