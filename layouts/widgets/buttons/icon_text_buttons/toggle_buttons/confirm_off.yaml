@@ -38,6 +38,12 @@
               text: ${confirm_text}
           - lvgl.widget.show: confirm_box
         else:
+          # only this path actuates; the dialog path has not done anything yet
+          - lvgl.widget.hide:
+              - ${uid}_widget_on
+              - ${uid}_widget_off
+          - lvgl.widget.show:
+              - ${uid}_widget_unknown
           - homeassistant.action:
               action: ${domain}.turn_on
               data:
