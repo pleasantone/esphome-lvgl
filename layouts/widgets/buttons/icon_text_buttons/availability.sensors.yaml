@@ -1,0 +1,63 @@
+# Gates a stateful tile on whether the thing behind it is actually reachable.
+#
+# A tile shows what Home Assistant last said, and Home Assistant keeps saying it
+# long after the device is gone: ha-bambulab freezes a printer's entities at
+# their last values rather than marking them unavailable, so a chamber light
+# reads "on" all night after the printer is powered off. Even when an
+# integration does mark an entity unavailable the tile cannot tell, because
+# ESPHome's homeassistant binary_sensor maps only the literal "on" to true and
+# publishes nothing at all for "unavailable" -- the tile simply freezes.
+#
+# Include this alongside the tile's own sensors, same uid, pointed at whatever
+# binary_sensor says the device is reachable. While that is off the tile shows
+# the unknown glyph instead of a stale state, and drops its on-state edge.
+#
+# required vars:
+# - uid
+# - entity_id # a binary_sensor that is on when the device is reachable
+
+binary_sensor:
+  - id: ${uid}_available
+    platform: homeassistant
+    entity_id: ${entity_id}
+    trigger_on_initial_state: true
+    on_state:
+      - if:
+          condition:
+            - binary_sensor.is_on: ${uid}_available
+          then:
+            # reachable again -- trust the tile's own state sensor. It may be a
+            # moment stale if availability arrives first; the next push fixes it
+            - if:
+                condition:
+                  - binary_sensor.is_on: ${uid}_widget_sensor
+                then:
+                  - lvgl.widget.hide:
+                      - ${uid}_widget_unknown
+                      - ${uid}_widget_off
+                  - lvgl.widget.show:
+                      - ${uid}_widget_on
+                  - lvgl.widget.update:
+                      id: ${uid}_widget
+                      border_width: 4
+                      border_side: LEFT
+                      border_color: 0xFFD700
+                else:
+                  - lvgl.widget.hide:
+                      - ${uid}_widget_unknown
+                      - ${uid}_widget_on
+                  - lvgl.widget.show:
+                      - ${uid}_widget_off
+                  - lvgl.widget.update:
+                      id: ${uid}_widget
+                      border_width: 0
+          else:
+            - lvgl.widget.hide:
+                - ${uid}_widget_on
+                - ${uid}_widget_off
+            - lvgl.widget.show:
+                - ${uid}_widget_unknown
+            # the edge would otherwise keep asserting a state we no longer know
+            - lvgl.widget.update:
+                id: ${uid}_widget
+                border_width: 0
