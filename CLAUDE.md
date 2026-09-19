@@ -209,8 +209,27 @@ of AMS units is a composition choice rather than a fork of the whole tile:
 There is deliberately **no per-topology tile file**. A printer tile is composed in
 `layouts/<WxH>.yaml` from `&printer_tile` + `&printer_tile_layout`, a name label, one `ams_row*` include
 per AMS unit, then status and progress. ESPHome YAML has no loops, so a tile file would have to hardcode
-a unit count and fork for every combination (1 AMS, 2 AMS, 2 AMS + HT, 2 HT…). Adding a second AMS HT is
-one more row include plus its three sensor packages — nothing else changes.
+a unit count and fork for every combination (1 AMS, 2 AMS, 2 AMS + HT, 2 HT…).
+
+`layouts/480x320.yaml` does not enumerate the units a printer actually has. **Each printer carries all
+twelve slots** — AMS `1`–`4` and AMS HT `128`/`129` — and every row is included with `hidden: true` as a
+sibling key of the merge. `ams_row_humidity.sensors.yaml` calls `lvgl.widget.show` on
+`${uid}_ams_${ams_id}_row` when a reading arrives, so **a unit reveals its own row**: every AMS reports
+humidity, a slot whose entities do not exist never sends anything and stays hidden, and an AMS moved
+between printers appears on the new one without a reflash. Rows never hide again — a unit that goes away
+leaves its row until the panel restarts. This costs about 9.6KB of RAM and 45KB of flash over
+enumerating only the real units, which is the whole reason it is affordable.
+
+Hiding a *row* is fine; the alignment caveat below is about hiding a column *within* a row.
+
+Drying is subscribed for every slot for the same reason: a unit with no heater has no `_drying` entity, so
+its heater icon stays blank on its own rather than because a package was left out. The capability is
+discovered, not declared.
+
+The `800x480` layout still enumerates its units the old way — it is upstream's six demo printers, and six
+printers times twelve slots is not worth the RAM. Upstream branches keep the enumerated form too: the row
+`id` and the `lvgl.widget.show` are harmless where rows are always visible, and only the layout's
+`hidden: true` opts into the adaptive behaviour.
 
 Every tray id is `${uid}_ams_${ams_id}_tray_N_*`, so a unit is identified purely by `uid` + `ams_id`.
 
