@@ -235,10 +235,9 @@ lvgl:
                   layout:
                     <<: *printer_tile_layout
                   widgets:
-                    - label: # printer name
-                        width: 100%
-                        height: SIZE_CONTENT
-                        text: 1 - X1C
+                    - obj: # name left, print status right
+                        <<: !include { file: widgets/printers/tile_title.yaml, vars: {
+                          uid: printer_1, name: "1 - X1C" } }
                     - obj: # AMS 1
                         <<: !include { file: widgets/printers/ams_row.yaml, vars: {
                           uid: printer_1, ams_id: "1", label: "1", <<: *ams_row_vars } }
@@ -254,10 +253,9 @@ lvgl:
                   layout:
                     <<: *printer_tile_layout
                   widgets:
-                    - label: # printer name
-                        width: 100%
-                        height: SIZE_CONTENT
-                        text: 2 - H2C
+                    - obj: # name left, print status right
+                        <<: !include { file: widgets/printers/tile_title.yaml, vars: {
+                          uid: printer_2, name: "2 - H2C" } }
                     - obj: # AMS 1
                         <<: !include { file: widgets/printers/ams_row.yaml, vars: {
                           uid: printer_2, ams_id: "1", label: "1", <<: *ams_row_vars } }
