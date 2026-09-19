@@ -54,9 +54,7 @@ script:
                       - ${uid}_widget_on
                   - lvgl.widget.update:
                       id: ${uid}_widget
-                      border_width: 4
-                      border_side: LEFT
-                      border_color: 0xFFD700
+                      border_opa: COVER
                 else:
                   - lvgl.widget.hide:
                       - ${uid}_widget_unknown
@@ -65,7 +63,7 @@ script:
                       - ${uid}_widget_off
                   - lvgl.widget.update:
                       id: ${uid}_widget
-                      border_width: 0
+                      border_opa: TRANSP
           else:
             # unreachable: say so rather than repeating what it last said
             - lvgl.widget.hide:
@@ -75,4 +73,4 @@ script:
                 - ${uid}_widget_unknown
             - lvgl.widget.update:
                 id: ${uid}_widget
-                border_width: 0
+                border_opa: TRANSP

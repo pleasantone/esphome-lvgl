@@ -19,12 +19,12 @@ binary_sensor:
                 - ${uid}_widget_on
             # a gold edge, not just a gold glyph: state carried only by hue is
             # invisible to a colourblind user and hard to read at 2m, and an
-            # edge appearing is a shape cue rather than a colour one
+            # edge appearing is a shape cue rather than a colour one. The width
+            # is reserved in the widget itself, so only the opacity changes --
+            # see the note there.
             - lvgl.widget.update:
                 id: ${uid}_widget
-                border_width: 4
-                border_side: LEFT
-                border_color: 0xFFD700
+                border_opa: COVER
           else:
             - lvgl.widget.hide:
                 - ${uid}_widget_unknown
@@ -33,4 +33,4 @@ binary_sensor:
                 - ${uid}_widget_off
             - lvgl.widget.update:
                 id: ${uid}_widget
-                border_width: 0
+                border_opa: TRANSP
