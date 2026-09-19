@@ -439,28 +439,6 @@ lvgl:
                       icon_closed: "\U000F06D9"
                       <<: *button_widget_vars
 
-              - obj: # clothes dryer -- on while it is actually drawing power
-                  <<: !include
-                    file: widgets/status/threshold/widget.yaml
-                    vars:
-                      uid: clothes_dryer
-                      text: Dryer
-                      icon_on: "\U000F0917"
-                      icon_off: "\U000F0917"
-                      color_on: 0xFFD700
-                      <<: *button_widget_vars
-
-              - obj: # sump flooding
-                  <<: !include
-                    file: widgets/status/binary/widget.yaml
-                    vars:
-                      uid: sump_flooding
-                      text: Flooding
-                      icon_on: "\U000F1502"
-                      icon_off: "\U000F1502"
-                      color_on: 0xFF3B30
-                      <<: *button_widget_vars
-
               - button: # front sump pump
                   <<: !include
                     file: widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
@@ -483,6 +461,28 @@ lvgl:
                       text: Rear Sump
                       icon_on: "\U000F058F"
                       icon_off: "\U000F058F"
+                      <<: *button_widget_vars
+
+              - obj: # clothes dryer -- on while it is actually drawing power
+                  <<: !include
+                    file: widgets/status/threshold/widget.yaml
+                    vars:
+                      uid: clothes_dryer
+                      text: Dryer
+                      icon_on: "\U000F0917"
+                      icon_off: "\U000F0917"
+                      color_on: 0xFFD700
+                      <<: *button_widget_vars
+
+              - obj: # sump flooding
+                  <<: !include
+                    file: widgets/status/binary/widget.yaml
+                    vars:
+                      uid: sump_flooding
+                      text: Flooding
+                      icon_on: "\U000F1502"
+                      icon_off: "\U000F1502"
+                      color_on: 0xFF3B30
                       <<: *button_widget_vars
 
     - id: lighting_outside
