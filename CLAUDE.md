@@ -228,12 +228,11 @@ three states without a "has a heater" var: blank when that package is absent, gr
 has drying hardware but is idle, amber `0xFFAF00` while it dries. An empty label is zero-width, so a row
 with no heater still lines its value up with the rows that have one.
 
-`ams_tray_padding` is doing double duty: it is the gap between pills *and* the gap between the three column
-groups, so raising it costs four times over. On `480x320` the row is 298px against 296px of content, which
-is what forced it down to 3 — `AMS HT` is 59px at `roboto_sm` and the pills cannot give anything back,
-since `100%` is 39px inside a 40px pill. The `800x480` layout keeps the short `1` / `2` / `HT` titles for
-the same reason in reverse: at `roboto_sm` 26 `AMS HT` is 95px, which will not fit beside 70px pills on its
-444px row.
+Unit titles are the bare `1` / `2` / `HT`, not `AMS 1`. Spelling them out costs 38px on `480x320` — enough
+to force `ams_tray_padding` down to 3 and the pill strip to 169 to buy it back, leaving 2px of slack in the
+row. It is not worth it: the titles sit beside pills that already read as one unit's row. `ams_tray_padding`
+is doing double duty as the gap between pills *and* between the three column groups, so trading it away
+costs four times over. The pills cannot fund anything either — `100%` is 39px inside a 40px pill.
 
 Row alignment across AMS units relies on `ams_strip_width` — a fixed-width pill strip (`4 * ams_tray_width
 + 3 * ams_tray_padding`) with its pills left-aligned inside. That is what makes a 1-pill AMS HT row sit
