@@ -26,6 +26,9 @@ sensor:
                 - ${uid}_widget_on
                 - ${uid}_widget_off
             - lvgl.widget.show: ${uid}_widget_unknown
+            - lvgl.widget.update:
+                id: ${uid}_widget
+                border_opa: TRANSP
           else:
             - if:
                 condition:
@@ -35,8 +38,16 @@ sensor:
                       - ${uid}_widget_unknown
                       - ${uid}_widget_off
                   - lvgl.widget.show: ${uid}_widget_on
+                  # the same edge the on/off status tiles carry -- the width is
+                  # reserved in the widget, so only the opacity changes
+                  - lvgl.widget.update:
+                      id: ${uid}_widget
+                      border_opa: COVER
                 else:
                   - lvgl.widget.hide:
                       - ${uid}_widget_unknown
                       - ${uid}_widget_on
                   - lvgl.widget.show: ${uid}_widget_off
+                  - lvgl.widget.update:
+                      id: ${uid}_widget
+                      border_opa: TRANSP
