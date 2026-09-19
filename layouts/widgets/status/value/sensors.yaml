@@ -10,4 +10,10 @@ sensor:
     on_value:
       - lvgl.label.update:
           id: ${uid}_widget_value
-          text: !lambda return std::to_string((int) lroundf(x)) + "${unit}";
+          # an unavailable sensor publishes NAN, and lroundf(NaN) is undefined --
+          # it printed 2147483647 and overflowed the tile
+          text: !lambda |-
+            if (std::isnan(x)) {
+              return std::string("--");
+            }
+            return std::to_string((int) lroundf(x)) + "${unit}";
