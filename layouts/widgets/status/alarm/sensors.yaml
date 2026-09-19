@@ -25,6 +25,6 @@ text_sensor:
             if (x == "disarmed") return std::string("\U000F068A"); // shield-home
             return std::string("\U000F099D"); // shield-lock
           text_color: !lambda |-
-            if (x == "triggered") return lv_color_hex(0xFF3B30);
+            if (x == "triggered") return lv_color_hex(0xFF6B60);
             if (x == "disarmed") return lv_color_hex(0x9AA0AE);
             return lv_color_hex(0xFFD700);
