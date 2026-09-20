@@ -324,6 +324,56 @@ The integration namespaces trays by unit: `sensor.<prefix>_ams_<n>_tray_<m>`, **
 tile derives the displayed end time from `ha_time.now() + remaining_time` instead of reading `end_time`'s
 hour field, which would be wrong by the local UTC offset. A tray with no RFID reports `remain: -1`.
 
+## Idle behaviour is split across two files on purpose
+
+`devices/JC3248W535.yaml` owns the backlight: dim to 25% of `active_brightness` at 5 minutes, backlight
+off plus `lvgl.pause` at 30. `layouts/480x320.yaml` owns the UI half in its own `on_idle` — dismiss
+`confirm_box` at 5 minutes, `go_home` at 20 — because those are layout ids and a device file must stay
+UI-free. **Both lists merge**: packages concatenate them and every entry keeps its own timeout, so adding
+one in either file leaves the other alone.
+
+Three things about that arrangement are load-bearing:
+
+- The 5-minute dim leaves the screen **fully touch-live**. That is why the confirm dialog is dismissed
+  there: a forgotten dialog would otherwise leave a live Turn Off under the next finger.
+- The 30-minute sleep is safe to wake, because `resume_on_input` defaults true (`lvgl/__init__.py`), so
+  the tap that wakes a dark screen is swallowed and never actuates what it landed on.
+- `go_home` sits at 20 minutes, not 30, so it cannot race the device file's `lvgl.pause`. Ordering
+  between two entries with the same timeout is not yours to control, and a page change is not worth
+  betting on across a paused LVGL.
+
+`active_brightness` is a ceiling driven by `sun.sun` elevation (day 1.0 / dusk 0.6 / night 0.35). The
+panel has no ambient light sensor — the CYD has an LDR on GPIO34, the Guition does not.
+
+## Checks that pay for themselves
+
+Each of these replaced a pile of exploratory calls at least once, and each is verified:
+
+```bash
+git log main..upstream/main                 # empty => everything upstream merged is integrated
+gh pr list --repo RyanEwen/esphome-lvgl --state open --author pleasantone
+esphome config home35.yaml > /tmp/cfg.txt   # then grep the resolved config, never read it inline
+```
+
+To check every entity the panel subscribes to actually exists in Home Assistant — the one failure the
+build cannot catch — pull them out of the resolved config and ask HA in one call:
+
+```bash
+grep -oE 'entity_id: [a-z_]+\.[a-z0-9_]+' /tmp/cfg.txt | awk '{print $2}' | sort -u
+```
+
+then `ha_get_state` with that list (max 100 per call; the AMS slots that do not exist are expected to
+fail, and which ones fail tells you the real topology).
+
+To audit the MDI subset, compare the codepoints in the resolved config against `layouts/fonts/glyphs.yaml`:
+anything used but not listed renders as a box, anything listed but unused is flash spent on nothing. Both
+sets were exactly 53 as of 2026-09-19.
+
+**Never `git add -A` in this repo on a branch cut from upstream.** Upstream carries no `.gitignore`, so
+that stages the whole `.esphome/` build tree and `secrets.yaml` — the WiFi password and the API key. Add
+paths explicitly. `esphome compile` also writes its own stock `.gitignore` into any config directory that
+lacks one, which is where a stray untracked copy comes from.
+
 ## Boot-time page selection (gotcha)
 
 The `splash` page's `on_load` fires `go_home` behind a `delay:`. **Do not remove that delay.**
