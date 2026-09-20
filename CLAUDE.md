@@ -124,17 +124,19 @@ The five ways a pair breaks, and what catches each:
 The last two share one symptom — a tile stuck on the unknown glyph — so treat that glyph as "check the
 entity_id", not "check the wiring".
 
-An on tile carries a gold left edge as well as a gold glyph — state held in hue alone is invisible to a
-colourblind user and hard to read across a room, and an edge appearing is a shape cue rather than a colour
-one. **The edge is reserved in the widget tree and revealed by `border_opa`, never by `border_width`.**
-LVGL's `lv_obj_get_style_space_left()` adds `border_width` to the content inset whenever `border_side`
-includes `LEFT`, and does so whether or not the border is painted, so toggling the width slides the icon
-and the label 4px sideways on every state change. Each tree that can light an edge therefore sets
-`border_width: 4` / `border_side: LEFT` / `border_color: 0xFFD700` / `border_opa: TRANSP` statically —
-including the unknown state, so a tile whose entity never reports does not sit 4px off from its
-neighbours — and every sensors file flips only `COVER` / `TRANSP`. Families that light no edge
-(`icon_buttons/`, `text_buttons/`, used only by `320x240`) reserve nothing, which is self-consistent;
-what must never happen is a tree that reserves the space while its sensors never draw in it.
+An on tile is distinguished by its glyph, not by an edge or a colour. A gold 4px bar down the left of
+every lit tile was tried and removed (tag `gold-edge`, `git revert` the commit after it to bring it back).
+Two things sank it: it cost 4px of content width in *every* state, because LVGL's
+`lv_obj_get_style_space_left()` adds `border_width` to the content inset whenever `border_side` includes
+`LEFT` whether or not the border is painted — so the width has to be reserved permanently or the text
+shifts on every toggle — and the tiles here already carry state by shape, since each one passes a real
+`icon_on` / `icon_off` pair.
+
+That shape cue is what makes the colour redundant, and it is worth knowing why: gold `0xFFD700` against
+white `0xFFFFFF` is **1.40:1**, well under the 3:1 floor for a non-text indicator. A tile that used one
+glyph for both states would be carrying its state on that 1.40:1 alone, which is the case the edge was
+built for. None do any more. If a same-glyph tile ever appears here, give it an `icon_off` before
+reaching for colour.
 
 The button tree specializes by shape and then by function: `buttons/{icon,text,icon_text}_buttons/` provide
 generic `stateless.yaml` / `stateful.yaml` bases, and subdirectories (`light_buttons/`,

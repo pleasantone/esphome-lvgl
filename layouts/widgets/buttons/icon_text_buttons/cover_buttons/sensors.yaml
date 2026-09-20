@@ -17,20 +17,12 @@ text_sensor:
                 - ${uid}_widget_open
             - lvgl.widget.show:
                 - ${uid}_widget_closed
-            - lvgl.widget.update:
-                id: ${uid}_widget
-                border_opa: TRANSP
           else:
             - lvgl.widget.hide:
                 - ${uid}_widget_unknown
                 - ${uid}_widget_closed
             - lvgl.widget.show:
                 - ${uid}_widget_open
-            # anything but closed lights the edge, opening and closing
-            # included -- a door in motion is not a door that is shut
-            - lvgl.widget.update:
-                id: ${uid}_widget
-                border_opa: COVER
       - lvgl.label.update:
           id: ${uid}_widget_text
           text: !lambda |-

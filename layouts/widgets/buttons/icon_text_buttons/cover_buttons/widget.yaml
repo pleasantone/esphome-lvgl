@@ -11,15 +11,6 @@
   id: ${uid}_widget
   width: ${width}
   height: ${height}
-  # The gold on-state edge is reserved in every state and only revealed when
-  # the door is not closed. border_width narrows the content area whether or
-  # not the border is drawn -- lv_obj_get_style_space_left() adds it whenever
-  # border_side includes LEFT -- so turning the width on and off would shift
-  # the icon and the label sideways. Only border_opa moves.
-  border_width: 4
-  border_side: LEFT
-  border_color: 0xFFD700
-  border_opa: TRANSP
   widgets:
     - label:
         id: ${uid}_widget_unknown
