@@ -94,6 +94,27 @@ script:
       - lvgl.page.show: ${home_page}
 
 lvgl:
+  # Idle behaviour that belongs to the UI rather than to the board: the device
+  # file owns the backlight and the pause, and knows nothing about these ids.
+  # Both lists merge -- packages concatenate them, and each entry keeps its own
+  # timeout.
+  on_idle:
+    # the confirm dialog must not outlive whoever opened it. Between the dim at
+    # 5 minutes and the sleep at 30 the screen is dark but fully touch-live, so
+    # a forgotten dialog leaves a live Turn Off under the next finger that
+    # lands on the panel -- exactly the stray touch the dialog exists to stop
+    - timeout: 5min
+      then:
+        - lvgl.widget.hide: confirm_box
+    # come back on the home page rather than on whatever was left open, e.g.
+    # the shared detail page still editing a light someone has since turned off
+    # elsewhere. 20 minutes, not 30: at 30 this would race the device file's
+    # lvgl.pause, and a page change is not worth betting on across a paused
+    # LVGL. By 20 minutes the panel has been ignored long enough that a flip on
+    # an already-dimmed screen bothers nobody.
+    - timeout: 20min
+      then:
+        - script.execute: go_home
   id: main_lvgl # needed by the detail page's Back button
   default_font: roboto_md
   theme: !include themes/main.yaml
