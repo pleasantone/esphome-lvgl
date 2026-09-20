@@ -10,6 +10,10 @@
 * Elecrow CrowPanel `DIS05035H` (v2.2) 3.5" 320x480 portrait, with resistive touch and USB-C. [Manufacturer's Link](https://www.elecrow.com/esp32-display-3-5-inch-hmi-display-spi-tft-lcd-touch-screen.html).
 
 ## Changelog
+### 2026-09-18
+* [Breaking change] The printer tile is now composed in the layout from one AMS row include per AMS unit rather than from a single `widgets/printers/widget.yaml`, so a printer can carry any combination of AMS and AMS HT units. `widgets/printers/widget.yaml` and `widgets/printers/sensors.yaml` are replaced by `ams_row*.yaml`, `tile_status.yaml`, `tile_progress.yaml` and their sensor counterparts. A page that includes the old files needs recomposing; the `printers` page in each layout shows the shape.
+* Show per-unit AMS humidity, with a heater icon beside it: amber while that unit is drying, grey while it is merely capable of it, blank where there is no heater.
+* AMS rows can optionally reveal themselves as their units report, so a printer's topology does not have to be spelled out in the layout. See "How to let AMS rows appear on their own".
 ### 2026-09-17
 * Document that every supported board draws portrait, and that the files in `layouts/` are named for the panel's nominal landscape resolution rather than for the canvas LVGL draws on. No config changes; the device files were already correct.
 * [Breaking change] `common.yaml` now requires an encrypted API and OTA. Add an `api_encryption_key` to your `secrets.yaml` (Home Assistant shows a generated key when adding an ESPHome device, or see the [API docs](https://esphome.io/components/api/)), then reflash each device and enter the same key in Home Assistant. A device that is only reachable over OTA should be flashed before Home Assistant loses the connection to it.
@@ -72,6 +76,24 @@ lvgl:
       skip: true
 ```
 
+### How to let AMS rows appear on their own
+By default a layout lists the AMS units a printer has, and that list is fixed at compile time. If you would rather not respell it every time a unit moves, include the rows `hidden: true` and let each unit reveal its own row:
+
+```yaml
+- obj: # AMS 2 -- hidden until this unit reports humidity
+    hidden: true
+    <<: !include { file: widgets/printers/ams_row.yaml, vars: {
+      uid: printer_1, ams_id: "2", label: "2", <<: *ams_row_vars } }
+```
+
+`ams_row_humidity.sensors.yaml` calls `lvgl.widget.show` on the row when a reading arrives. Every AMS reports humidity, so that doubles as "this unit is here": a slot whose entities do not exist never sends anything and stays hidden.
+
+Include a slot for every unit the printer could have — `1` to `4` for AMS units and `128` upwards for AMS HTs — with its sensor packages, and the tile then follows the hardware. Moving an AMS from one printer to another needs no reflash: the old row stops updating and the new one appears. A row hides itself again when its humidity reading goes away, so a unit that is removed does not leave a row of frozen values behind — though an integration that freezes a missing device's entities rather than marking them unavailable sends nothing to hide on.
+
+Subscribe `ams_row_drying.sensors.yaml` for every slot as well and the heater icon becomes discovered rather than declared — a unit with no drying hardware has no `_drying` entity, so its icon simply stays blank.
+
+The cost is the slots you do not use: on a Guition `JC3248W535`, going from 4 enumerated rows to 12 slots across two printers took RAM from 41.2% to 44.0% and flash from 18.7% to 19.3%. Empty slots are silent at boot, since Home Assistant sends nothing at all for an entity that does not exist.
+
 ## Todo
 This readme isn't finished. I'll be elaborating on some more techniques being used in here, such as the modularization of the widgets using `!include` and how the stateful widget files relate to their sensor counterparts (tip, just make sure to pass the same `uid` and `entity_id` when including a widget and when including the related widget sensor).
 
@@ -84,7 +106,7 @@ These look better in real life, I promise! I took these photos in low-light and 
 
 3.5" 320x480 portrait (Guition JC3248W535)  
 ![Lighting Page](media/guition_3.5_lighting.jpg "Lighting Page")
-![Printers Page](media/guition_3.5_printers.jpg "Printers Page")  
+![Printers Page](media/guition_3.5_printers_ams.jpg "Printers Page")  
 
 3.5" 320x480 portrait (Elecrow DIS05035H)  
 ![Lighting Page](media/elecrow_3.5_lighting.jpg "Lighting Page")

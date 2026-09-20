@@ -271,10 +271,12 @@ Drying is subscribed for every slot for the same reason: a unit with no heater h
 its heater icon stays blank on its own rather than because a package was left out. The capability is
 discovered, not declared.
 
-The `800x480` layout still enumerates its units the old way — it is upstream's six demo printers, and six
-printers times twelve slots is not worth the RAM. Upstream branches keep the enumerated form too: the row
-`id` and the `lvgl.widget.show` are harmless where rows are always visible, and only the layout's
-`hidden: true` opts into the adaptive behaviour.
+The `800x480` layout still enumerates its units the old way: it names the real X1C and H2C and lists the
+four rows they actually have. Upstream's version of that file is six demo printers — Fred, Wilma, Barney —
+so this one has been personalised since `c9a2b47` and cannot be offered upstream as it stands. Enumerating
+is the right call there anyway on a 480x800 canvas showing two printers side by side. Upstream branches
+keep the enumerated form too: the row `id` and the `lvgl.widget.show` are harmless where rows are always
+visible, and only the layout's `hidden: true` opts into the adaptive behaviour.
 
 Every tray id is `${uid}_ams_${ams_id}_tray_N_*`, so a unit is identified purely by `uid` + `ams_id`.
 
