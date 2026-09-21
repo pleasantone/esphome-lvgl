@@ -633,6 +633,13 @@ before `layout:` can change. `on_boot` at −100 runs after LVGL has shown whate
 does not care which that is — verified in SDL with a package page deliberately placed first. `splash`
 stays as a blank `skip: true` page 0, covered by `top_layer`'s boot screen for the instant before.
 
+**Write every `on_boot` as a list** (`on_boot:` → `- priority: … then: …`), in every file. Packages merge
+two dict-form `on_boot`s into *one* automation, keeping the last file's priority for all of them, so a
+feature at priority 0 lands after the layout's −100 `go_home` instead of before it. And a list-form
+`on_boot` merged after a dict-form one *replaces* it, silently dropping the layout's `go_home`. Lists
+concatenate and each keeps its own priority. Found on 2026-09-21, when `features/page_access/` needed its
+pages registered (priority 0) before `go_home` ran; until then every file used −100, which hid it.
+
 ## Per-device overrides from a top-level config
 
 Because packages are merged, a top-level or device file can reach into the layout with `!extend`:

@@ -32,17 +32,17 @@ esphome:
   includes:
     - flip_clock.h # split-flap card animation
   on_boot:
-    priority: -100
-    then:
-      # take over the idle feature's sleep while the switch is on
-      - lambda: |-
-          id(sleep_handler) = [](const std::string &reason) {
-            if (!id(sleep_clock_enabled).state) {
-              return false;  // idle goes dark as usual
-            }
-            id(sleep_clock_show).execute(reason);
-            return true;
-          };
+    - priority: -100
+      then:
+        # take over the idle feature's sleep while the switch is on
+        - lambda: |-
+            id(sleep_handler) = [](const std::string &reason) {
+              if (!id(sleep_clock_enabled).state) {
+                return false;  // idle goes dark as usual
+              }
+              id(sleep_clock_show).execute(reason);
+              return true;
+            };
 
 lvgl:
   pages:
