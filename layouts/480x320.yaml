@@ -1,10 +1,9 @@
 esphome:
   includes:
     - widgets/printers/tray_color.h # tray::bg / tray::ink, shared by every tray pill
-  # Go home once everything is up. Not from splash's on_load: a page.show from
-  # inside the first page's own load event is dropped, and splash is only first
-  # while no package contributes a page ahead of it. on_boot runs after LVGL is
-  # set up whatever page it opened on.
+  # Go home once everything is set up, rather than from splash's on_load: a
+  # page.show inside the first page's own load event is dropped, and splash is
+  # only the first page while no package adds one ahead of it.
   on_boot:
     priority: -100
     then:
@@ -87,7 +86,7 @@ lvgl:
       - <<: !include { file: widgets/footer/widget.yaml, vars: { <<: *nav_widget_vars } }
       - <<: !include { file: widgets/boot_screen/widget.yaml }
   pages:
-    - id: splash # blank until on_boot goes home; top_layer's boot screen covers it
+    - id: splash # blank until on_boot goes home
       skip: true
 
     - id: bedroom

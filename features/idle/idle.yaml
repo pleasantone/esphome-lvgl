@@ -1,6 +1,6 @@
 # Idle behaviour for the backlight: dim, go home, and sleep after a while
 # untouched, and wake on the next touch. Opt in from a top-level config, after
-# `layout:` (see README / CLAUDE.md on package order):
+# `layout:` (see "Optional features" in the README):
 #
 #   packages:
 #     ...
