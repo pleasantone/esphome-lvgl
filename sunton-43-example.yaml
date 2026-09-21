@@ -9,3 +9,8 @@ packages:
   common: !include common.yaml
   device: !include devices/ESP32-8048S043.yaml
   layout: !include layouts/800x480.yaml
+  # optional features -- list them after layout:
+  # idle: !include features/idle/idle.yaml                # dim, go home, sleep
+  # ceiling: !include features/idle/sun.yaml              # brightness follows the sun
+  # sleep_clock: !include features/sleep_clock/sleep_clock.yaml
+  # memory: !include features/diagnostics/memory.yaml     # heap sensors, for chasing a leak

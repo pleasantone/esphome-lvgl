@@ -17,33 +17,6 @@ binary_sensor:
   - platform: status
     name: Status
 
-# Stand-ins for what a real board's idle handling owns, so a layout that reads
-# them builds here too. SDL has no idle ladder of its own to obey them.
-globals:
-  - id: active_brightness
-    type: float
-    restore_value: false
-    initial_value: '1.0'
-  - id: idle_sleep_dark
-    type: bool
-    restore_value: false
-    initial_value: 'true'
-  - id: sun_band # 2 day, 1 dusk, 0 night
-    type: int
-    restore_value: false
-    initial_value: '2'
-
-# The same contract as a real board's display_sleep, minus the idle ladder.
-script:
-  - id: display_sleep
-    then:
-      - light.turn_off: backlight
-      - wait_until:
-          condition:
-            - lambda: return id(main_touchscreen)->get_touches().empty();
-      - lvgl.pause:
-          show_snow: false
-
 output:
   - platform: template
     id: fake_backlight_output
@@ -70,11 +43,11 @@ display:
       height: ${sdl_height}
 
 touchscreen:
-  id: main_touchscreen
-  platform: sdl
-  transform:
-    mirror_x: false
-    mirror_y: false
+  - id: main_touchscreen
+    platform: sdl
+    transform:
+      mirror_x: false
+      mirror_y: false
   # on_touch:
   #   - logger.log:
   #         format: Touch at (%d, %d)

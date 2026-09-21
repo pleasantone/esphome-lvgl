@@ -1,7 +1,7 @@
 # The sleep clock: four split-flap cards in one row, the date beneath, and the
 # AM/PM mark above the first card in 12-hour mode. Shown only by
-# sleep_clock_show (the idle timer), never by prev/next; any touch goes back to
-# the page it replaced. Pair with sensors.yaml.
+# sleep_clock_show, never by prev/next; any touch goes back to the page it
+# replaced. Included by sleep_clock.yaml.
 #
 # required vars:
 # - card_width
@@ -20,6 +20,7 @@
     - script.execute: { id: sleep_clock_refresh, animate: false }
   on_unload:
     - lvgl.widget.show: [titlebar, navbar]
+    - lambda: id(idle_hold_page) = false;
   on_press:
     # drop the rest of this touch, or its release would land on whatever the
     # page underneath has at that spot

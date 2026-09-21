@@ -1,53 +1,55 @@
-# The sleep clock's non-LVGL half: its Home Assistant controls, the digit font,
-# and the scripts that show and tick it. Pair with page.yaml, and add
-# flip_clock.h to esphome: includes:.
+# A dim split-flap clock in place of the dark sleep. Opt in from a top-level
+# config, after `layout:` and the idle feature:
 #
-# It keeps the screen lit at the sleep timeout, so it needs the board to own
-# an `idle_sleep_dark` global that its own sleep entry obeys, a `display_sleep`
-# script that goes dark, plus `backlight`, `active_brightness` and `sun_band`.
+#   packages:
+#     ...
+#     idle: !include features/idle/idle.yaml
+#     ceiling: !include features/idle/sun.yaml      # optional: night colours
+#     sleep_clock: !include features/sleep_clock/sleep_clock.yaml
 #
-# It also owns sleeping on demand: holding the footer's Home button for 1.5s,
-# or the "Sleep now" button in Home Assistant, gives the same sleep as the idle
-# timer -- the clock if the switch is on, otherwise dark.
+# Needs features/idle/idle.yaml, whose sleep -- the timer, the Home hold and
+# "Sleep now" -- it takes over while the Sleep clock switch is on, by
+# registering a sleep_handler. Needs from the layout: `main_lvgl`, `ha_time`,
+# `clock_24h`, and the header/footer ids `titlebar` / `navbar`.
 #
-# required vars:
-# - digit_size
+# It brings its own page. That is safe because layouts go home from on_boot,
+# not from whichever page happens to be first; list it after `layout:` anyway,
+# so `splash` stays the page shown for the instant before that.
+#
+# Sizes default to a 320px-wide canvas; override them in the top-level
+# substitutions for a wider one. Cards must fit: 4 * width + 2 * card_gap +
+# pair_gap + 4 (the outline's room) <= the canvas width.
+
+substitutions:
+  sleep_clock_card_width: "68"
+  sleep_clock_card_height: "112"
+  sleep_clock_card_gap: "6"
+  sleep_clock_pair_gap: "16"
+  sleep_clock_digit_size: "88"
+  sleep_clock_brightness: "10" # percent of the ceiling
 
 esphome:
+  includes:
+    - flip_clock.h # split-flap card animation
   on_boot:
-    priority: -100 # after LVGL has built home_btn
+    priority: -100
     then:
-      # The hold is attached here rather than in footer/widget.yaml because the
-      # footer is shared with the generic layouts, which have no sleep to call.
-      # home_btn's own on_press (go home) still fires at touch-down.
+      # take over the idle feature's sleep while the switch is on
       - lambda: |-
-          auto cb = [](lv_event_t *e) {
-            if (lv_event_get_code(e) == LV_EVENT_PRESSED) {
-              id(sleep_hold).execute();
-            } else {  // RELEASED or PRESS_LOST: let go before the hold completed
-              id(sleep_hold).stop();
+          id(sleep_handler) = [](const std::string &reason) {
+            if (!id(sleep_clock_enabled).state) {
+              return false;  // idle goes dark as usual
             }
+            id(sleep_clock_show).execute(reason);
+            return true;
           };
-          lv_obj_add_event_cb(id(home_btn), cb, LV_EVENT_PRESSED, nullptr);
-          lv_obj_add_event_cb(id(home_btn), cb, LV_EVENT_RELEASED, nullptr);
-          lv_obj_add_event_cb(id(home_btn), cb, LV_EVENT_PRESS_LOST, nullptr);
 
-button:
-  - id: sleep_now_button
-    platform: template
-    name: Sleep now
-    icon: mdi:sleep
-    on_press:
-      - script.execute: { id: sleep_now, reason: HA }
-
-# What last put the panel to sleep or woke it, and when -- HA's history of
-# this is the timeline to read when the panel is found somewhere unexpected.
-text_sensor:
-  - id: sleep_last_event
-    platform: template
-    name: Sleep last event
-    icon: mdi:sleep
-    entity_category: diagnostic
+lvgl:
+  pages:
+    - id: sleep_clock
+      <<: !include { file: page.yaml, vars: {
+        card_width: "${sleep_clock_card_width}", card_height: "${sleep_clock_card_height}",
+        card_gap: "${sleep_clock_card_gap}", pair_gap: "${sleep_clock_pair_gap}" }}
 
 font:
   - id: flip_digits
@@ -55,7 +57,7 @@ font:
       type: gfonts
       family: Roboto Condensed
       weight: bold
-    size: ${digit_size}
+    size: ${sleep_clock_digit_size}
     glyphs: "0123456789"
     bpp: 4
 
@@ -79,10 +81,10 @@ select:
     icon: mdi:weather-night
     entity_category: config
     options:
-      - Follow the sun # night band: sun below -6 degrees
+      - At night # whatever the ceiling feature calls night; never without one
       - Always
       - Never
-    initial_option: Follow the sun
+    initial_option: At night
     optimistic: true
     restore_value: true
 
@@ -94,10 +96,7 @@ switch:
     entity_category: config
     optimistic: true
     restore_mode: RESTORE_DEFAULT_OFF
-    # the board's own sleep entry goes dark only while this is off. A change
-    # takes effect at the next sleep: a clock already showing stays up.
-    on_state:
-      - lambda: id(idle_sleep_dark) = !x;
+    # read at each sleep; a clock already showing stays up until touched
 
 number:
   - id: sleep_clock_brightness
@@ -110,7 +109,7 @@ number:
     min_value: 1
     max_value: 50
     step: 1
-    initial_value: 10
+    initial_value: ${sleep_clock_brightness}
     optimistic: true
     restore_value: true
     on_value:
@@ -122,39 +121,6 @@ number:
             - script.execute: sleep_clock_backlight
 
 script:
-  - id: sleep_note # publishes "<event> HH:MM" to sleep_last_event
-    parameters:
-      event: std::string
-    then:
-      - lambda: |-
-          auto now = id(ha_time).now();
-          id(sleep_last_event).publish_state(now.is_valid() ? event + now.strftime(" %H:%M") : event);
-
-  - id: sleep_now
-    parameters:
-      reason: std::string # hold / HA
-    then:
-      - if:
-          condition:
-            - switch.is_on: sleep_clock_enabled
-          then:
-            - script.execute: { id: sleep_clock_show, reason: !lambda return reason; }
-          else:
-            - script.execute: { id: sleep_note, event: !lambda 'return "dark (" + reason + ")";' }
-            - script.execute: display_sleep
-
-  - id: sleep_hold
-    mode: restart
-    then:
-      - delay: 1500ms # well clear of the 400ms long press the tiles use
-      - script.execute: { id: sleep_now, reason: hold }
-      # the finger is still down: drop the rest of this touch so its release
-      # lands on nothing
-      - lambda: |-
-          for (lv_indev_t *i = lv_indev_get_next(nullptr); i != nullptr; i = lv_indev_get_next(i)) {
-            lv_indev_wait_release(i);
-          }
-
   - id: sleep_clock_show
     parameters:
       reason: std::string # idle / hold / HA
@@ -165,14 +131,16 @@ script:
           condition:
             - lambda: return !id(sleep_clock)->is_showing();
           then:
-            - lambda: id(sleep_clock_origin) = id(main_lvgl)->get_current_page();
+            - lambda: |-
+                id(sleep_clock_origin) = id(main_lvgl)->get_current_page();
+                id(idle_hold_page) = true;  // the go-home timer leaves it alone
             - lvgl.page.show: sleep_clock
             - script.execute: { id: sleep_note, event: !lambda 'return "clock (" + reason + ")";' }
       - script.execute: sleep_clock_backlight
 
   - id: sleep_clock_backlight
     then:
-      # relative to the sun-driven ceiling, so night is dimmer than day
+      # relative to the ceiling, so night is dimmer than day
       - light.turn_on:
           id: backlight
           brightness: !lambda return id(active_brightness) * id(sleep_clock_brightness).state / 100.0f;
@@ -211,7 +179,7 @@ script:
     then:
       - lambda: |-
           auto mode = id(sleep_clock_night_colours).current_option();
-          int red = mode == "Always" || (mode == "Follow the sun" && id(sun_band) == 0);
+          int red = mode == "Always" || (mode == "At night" && id(ambient_night));
           if (red == id(sleep_clock_red)) {
             return;  // restyling invalidates the whole face; only do it on a change
           }

@@ -30,16 +30,18 @@ repo). `sdl-example.yaml` deliberately skips `common.yaml`, so it needs no secre
 
 ## Composition model
 
-A top-level config is only a few lines — it names the device, picks a home page, and merges three packages:
+A top-level config is only a few lines — it names the device, picks a home page, merges three packages,
+and opts into any features:
 
 ```yaml
 esphome: { name: ..., friendly_name: ... }   # device_name/friendly_name live HERE, not in substitutions
 substitutions: { home_page: lighting_1 }
 packages:
-  common: !include common.yaml               # WiFi, API, OTA, web_server, diagnostic sensors
+  common: !include common.yaml               # WiFi, API, OTA, web_server, uptime + reset reason
   device: !include devices/<BOARD>.yaml      # pins, display, touchscreen, backlight, psram, framework
   layout: !include layouts/<WxH>.yaml        # fonts, theme, LVGL pages, and all HA sensors
                                              # (or <WxH>-home.yaml -- see "Personal vs example layouts")
+  idle: !include features/idle/idle.yaml     # optional behaviour, AFTER layout: -- see "Features"
 ```
 
 **A layout's name is the canvas it was drawn for, not what every board gives it.** The Guition
@@ -49,8 +51,10 @@ driven at 320px wide on that board — about 298px usable inside the page and ti
 against the real canvas, not the filename. Boards that need landscape set `lvgl: rotation:` in their
 device file.
 
-The three axes are intentionally orthogonal: `devices/` files contain *nothing* UI-related, and `layouts/`
-files contain nothing board-specific. Layouts are keyed by resolution (`320x240`, `480x320`, `800x480`), so
+The axes are intentionally orthogonal: `devices/` files contain *only* hardware — pins, display,
+touchscreen, backlight, and stable ids for them — and nothing UI-related or behavioural (Ryan's rule, from
+upstream PR #50: device files stay project-agnostic); `layouts/` files contain nothing board-specific; and
+behaviour a panel may or may not want lives in `features/`. Layouts are keyed by resolution (`320x240`, `480x320`, `800x480`), so
 several boards share one layout. Adding a board means adding one file to `devices/` and nothing else.
 
 `home_page` is a required substitution consumed by the `go_home` script in every layout; it is also what the
@@ -174,19 +178,24 @@ entries its tiles need, so the two halves sit in one file and the layout's botto
 collapses. Moving the printers page out took 55 lines off `480x320-home.yaml` for 10 added, and the
 resolved config was identical as a multiset — every line still there, only reordered.
 
-What kills it: **package-contributed pages merge ahead of the including file's own.** Moving one page into
-a package promotes it to first, so `printers` displaced `splash` as the boot page and the `go_home` that
-`splash`'s `on_load` fires never ran. On this device that hides itself, because `home_page` is already
-`printers`; on a device with `home_page: lighting_main` the panel would boot to printers and stay there.
-Keeping page order would mean moving *every* page into a package and trusting declaration order — trading
-an explicit list for an implicit one, which is the objection above.
+What killed it then: **a package's pages merge in package order, and a package included *inside* a file
+is processed before that file's own content** — so a page moved into a package the layout includes lands
+ahead of the layout's pages. `printers` displaced `splash` as the boot page, and the `go_home` that
+`splash`'s `on_load` fired never ran.
+
+Two things have changed since (2026-09-21). Boot no longer depends on the first page: every layout now goes
+home from `esphome: on_boot`, not from `splash` (see "Boot-time page selection"). And top-level packages
+merge in the order they are listed, so a feature listed *after* `layout:` appends its page at the end
+(`… printer_control sleep_clock`), which is how `features/sleep_clock/` brings its own page. What is left
+of the objection is prev/next order: pages a package contributes land in package order, not where you would
+write them in the list — fine for a `skip: true` page, a real cost for a navigable one.
 
 There is no escape hatch: `- !include pages/printers.yaml` as a list item under `pages:` keeps the order
 explicit but returns only a page mapping, and a mapping merged into `lvgl:` cannot contribute
 `binary_sensor:` entries. Only a package can, which is the same wall the widget/sensors pair hits.
 
-Worth revisiting only if pages should become pluggable per device — a device file opting a whole page in or
-out. Then package-per-page is the right shape and the ordering cost is paid deliberately.
+Worth revisiting if navigable pages should become pluggable per panel. Then package-per-page is the right
+shape and the ordering cost is paid deliberately.
 
 The five ways a pair breaks, and what catches each:
 
@@ -438,84 +447,86 @@ The integration namespaces trays by unit: `sensor.<prefix>_ams_<n>_tray_<m>`, **
 tile derives the displayed end time from `ha_time.now() + remaining_time` instead of reading `end_time`'s
 hour field, which would be wrong by the local UTC offset. A tray with no RFID reports `remain: -1`.
 
-## Idle behaviour is split across two files on purpose
+## Features (`features/`)
 
-`devices/JC3248W535.yaml` owns the backlight: dim to 25% of `active_brightness` at 5 minutes, backlight
-off plus `lvgl.pause` at 30. `layouts/480x320-home.yaml` owns the UI half in its own `on_idle` — dismiss
-`confirm_box` at 5 minutes, `go_home` at 20 — because those are layout ids and a device file must stay
-UI-free. **Both lists merge**: packages concatenate them and every entry keeps its own timeout, so adding
-one in either file leaves the other alone.
+A feature is an opt-in package: behaviour a panel may or may not want, kept out of `devices/` (hardware
+only) and `layouts/` (pages only). Each one lists what it needs from the other two in its header — stable
+ids like `backlight`, `main_touchscreen`, `main_lvgl`, `go_home`, `home_btn` — and **must be listed after
+`layout:`**, so any page it brings appends after `splash`. The generic examples carry the opt-in lines
+commented out; `home35.yaml` and `sdl-home.yaml` use them.
 
-Three things about that arrangement are load-bearing:
+**Settings are Home Assistant controls with YAML defaults** (upstream #53: Ryan wants HA control *and* the
+YAML way kept). Every tunable is a template `number` / `switch` / `select` with `restore_value`, whose
+`initial_value` is a substitution the feature defaults and a top-level config can override. So a config
+sets a panel's starting point, and HA changes a running one without a reflash.
 
-- The 5-minute dim leaves the screen **fully touch-live**. That is why the confirm dialog is dismissed
-  there: a forgotten dialog would otherwise leave a live Turn Off under the next finger.
-- The 30-minute sleep is safe to wake, because `resume_on_input` defaults true (`lvgl/__init__.py`), so
-  the tap that wakes a dark screen is swallowed and never actuates what it landed on.
-- `go_home` sits at 20 minutes, not 30, so it cannot race the device file's `lvgl.pause`. Ordering
-  between two entries with the same timeout is not yours to control, and a page change is not worth
-  betting on across a paused LVGL.
+### `features/idle/` — dim, go home, sleep, wake
 
-`active_brightness` is a ceiling driven by `sun.sun` elevation (day 1.0 / dusk 0.6 / night 0.35). The
-panel has no ambient light sensor — the CYD has an LDR on GPIO34, the Guition does not.
+`idle.yaml` is the base. After **Dim after** minutes it dims to **Dim level** % of the ceiling, after **Go
+home after** it runs the layout's `go_home`, after **Sleep after** it sleeps; `0` means never
+(`idle_ms()` in `idle.h` maps it to a threshold the inactivity time cannot pass — `on_idle` timeouts are
+templatable). A touch wakes the backlight to the ceiling via `!extend main_touchscreen` → `on_touch`.
 
-The three timeouts are substitutions (`idle_dim_timeout`, `idle_home_timeout`, `idle_sleep_timeout`),
-defaulted in both the device file and the layout, and a top-level config overrides them. That is the
-test hook: a scratch config with `5s` / `1h` / `15s` runs the whole ladder in seconds.
+What is load-bearing:
 
-### The sleep clock
+- The dim leaves the screen **fully touch-live**. That is why the layout still dismisses `confirm_box` at a
+  fixed 5 minutes: a forgotten dialog would otherwise leave a live Turn Off under the next finger.
+- The sleep is safe to wake, because `resume_on_input` defaults true (`lvgl/__init__.py`), so the tap that
+  wakes a dark screen is swallowed and never actuates what it landed on.
+- **`display_sleep` waits for the finger to lift before `lvgl.pause`.** `resume_on_input` wakes on a
+  *release* (`LVTouchListener::release()` → `maybe_wakeup()`), so a pause under a held finger — the Home
+  hold, below — would undo itself on lift, and the next tap would land on a live screen.
+- **Go home is skipped while paused**, so it can share a timeout with the sleep without a page change
+  racing `lvgl.pause` — the old "go home at 20, sleep at 30" spacing was that race's only guard, and the
+  timeouts are now user-set. It is also skipped while `idle_hold_page` is set.
+- **The dim only ever lowers the backlight.** A sleep clock put up by hand sits below the dim level; the
+  timers keep counting from the hold, and without this the clock would be dimmed *up*.
 
-With the **Sleep clock** switch on, the 30-minute sleep puts a dim split-flap clock up instead of going
-dark. The two sleep entries do not race even though they share a timeout. The device's entry goes dark
-only while its `idle_sleep_dark` global is true, and the switch's `on_state` keeps that global the
-inverse of itself, so the device obeys a flag without knowing a clock exists. The layout's entry shows
-the clock. `devices/SDL.yaml` carries stand-ins for `idle_sleep_dark`, `active_brightness`, `sun_band` and
-`display_sleep` so the layout builds there.
+**Sleeping** — the timer, holding the footer's Home button for 1.5s, and the **Sleep now** HA button — all
+run `sleep_now`. It offers the sleep to `sleep_handler` first, a `std::function` global another feature
+may register; if none does, or it declines, the panel goes dark. That is how the sleep clock takes over
+without `idle` knowing it exists. Home's own `on_press` still goes home at touch-down, so a hold means go
+home, then sleep. The hold is attached in C++ from `on_boot`, not in `footer/widget.yaml`, because the
+footer is shared by every layout whether or not it idles. **Sleep last event** records each sleep and
+touch-wake with its time ("clock (idle) 02:13", "dark (HA) 23:40"); it reads `unknown` after a reboot,
+which is itself the tell.
 
-Its brightness is the **Sleep clock brightness** number (1–50%), taken relative to `active_brightness`
-so night is dimmer than day, and applied live while the clock is showing. Because `go_home` has run at
-20 minutes, a touch returns to the home page; `sleep_clock_origin` still records the real page, which
-matters only if the ladder changes. The press handler calls `lv_indev_wait_release()` for the same
-reason the page swipes did. Turning the switch off while the clock is up leaves it up until touched.
+### `features/idle/sun.yaml` / `ambient_light.yaml` — the ceiling
 
-The pair is `widgets/sleep_clock/page.yaml` + `sensors.yaml`, and `flip_clock.h` animates the cards.
-**`flip_clock.h` finds a card's parts by child index**, so `card.yaml`'s child order is a contract. The
-page must stay in the layout's `pages:` list, not the package, because package pages merge ahead of the
-layout's and would displace `splash` as the boot page.
+Both set `active_brightness` (the ceiling everything dims relative to) and `ambient_night` in three bands,
+day 100 / dusk 60 / night 35 %, re-applying only on a change of band. `sun.yaml` bands `sun.sun`'s
+elevation at ±6° and needs HA's sun integration; its `isnan` guard matters, because an unavailable sensor
+publishes NAN, and NAN compared lands you in the night band at noon. `ambient_light.yaml` is for a board
+with a light sensor: it `!extend`s a sensor the device file must name `ambient_light`, in lux. The Guition
+has none, so home35 uses `sun.yaml`; the CYD has an LDR on GPIO34 but its device file does not expose it
+yet, so **`ambient_light.yaml` has only ever been validated, never run.** Without either, the ceiling
+stays 100% and nothing is ever night.
 
-The cards carry a 1px white `outline`, not a `border`. A border insets the content box, which moves the
-halves relative to the full-height face inside them and splits the digit a pixel off the hinge; an
-outline draws outside and changes nothing. It does need a pixel of room, since a parent clips its
-children's outlines, which is why the pair objs have `pad_all: 1`.
+### `features/sleep_clock/` — a split-flap clock instead of the dark sleep
 
-**Night colours** (Follow the sun / Always / Never) turns the whole face red — digits, card tint,
-outline, date and AM/PM. It has to be the whole face: the outline and the date would otherwise be the
-bluest, brightest things left. "Follow the sun" means the device's `sun_band` night band (sun below
-−6°), so the layout reads that device global the way it reads `active_brightness`; SDL has a stand-in.
-The palette is checked every tick but restyled only when it changes (`sleep_clock_red`), because
-restyling invalidates the whole face. The night ink is 4.1:1 on its card, and the outline 4.5:1 and the
-date 3.4:1 on black. Brightness still matters more than colour here: IPS black leaks backlight, so the
-10% slider does most of the work and red refines it.
+With the **Sleep clock** switch on, `sleep_handler` puts a dim clock up instead of going dark — from the
+timer, the Home hold or Sleep now alike. It brings its own `skip: true` page, sets `idle_hold_page` while
+showing so go-home leaves it alone, and hides the header and footer (`titlebar` / `navbar` on
+`top_layer`). A touch returns to the page it replaced, calling `lv_indev_wait_release()` so the release
+lands on nothing. **Sleep clock brightness** (1–50 % of the ceiling) applies live while showing. Card and
+digit sizes are substitutions defaulting to a 320px canvas.
 
-**24-hour time** is a separate switch in `widgets/header/sensors.yaml`, so every layout exposes it. It
-drives the header clock, the sleep clock and the printer end times. The printer tiles pick it up on
-their next remaining-time update rather than at once.
+`flip_clock.h` animates the cards and **finds a card's parts by child index**, so `card.yaml`'s child order
+is a contract. The cards carry a 1px white `outline`, not a `border`: a border insets the content box,
+moving the halves relative to the full-height face inside them and splitting the digit a pixel off the
+hinge; an outline draws outside and changes nothing, but needs a pixel of room, since a parent clips its
+children's outlines — hence `pad_all: 1` on the pair objs.
 
-**Sleeping on demand** gives the same sleep as the timer — the clock if the switch is on, otherwise
-dark — from two places: holding the footer's Home button for 1.5s, and the **Sleep now** button in Home
-Assistant. Both run `sleep_now`. Home's own `on_press` still goes home at touch-down, so a hold means go
-home, then sleep. The hold is attached in C++ from the package's `on_boot`, not in `footer/widget.yaml`,
-because the footer is shared with the generic layouts and they have no sleep to call.
+**Night colours** (At night / Always / Never) turns the whole face red — digits, card tint, outline, date
+and AM/PM — or the outline and date would be the bluest, brightest things left. "At night" reads
+`ambient_night`, so it follows whichever ceiling feature is in use, and never fires without one. The
+palette is restyled only on a change (`sleep_clock_red`), because restyling invalidates the whole face.
+Night ink is 4.1:1 on its card; outline 4.5:1 and date 3.4:1 on black. Brightness matters more than
+colour: IPS black leaks backlight, so the 10% slider does most of the work.
 
-The dark path is the device's `display_sleep` script, which **waits for the finger to lift before
-`lvgl.pause`**. `resume_on_input` wakes on a *release* (`LVTouchListener::release()` →
-`maybe_wakeup()`), so a pause under the held finger would undo itself on lift. The next tap would then
-land on a live screen instead of being swallowed.
-
-After a manual sleep the idle timers keep counting from the hold, so both earlier entries had to learn
-to leave a clock alone. `go_home` is skipped while the clock is showing, and the device's dim only ever
-*lowers* the backlight. Without that, the clock would be dimmed *up* to 25% at 5 minutes and replaced by
-the home page at 20.
+**24-hour time** is a separate switch in `layouts/widgets/header/sensors.yaml`, so every layout exposes it;
+it drives the header clock, the sleep clock and the printer end times (the tiles on their next
+remaining-time update).
 
 **Never render a transformed object at scale 0.** In LVGL 9.5, `lv_obj_refr()` creates a layer for any
 object with a transform, and `lv_draw_layer()` returns early for `scale <= 0` *without* queueing the
@@ -524,21 +535,32 @@ first version of the flip made the lower flap visible at scale 0 for its 160ms d
 layers per flip, every minute, until PSRAM ran out a few hours into the night. The panel then rebooted
 to `printers`, which looked like a crash in "deeper sleep". `flip::scale_cb` now hides a flap at 0.
 LVGL fixed it in 9.6.0 (commit `3fff79153`, "skip obj refr for zero scaled") and did not backport it
-to 9.5. Once ESPHome pins LVGL 9.6 or later, the hiding is no longer needed, though it does no harm.
-Found in SDL: `heap <pid>` showed thousands of live 24KB blocks, and `MallocStackLogging=1` plus
-`malloc_history <pid> -allBySize` traced them to `lv_draw_layer_create`. `leaks` did *not* catch it,
-because the layers stay linked on the display's layer list and so remain reachable.
+to 9.5; reported to ESPHome as esphome/esphome#19439. Once ESPHome pins LVGL 9.6 or later, the hiding is
+no longer needed, though it does no harm. Found in SDL: `heap <pid>` showed thousands of live 24KB
+blocks, and `MallocStackLogging=1` plus `malloc_history <pid> -allBySize` traced them to
+`lv_draw_layer_create`. `leaks` did *not* catch it, because the layers stay linked on the display's layer
+list and so remain reachable.
 
-`common.yaml` now carries diagnostics for exactly this kind of hunt: **Uptime**, **Reset Reason**, and
-**Heap Free / Min Free / Largest Block** (`debug:`). The Guition file adds **PSRAM Free**. The clock
-package publishes **Sleep last event** ("clock (idle) 02:13", "woken (touch) 02:40", …). A reboot shows
-as a reset reason plus that sensor going `unknown`; a phantom touch shows as a `woken (touch)` entry
-nobody made.
+### `features/diagnostics/` — and what stays in `common.yaml`
 
-To see the clock without hardware, build a scratch SDL config with `-DLV_USE_SNAPSHOT=1` in
-`build_flags`. `lv_snapshot_take()` then writes the active screen to a file. The host build ignores
-`set_epoch_time()`, because `settimeofday` fails there and the host clock wins, so to catch a flip call
-`flip::set()` on a card directly.
+**Uptime** and **Reset Reason** are always on, in `common.yaml`: the evidence for an unexplained restart
+can only be caught at the boot that follows it, which is exactly when an opt-in would not have been on —
+the panel rebooted twice before these existed, and why was lost. The memory sensors are opt-in:
+`memory.yaml` (Heap Free / Min Free / Largest Block, Loop Time) and `psram.yaml` (PSRAM Free, only for a
+board whose device file configures `psram:`). They report every minute, which is a recorder row a minute
+each — turn them on for the panel you are chasing a problem on. A leak shows as Free or Min Free trending
+down over hours; Largest Block falling while Free holds is fragmentation.
+
+### Testing features in SDL
+
+`sdl-home.yaml` opts into the same features as home35. To run the idle ladder in seconds, publish
+fractional minutes straight to the numbers — `id(idle_sleep_minutes).publish_state(15.0f / 60)` —
+since the HA controls take whole minutes. To see the clock without hardware, build a scratch SDL config
+with `-DLV_USE_SNAPSHOT=1` in `build_flags`; `lv_snapshot_take()` then writes the active screen to a
+file. The host build ignores `set_epoch_time()`, because `settimeofday` fails there and the host clock
+wins, so to catch a flip call `flip::set()` on a card directly. A second LVGL pointer created in an
+`on_boot` lambda (`lv_indev_create()` + a scripted `read_cb`) drives touches deterministically; its
+first gesture after boot is dropped, so lead with a throwaway tap.
 
 ## Checks that pay for themselves
 
@@ -571,11 +593,15 @@ lacks one, which is where a stray untracked copy comes from.
 
 ## Boot-time page selection (gotcha)
 
-The `splash` page's `on_load` fires `go_home` behind a `delay:`. **Do not remove that delay.**
-`lvgl.page.show` called synchronously from inside the initial page's own load event is dropped, leaving the
-empty `splash` page active — which renders white, with the header and footer still drawn because they live
-on `top_layer`. The symptom looks like a rendering or data problem, but pressing the home button (the same
-action, later) fixes it, which is the tell.
+Every layout goes home from `esphome: on_boot` at priority −100, not from a page. **Do not move it back
+into `splash`'s `on_load`.** `lvgl.page.show` called synchronously from inside the initial page's own load
+event is dropped, leaving the empty first page active — which renders white, with the header and footer
+still drawn because they live on `top_layer`. The symptom looks like a rendering or data problem, but
+pressing the home button (the same action, later) fixes it, which is the tell. `splash` used to dodge
+this with a 250ms `delay:`, but it only worked while `splash` was the first page, which a package listed
+before `layout:` can change. `on_boot` at −100 runs after LVGL has shown whatever page is first, so it
+does not care which that is — verified in SDL with a package page deliberately placed first. `splash`
+stays as a blank `skip: true` page 0, covered by `top_layer`'s boot screen for the instant before.
 
 ## Per-device overrides from a top-level config
 

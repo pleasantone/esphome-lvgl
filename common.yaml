@@ -31,10 +31,11 @@ binary_sensor:
   - platform: status
     name: Status
 
-# Evidence for the next unexplained restart: uptime shows that one happened,
-# reset reason says why (a crash, a watchdog, or the 15-minute api/wifi
-# reboot_timeout, which reads as a software reset), and the heap sensors show
-# whether memory was running out on the way there.
+# Always on, because the evidence for an unexplained restart can only be caught
+# at the boot that follows it: uptime shows that one happened, reset reason says
+# why (a crash, a watchdog, or the 15-minute api/wifi reboot_timeout, which
+# reads as a software reset). The memory sensors for chasing one down are
+# opt-in: features/diagnostics/.
 debug:
   update_interval: 60s
 
@@ -42,16 +43,6 @@ sensor:
   - platform: uptime
     name: Uptime
     entity_category: diagnostic
-
-  - platform: debug
-    free:
-      name: Heap Free
-    min_free:
-      name: Heap Min Free
-    block:
-      name: Heap Largest Block
-    loop_time:
-      name: Loop Time
 
   - id: wifi_signal_db
     name: WiFi Signal

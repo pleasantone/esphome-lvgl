@@ -14,3 +14,6 @@ substitutions:
 packages:
   device: !include devices/SDL.yaml
   layout: !include layouts/480x320-home.yaml
+  idle: !include features/idle/idle.yaml
+  ceiling: !include features/idle/sun.yaml
+  sleep_clock: !include features/sleep_clock/sleep_clock.yaml

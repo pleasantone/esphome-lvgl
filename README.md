@@ -10,6 +10,18 @@
 * Elecrow CrowPanel `DIS05035H` (v2.2) 3.5" 320x480 portrait, with resistive touch and USB-C. [Manufacturer's Link](https://www.elecrow.com/esp32-display-3-5-inch-hmi-display-spi-tft-lcd-touch-screen.html).
 
 ## Changelog
+### 2026-09-21
+* [Breaking change] Device files are hardware only again. `devices/JC3248W535.yaml` no longer dims, sleeps or follows the sun on its own; that behaviour moved to opt-in packages under the new `features/` directory. To keep it, add `idle: !include features/idle/idle.yaml` and `ceiling: !include features/idle/sun.yaml` to your top-level `packages:`, **after** `layout:`.
+* New `features/` directory for behaviour a panel may or may not want, each opted into from the top-level config. Every setting is a Home Assistant control whose starting value is a substitution, so YAML sets the default and HA can change a running panel without a reflash:
+  * `features/idle/idle.yaml`: dim, go home and sleep after configurable idle times (Dim after, Dim level, Go home after, Sleep after; 0 = never), wake on touch, a Sleep now button, and holding the footer's Home button for 1.5s to sleep.
+  * `features/idle/sun.yaml` / `ambient_light.yaml`: the brightness ceiling, from `sun.sun` or from a board's `ambient_light` sensor.
+  * `features/sleep_clock/sleep_clock.yaml`: a dim split-flap clock in place of the dark sleep, with its own brightness and optional red night colours.
+  * `features/diagnostics/memory.yaml` / `psram.yaml`: heap, loop-time and PSRAM sensors for chasing a leak.
+* `common.yaml` now always reports **Uptime** and **Reset Reason**, so an unexplained restart leaves evidence.
+* Every layout goes home from `esphome: on_boot` instead of from the `splash` page's `on_load`, so boot no longer depends on `splash` being the first page. A layout of your own that copied the old `splash` should do the same.
+* A **24-hour time** switch (in the shared header package) sets the header clock, the sleep clock and the printer end times.
+* `devices/SDL.yaml` declares its touchscreen as a list, like every other device file, so features can `!extend` it.
+* ESPHome 2026.9.0's bundled LVGL 9.5.0 leaks memory for every frame that draws an object scaled to 0 (fixed in LVGL 9.6.0; esphome/esphome#19439). If you animate `transform_scale_x/y`, hide the object while its scale is 0.
 ### 2026-09-20
 * [Breaking change] Personal and example layouts are now separate files. `layouts/480x320.yaml` and `layouts/800x480.yaml` are back to upstream's generic demo content (`light.kitchen_light`, printers Fred/Wilma/Barney), and the personalised version moved to `layouts/480x320-home.yaml`. Only `home35.yaml` and the new `sdl-home.yaml` use it; every `*-example.yaml` builds the generic ones again. If you had been building an example config and getting someone else's entities, that is what this fixes.
 * The generic layouts' printers pages were recomposed onto `widgets/printers/tile_combined.yaml` + `printer_combined.sensors.yaml`, reproducing upstream's single-AMS combined line with the current widget set. The old `widgets/printers/widget.yaml` and `sensors.yaml` remain removed.
