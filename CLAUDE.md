@@ -654,6 +654,32 @@ lvgl:
 `display:` and `touchscreen:` in every device file carry `id: main_display` / `id: main_touchscreen` for the
 same reason — so rotation or transforms can be extended from above.
 
+## One image on several panels
+
+Upstream draft #61 (on #59's page files, `480x320` only so far) makes the home page and page visibility
+Home Assistant controls on every panel: a **Home page** select plus a **Show \<page\> page** switch per
+page, all from `layouts/widgets/page_access.yaml`, one include per page. `skip: true` in YAML still wins —
+the switch leaves such a page alone. With those, a room differs from another only in runtime settings, so
+one image can serve several panels: `esphome: name_add_mac_suffix: true` in the top-level config makes
+each join Home Assistant as its own device (`<name>-<last 3 MAC bytes>`). That line is the whole opt-in;
+per-panel configs just don't set it.
+
+Updating such a fleet is a loop, which keeps `common.yaml`'s encrypted OTA — the suffixed names mean
+`esphome upload` can't find a panel by name:
+
+```bash
+esphome compile panels.yaml
+for ip in 192.168.89.135 192.168.89.140; do esphome upload panels.yaml --device $ip; done
+```
+
+Deliberately not built (scoped 2026-09-21, ~half a day): updates from Home Assistant via
+`update: platform: http_request`, a manifest on HA's `/config/www`, and a publish script (ESPHome has no
+manifest generator; the image is `build/firmware.ota.bin`, and the version must come from `esphome:
+project:`, bumped per build with `-s`). It would give each panel an Install button, but the download is
+authenticated only by an md5 in the same unauthenticated manifest, which undoes encrypted OTA for anyone on
+the LAN, and it costs ~40–60KB of flash plus a buffer on every panel — tight on the CYD. Build it only if
+someone running several panels asks.
+
 ## Home Assistant coupling
 
 Buttons call HA via `homeassistant.action:` (the modern name for services), which requires "Allow the device
