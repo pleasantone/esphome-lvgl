@@ -32,7 +32,7 @@
 ### 2026-09-18
 * [Breaking change] The printer tile is now composed in the layout from one AMS row include per AMS unit rather than from a single `widgets/printers/widget.yaml`, so a printer can carry any combination of AMS and AMS HT units. `widgets/printers/widget.yaml` and `widgets/printers/sensors.yaml` are replaced by `ams_row*.yaml`, `tile_status.yaml`, `tile_progress.yaml` and their sensor counterparts. A page that includes the old files needs recomposing; the `printers` page in each layout shows the shape.
 * Show per-unit AMS humidity, with a heater icon beside it: amber while that unit is drying, grey while it is merely capable of it, blank where there is no heater.
-* AMS rows can optionally reveal themselves as their units report, so a printer's topology does not have to be spelled out in the layout. See "How to let AMS rows appear on their own".
+* AMS rows can optionally reveal themselves as their units report, so a printer's topology does not have to be spelled out in the layout. See "How to show every AMS unit".
 ### 2026-09-17
 * Document that every supported board draws portrait, and that the files in `layouts/` are named for the panel's nominal landscape resolution rather than for the canvas LVGL draws on. No config changes; the device files were already correct.
 * [Breaking change] `common.yaml` now requires an encrypted API and OTA. Add an `api_encryption_key` to your `secrets.yaml` (Home Assistant shows a generated key when adding an ESPHome device, or see the [API docs](https://esphome.io/components/api/)), then reflash each device and enter the same key in Home Assistant. A device that is only reachable over OTA should be flashed before Home Assistant loses the connection to it.
@@ -127,23 +127,34 @@ lvgl:
       skip: true
 ```
 
-### How to let AMS rows appear on their own
-By default a layout lists the AMS units a printer has, and that list is fixed at compile time. If you would rather not respell it every time a unit moves, include the rows `hidden: true` and let each unit reveal its own row:
+### How to show every AMS unit
+The demo tiles use `tile_combined.yaml`, which puts the printer name and one AMS unit's four trays on a single line. To show all of a printer's units instead, switch that tile's body to `tile.yaml`:
 
 ```yaml
-- obj: # AMS 2 -- hidden until this unit reports humidity
-    hidden: true
-    <<: !include { file: widgets/printers/ams_row.yaml, vars: {
-      uid: printer_1, ams_id: "2", label: "2", <<: *ams_row_vars } }
+- obj: # printer 1
+    <<: *printer_tile
+    layout:
+      <<: *printer_tile_layout
+    widgets: !include { file: widgets/printers/tile.yaml, vars: {
+      uid: printer_1, name: 1 - Fred,
+      <<: [*ams_row_vars, *printer_bar_vars] } }
 ```
 
-`ams_row_humidity.sensors.yaml` calls `lvgl.widget.show` on the row when a reading arrives. Every AMS reports humidity, so that doubles as "this unit is here": a slot whose entities do not exist never sends anything and stays hidden.
+and its sensor package to `printer.sensors.yaml`:
 
-Include a slot for every unit the printer could have — `1` to `4` for AMS units and `128` upwards for AMS HTs — with its sensor packages, and the tile then follows the hardware. Moving an AMS from one printer to another needs no reflash: the old row stops updating and the new one appears. A row hides itself again when its humidity reading goes away, so a unit that is removed does not leave a row of frozen values behind — though an integration that freezes a missing device's entities rather than marking them unavailable sends nothing to hide on.
+```yaml
+printer_1_sensors: !include { file: widgets/printers/printer.sensors.yaml, vars: {
+  uid: printer_1,
+  entity_id_prefix: p1s_1
+}}
+```
 
-Subscribe `ams_row_drying.sensors.yaml` for every slot as well and the heater icon becomes discovered rather than declared — a unit with no drying hardware has no `_drying` entity, so its icon simply stays blank.
+Change both halves together; a mismatched pair fails at config time on the ids the wrong half cannot find. The two formats can sit side by side on one page.
 
-The cost is the slots you do not use: on a Guition `JC3248W535`, going from 4 enumerated rows to 12 slots across two printers took RAM from 41.2% to 44.0% and flash from 18.7% to 19.3%. Empty slots are silent at boot, since Home Assistant sends nothing at all for an entity that does not exist.
+`tile.yaml` carries all twelve slots a printer can have (AMS units `1` to `4`, AMS HTs `128` and `129`), each hidden until its unit reports humidity. Every AMS reports humidity, so that doubles as "this unit is here". A slot whose entities do not exist never sends anything and stays hidden. A unit that stops reporting hides again, and moving an AMS to another printer needs no reflash. The heater icon is discovered the same way: a unit with no drying hardware has no `_drying` entity, so its icon stays blank.
+
+The cost is the slots you do not use: on a Guition `JC3248W535`, going from 4 enumerated rows to 12 slots across two printers took RAM from 41.2% to 44.0% and flash from 18.7% to 19.3%. Empty slots are silent at boot, since Home Assistant sends nothing for an entity that does not exist.
+
 ### How to dim and sleep the panel when it is idle
 A wall panel that stays at full brightness all night is its own night light. `lvgl:` has an `on_idle:` trigger, and every device file in this repo already gives its backlight the id `backlight`, so this works on any supported board. Add it to a device's config file — nothing in `devices/` or `layouts/` needs changing:
 
