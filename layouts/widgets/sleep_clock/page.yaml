@@ -24,6 +24,7 @@
     # drop the rest of this touch, or its release would land on whatever the
     # page underneath has at that spot
     - lambda: lv_indev_wait_release(lv_indev_active());
+    - script.execute: { id: sleep_note, event: "woken (touch)" }
     - lambda: id(main_lvgl)->show_page(id(sleep_clock_origin), LV_SCREEN_LOAD_ANIM_NONE, 0);
   widgets:
     - obj: # as wide as the row of cards, so the AM/PM line starts where they do

@@ -517,6 +517,22 @@ to leave a clock alone. `go_home` is skipped while the clock is showing, and the
 *lowers* the backlight. Without that, the clock would be dimmed *up* to 25% at 5 minutes and replaced by
 the home page at 20.
 
+**Never render a transformed object at scale 0.** In LVGL 9.5, `lv_obj_refr()` creates a layer for any
+object with a transform, and `lv_draw_layer()` returns early for `scale <= 0` *without* queueing the
+blend task that frees it. So every frame drawing a visible obj at scale 0 leaks one layer (~24KB). The
+first version of the flip made the lower flap visible at scale 0 for its 160ms delay. That leaked a few
+layers per flip, every minute, until PSRAM ran out a few hours into the night. The panel then rebooted
+to `printers`, which looked like a crash in "deeper sleep". `flip::scale_cb` now hides a flap at 0.
+Found in SDL: `heap <pid>` showed thousands of live 24KB blocks, and `MallocStackLogging=1` plus
+`malloc_history <pid> -allBySize` traced them to `lv_draw_layer_create`. `leaks` did *not* catch it,
+because the layers stay linked on the display's layer list and so remain reachable.
+
+`common.yaml` now carries diagnostics for exactly this kind of hunt: **Uptime**, **Reset Reason**, and
+**Heap Free / Min Free / Largest Block** (`debug:`). The Guition file adds **PSRAM Free**. The clock
+package publishes **Sleep last event** ("clock (idle) 02:13", "woken (touch) 02:40", …). A reboot shows
+as a reset reason plus that sensor going `unknown`; a phantom touch shows as a `woken (touch)` entry
+nobody made.
+
 To see the clock without hardware, build a scratch SDL config with `-DLV_USE_SNAPSHOT=1` in
 `build_flags`. `lv_snapshot_take()` then writes the active screen to a file. The host build ignores
 `set_epoch_time()`, because `settimeofday` fails there and the host clock wins, so to catch a flip call

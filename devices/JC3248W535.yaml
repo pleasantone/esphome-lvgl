@@ -92,6 +92,10 @@ globals:
     initial_value: '2'
 
 sensor:
+  - platform: debug
+    psram:
+      name: PSRAM Free
+
   - id: sun_elevation
     platform: homeassistant
     entity_id: sun.sun

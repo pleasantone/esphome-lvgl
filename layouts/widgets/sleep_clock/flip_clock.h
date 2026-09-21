@@ -30,7 +30,20 @@ inline lv_obj_t *label_of(lv_obj_t *half) { return lv_obj_get_child(lv_obj_get_c
 
 inline void set_half(lv_obj_t *half, const char *text) { lv_label_set_text(label_of(half), text); }
 
-inline void scale_cb(void *obj, int32_t v) { lv_obj_set_style_transform_scale_y((lv_obj_t *) obj, v, 0); }
+// A flap is hidden, never drawn, at scale 0. LVGL 9.5 leaks there:
+// lv_obj_refr() creates a layer for a transformed obj, and lv_draw_layer()
+// returns early for scale <= 0 without queueing the blend task that frees it.
+// A visible flap at scale 0 leaked one layer (~24KB of PSRAM) per frame, which
+// is what ran the panel out of memory a few hours into a night of flips.
+inline void scale_cb(void *obj, int32_t v) {
+  auto *flap = (lv_obj_t *) obj;
+  if (v <= 0) {
+    lv_obj_add_flag(flap, LV_OBJ_FLAG_HIDDEN);
+    return;
+  }
+  lv_obj_set_style_transform_scale_y(flap, v, 0);
+  lv_obj_remove_flag(flap, LV_OBJ_FLAG_HIDDEN);
+}
 
 inline void upper_done(lv_anim_t *a) { lv_obj_add_flag((lv_obj_t *) a->var, LV_OBJ_FLAG_HIDDEN); }
 
@@ -74,10 +87,8 @@ inline void set(lv_obj_t *card, const char *digit, bool animate) {
   lv_obj_update_layout(card);
   lv_obj_set_style_transform_pivot_y(upper, lv_obj_get_height(upper), 0);  // its bottom edge is the hinge
   lv_obj_set_style_transform_pivot_y(lower, 0, 0);                         // its top edge is the hinge
-  lv_obj_set_style_transform_scale_y(upper, LV_SCALE_NONE, 0);
-  lv_obj_set_style_transform_scale_y(lower, 0, 0);
-  lv_obj_remove_flag(upper, LV_OBJ_FLAG_HIDDEN);
-  lv_obj_remove_flag(lower, LV_OBJ_FLAG_HIDDEN);
+  scale_cb(upper, LV_SCALE_NONE);
+  scale_cb(lower, 0);  // hidden until it starts to unfold -- see scale_cb
 
   lv_anim_t a;
   lv_anim_init(&a);

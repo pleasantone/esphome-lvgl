@@ -136,7 +136,7 @@ lvgl:
             condition:
               - switch.is_on: sleep_clock_enabled
             then:
-              - script.execute: sleep_clock_show
+              - script.execute: { id: sleep_clock_show, reason: idle }
   id: main_lvgl # needed by the detail page's Back button
   default_font: roboto_md
   theme: !include themes/main.yaml

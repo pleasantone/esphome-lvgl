@@ -38,7 +38,16 @@ button:
     name: Sleep now
     icon: mdi:sleep
     on_press:
-      - script.execute: sleep_now
+      - script.execute: { id: sleep_now, reason: HA }
+
+# What last put the panel to sleep or woke it, and when -- HA's history of
+# this is the timeline to read when the panel is found somewhere unexpected.
+text_sensor:
+  - id: sleep_last_event
+    platform: template
+    name: Sleep last event
+    icon: mdi:sleep
+    entity_category: diagnostic
 
 font:
   - id: flip_digits
@@ -113,21 +122,32 @@ number:
             - script.execute: sleep_clock_backlight
 
 script:
+  - id: sleep_note # publishes "<event> HH:MM" to sleep_last_event
+    parameters:
+      event: std::string
+    then:
+      - lambda: |-
+          auto now = id(ha_time).now();
+          id(sleep_last_event).publish_state(now.is_valid() ? event + now.strftime(" %H:%M") : event);
+
   - id: sleep_now
+    parameters:
+      reason: std::string # hold / HA
     then:
       - if:
           condition:
             - switch.is_on: sleep_clock_enabled
           then:
-            - script.execute: sleep_clock_show
+            - script.execute: { id: sleep_clock_show, reason: !lambda return reason; }
           else:
+            - script.execute: { id: sleep_note, event: !lambda 'return "dark (" + reason + ")";' }
             - script.execute: display_sleep
 
   - id: sleep_hold
     mode: restart
     then:
       - delay: 1500ms # well clear of the 400ms long press the tiles use
-      - script.execute: sleep_now
+      - script.execute: { id: sleep_now, reason: hold }
       # the finger is still down: drop the rest of this touch so its release
       # lands on nothing
       - lambda: |-
@@ -136,6 +156,8 @@ script:
           }
 
   - id: sleep_clock_show
+    parameters:
+      reason: std::string # idle / hold / HA
     then:
       # already up (put there by hand, then the idle timer fired): only the
       # backlight is refreshed, or the origin would become the clock itself
@@ -145,6 +167,7 @@ script:
           then:
             - lambda: id(sleep_clock_origin) = id(main_lvgl)->get_current_page();
             - lvgl.page.show: sleep_clock
+            - script.execute: { id: sleep_note, event: !lambda 'return "clock (" + reason + ")";' }
       - script.execute: sleep_clock_backlight
 
   - id: sleep_clock_backlight
