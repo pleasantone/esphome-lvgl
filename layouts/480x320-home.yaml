@@ -1,6 +1,14 @@
+substitutions:
+  # the UI half of the idle ladder; the board file carries the same names for
+  # its own half. Overridable from a top-level config to test it in seconds.
+  idle_dim_timeout: 5min
+  idle_home_timeout: 20min
+  idle_sleep_timeout: 30min
+
 esphome:
   includes:
     - widgets/printers/tray_color.h # tray::bg / tray::ink, shared by every tray pill
+    - widgets/sleep_clock/flip_clock.h # split-flap card animation
 
 font: !include
   file: fonts/fonts.yaml
@@ -103,7 +111,7 @@ lvgl:
     # 5 minutes and the sleep at 30 the screen is dark but fully touch-live, so
     # a forgotten dialog leaves a live Turn Off under the next finger that
     # lands on the panel -- exactly the stray touch the dialog exists to stop
-    - timeout: 5min
+    - timeout: ${idle_dim_timeout}
       then:
         - lvgl.widget.hide: confirm_box
     # come back on the home page rather than on whatever was left open, e.g.
@@ -112,9 +120,18 @@ lvgl:
     # lvgl.pause, and a page change is not worth betting on across a paused
     # LVGL. By 20 minutes the panel has been ignored long enough that a flip on
     # an already-dimmed screen bothers nobody.
-    - timeout: 20min
+    - timeout: ${idle_home_timeout}
       then:
         - script.execute: go_home
+    # with the Sleep clock switch on, the board's sleep leaves the screen lit
+    # (it obeys idle_sleep_dark) and this puts the clock up in its place
+    - timeout: ${idle_sleep_timeout}
+      then:
+        - if:
+            condition:
+              - switch.is_on: sleep_clock_enabled
+            then:
+              - script.execute: sleep_clock_show
   id: main_lvgl # needed by the detail page's Back button
   default_font: roboto_md
   theme: !include themes/main.yaml
@@ -180,6 +197,10 @@ lvgl:
         container_pad_left: 6, container_pad_right: 6,
         pad_row: 8, slider_height: 40, arc_size: 130,
         roller_height: 90, back_height: 50 }}
+
+    - id: sleep_clock
+      <<: !include { file: widgets/sleep_clock/page.yaml, vars: {
+        card_width: 68, card_height: 112, card_gap: 6, pair_gap: 16 }}
 
     - id: living_room
       <<: *page_styles
@@ -746,6 +767,9 @@ lvgl:
 packages:
   # header
   header_sensors: !include { file: widgets/header/sensors.yaml }
+
+  # sleep clock
+  sleep_clock_sensors: !include { file: widgets/sleep_clock/sensors.yaml, vars: { digit_size: 88 } }
 
   # boot screen
   boot_screen_sensors: !include { file: widgets/boot_screen/sensors.yaml }

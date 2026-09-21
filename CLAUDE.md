@@ -459,6 +459,44 @@ Three things about that arrangement are load-bearing:
 `active_brightness` is a ceiling driven by `sun.sun` elevation (day 1.0 / dusk 0.6 / night 0.35). The
 panel has no ambient light sensor — the CYD has an LDR on GPIO34, the Guition does not.
 
+The three timeouts are substitutions (`idle_dim_timeout`, `idle_home_timeout`, `idle_sleep_timeout`),
+defaulted in both the device file and the layout, and a top-level config overrides them. That is the
+test hook: a scratch config with `5s` / `1h` / `15s` runs the whole ladder in seconds.
+
+### The sleep clock
+
+With the **Sleep clock** switch on, the 30-minute sleep puts a dim split-flap clock up instead of going
+dark. The two sleep entries do not race even though they share a timeout. The device's entry goes dark
+only while its `idle_sleep_dark` global is true, and the switch's `on_state` keeps that global the
+inverse of itself, so the device obeys a flag without knowing a clock exists. The layout's entry shows
+the clock. `devices/SDL.yaml` carries stand-ins for `idle_sleep_dark` and `active_brightness` so the
+layout builds there.
+
+Its brightness is the **Sleep clock brightness** number (1–50%), taken relative to `active_brightness`
+so night is dimmer than day, and applied live while the clock is showing. Because `go_home` has run at
+20 minutes, a touch returns to the home page; `sleep_clock_origin` still records the real page, which
+matters only if the ladder changes. The press handler calls `lv_indev_wait_release()` for the same
+reason the page swipes did. Turning the switch off while the clock is up leaves it up until touched.
+
+The pair is `widgets/sleep_clock/page.yaml` + `sensors.yaml`, and `flip_clock.h` animates the cards.
+**`flip_clock.h` finds a card's parts by child index**, so `card.yaml`'s child order is a contract. The
+page must stay in the layout's `pages:` list, not the package, because package pages merge ahead of the
+layout's and would displace `splash` as the boot page.
+
+The cards carry a 1px white `outline`, not a `border`. A border insets the content box, which moves the
+halves relative to the full-height face inside them and splits the digit a pixel off the hinge; an
+outline draws outside and changes nothing. It does need a pixel of room, since a parent clips its
+children's outlines, which is why the pair objs have `pad_all: 1`.
+
+**24-hour time** is a separate switch in `widgets/header/sensors.yaml`, so every layout exposes it. It
+drives the header clock, the sleep clock and the printer end times. The printer tiles pick it up on
+their next remaining-time update rather than at once.
+
+To see the clock without hardware, build a scratch SDL config with `-DLV_USE_SNAPSHOT=1` in
+`build_flags`. `lv_snapshot_take()` then writes the active screen to a file. The host build ignores
+`set_epoch_time()`, because `settimeofday` fails there and the host clock wins, so to catch a flip call
+`flip::set()` on a card directly.
+
 ## Checks that pay for themselves
 
 Each of these replaced a pile of exploratory calls at least once, and each is verified:

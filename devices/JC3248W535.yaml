@@ -1,3 +1,8 @@
+substitutions:
+  # the idle ladder; overridable from a top-level config to test it in seconds
+  idle_dim_timeout: 5min
+  idle_sleep_timeout: 30min
+
 esphome:
   platformio_options:
     upload_speed: 921600
@@ -77,6 +82,10 @@ globals:
     type: float
     restore_value: false
     initial_value: '1.0'
+  - id: idle_sleep_dark # cleared by a layout that keeps something on screen at the sleep timeout
+    type: bool
+    restore_value: false
+    initial_value: 'true'
   - id: sun_band # 2 day, 1 dusk, 0 night -- only a change re-applies brightness
     type: int
     restore_value: false
@@ -109,13 +118,17 @@ sensor:
 
 lvgl:
   on_idle:
-    - timeout: 5min
+    - timeout: ${idle_dim_timeout}
       then:
         - light.turn_on:
             id: backlight
             brightness: !lambda return id(active_brightness) * 0.25f;
-    - timeout: 30min
+    - timeout: ${idle_sleep_timeout}
       then:
-        - light.turn_off: backlight
-        - lvgl.pause:
-            show_snow: false
+        - if:
+            condition:
+              - lambda: return id(idle_sleep_dark);
+            then:
+              - light.turn_off: backlight
+              - lvgl.pause:
+                  show_snow: false

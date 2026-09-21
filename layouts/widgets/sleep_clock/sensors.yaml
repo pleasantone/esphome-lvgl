@@ -1,0 +1,116 @@
+# The sleep clock's non-LVGL half: its two Home Assistant controls, the digit
+# font, and the scripts that show and tick it. Pair with page.yaml, and add
+# flip_clock.h to esphome: includes:.
+#
+# It keeps the screen lit at the sleep timeout, so it needs the board to own
+# an `idle_sleep_dark` global that its own sleep entry obeys, plus `backlight`
+# and `active_brightness`.
+#
+# required vars:
+# - digit_size
+
+font:
+  - id: flip_digits
+    file:
+      type: gfonts
+      family: Roboto Condensed
+      weight: bold
+    size: ${digit_size}
+    glyphs: "0123456789"
+    bpp: 4
+
+globals:
+  - id: sleep_clock_origin # page index to return to
+    type: int
+    restore_value: false
+    initial_value: '0'
+
+switch:
+  - id: sleep_clock_enabled
+    platform: template
+    name: Sleep clock
+    icon: mdi:clock-digital
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    # the board's own sleep entry goes dark only while this is off. A change
+    # takes effect at the next sleep: a clock already showing stays up.
+    on_state:
+      - lambda: id(idle_sleep_dark) = !x;
+
+number:
+  - id: sleep_clock_brightness
+    platform: template
+    name: Sleep clock brightness
+    icon: mdi:brightness-4
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: slider
+    min_value: 1
+    max_value: 50
+    step: 1
+    initial_value: 10
+    optimistic: true
+    restore_value: true
+    on_value:
+      # live while it is showing, so it can be tuned from the dark
+      - if:
+          condition:
+            - lambda: return id(sleep_clock)->is_showing();
+          then:
+            - script.execute: sleep_clock_backlight
+
+script:
+  - id: sleep_clock_show
+    then:
+      - lambda: id(sleep_clock_origin) = id(main_lvgl)->get_current_page();
+      - lvgl.page.show: sleep_clock
+      - script.execute: sleep_clock_backlight
+
+  - id: sleep_clock_backlight
+    then:
+      # relative to the sun-driven ceiling, so night is dimmer than day
+      - light.turn_on:
+          id: backlight
+          brightness: !lambda return id(active_brightness) * id(sleep_clock_brightness).state / 100.0f;
+
+  - id: sleep_clock_refresh
+    parameters:
+      animate: bool
+    then:
+      - lambda: |-
+          auto now = id(ha_time).now();
+          if (!now.is_valid()) {  // no time from HA yet
+            for (auto *card : {id(sleep_clock_h1), id(sleep_clock_h2), id(sleep_clock_m1), id(sleep_clock_m2)}) {
+              flip::set(card, "", false);
+            }
+            lv_label_set_text(id(sleep_clock_ampm), "");
+            lv_label_set_text(id(sleep_clock_date), "");
+            return;
+          }
+          bool h24 = id(clock_24h).state;
+          int hour = h24 ? now.hour : (now.hour + 11) % 12 + 1;
+          char hh[3], mm[3];
+          snprintf(hh, sizeof(hh), "%02d", hour);
+          snprintf(mm, sizeof(mm), "%02d", now.minute);
+          // a 12-hour clock shows 9:41 on a blank card, not 09:41
+          std::string h1 = (!h24 && hh[0] == '0') ? "" : std::string(1, hh[0]);
+          flip::set(id(sleep_clock_h1), h1.c_str(), animate);
+          flip::set(id(sleep_clock_h2), std::string(1, hh[1]).c_str(), animate);
+          flip::set(id(sleep_clock_m1), std::string(1, mm[0]).c_str(), animate);
+          flip::set(id(sleep_clock_m2), std::string(1, mm[1]).c_str(), animate);
+          lv_label_set_text(id(sleep_clock_ampm), h24 ? "" : (now.hour < 12 ? "AM" : "PM"));
+          std::string date = now.strftime("%A, %B ") + std::to_string(now.day_of_month);
+          lv_label_set_text(id(sleep_clock_date), date.c_str());
+
+interval:
+  # every second rather than on the minute: flip::set is a no-op for a card
+  # that has not changed, and this also picks up a 12/24-hour switch or the
+  # first time sync without either having to know the clock exists
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            - lambda: return id(sleep_clock)->is_showing();
+          then:
+            - script.execute: { id: sleep_clock_refresh, animate: true }
