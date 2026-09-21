@@ -8,7 +8,7 @@
 #     ceiling: !include features/idle/sun.yaml   # optional
 #
 # Needs from the device file: a `backlight` light and a `main_touchscreen`
-# (list form). Needs from the layout: `go_home`, `main_lvgl` and the footer's
+# (list form). Needs from the layout: `go_home`, `ha_time` and the footer's
 # `home_btn`.
 #
 # Each timeout and the dim level is a Home Assistant number whose first value
@@ -34,8 +34,9 @@ globals:
     type: bool
     restore_value: false
     initial_value: 'false'
-  # A feature that sleeps differently registers here; returning false falls
-  # back to going dark. How the sleep clock hooks in without idle knowing it.
+  # A feature that sleeps differently -- say, a clock instead of a dark screen --
+  # registers here; returning false falls back to going dark. It lets such a
+  # feature take over without this one knowing it exists.
   - id: sleep_handler
     type: std::function<bool(const std::string &)>
     restore_value: false
@@ -190,7 +191,7 @@ lvgl:
     - timeout: !lambda return idle_ms(id(idle_dim_minutes).state);
       then:
         # dimming never raises the backlight, so something already lower --
-        # a sleep clock put up by hand before this fired -- stays put
+        # put up by hand before this fired, say -- stays put
         - if:
             condition:
               - lambda: |-
@@ -208,7 +209,9 @@ lvgl:
       then:
         - if:
             condition:
-              - lambda: return !id(idle_hold_page) && !id(main_lvgl)->is_paused();
+              - lambda: return !id(idle_hold_page);
+              - not:
+                  - lvgl.is_paused:
             then:
               - script.execute: go_home
     - timeout: !lambda return idle_ms(id(idle_sleep_minutes).state);
