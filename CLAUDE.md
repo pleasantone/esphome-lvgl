@@ -523,6 +523,8 @@ blend task that frees it. So every frame drawing a visible obj at scale 0 leaks 
 first version of the flip made the lower flap visible at scale 0 for its 160ms delay. That leaked a few
 layers per flip, every minute, until PSRAM ran out a few hours into the night. The panel then rebooted
 to `printers`, which looked like a crash in "deeper sleep". `flip::scale_cb` now hides a flap at 0.
+LVGL fixed it in 9.6.0 (commit `3fff79153`, "skip obj refr for zero scaled") and did not backport it
+to 9.5. Once ESPHome pins LVGL 9.6 or later, the hiding is no longer needed, though it does no harm.
 Found in SDL: `heap <pid>` showed thousands of live 24KB blocks, and `MallocStackLogging=1` plus
 `malloc_history <pid> -allBySize` traced them to `lv_draw_layer_create`. `leaks` did *not* catch it,
 because the layers stay linked on the display's layer list and so remain reachable.
