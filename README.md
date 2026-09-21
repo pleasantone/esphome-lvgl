@@ -11,6 +11,8 @@
 
 ## Changelog
 ### 2026-09-21
+* Light and light-group tiles no longer set the light to 1% on a long press; a hold was too easy to hit by accident on a wall panel, and on a group tile it dimmed every light in the group. To keep it on a tile, include `dim_on_hold.yaml` instead of `widget.yaml` from the same directory (`light_buttons/` or `light_group_buttons/`); the vars and the sensors package are unchanged.
+* The boot screen is dark rather than white, so a reboot at night does not light the room.
 * New `features/` directory for behaviour a panel may or may not want, kept out of the device files (hardware only) and the layouts (pages only). Each is opted into from the top-level `packages:`, listed **after** `layout:`. Every setting is a Home Assistant control whose starting value is a substitution, so YAML sets the default and HA can change a running panel without a reflash:
   * `features/idle/idle.yaml`: dim, go home and sleep after configurable idle times (Dim after, Dim level, Go home after, Sleep after; 0 = never), wake on touch, a Sleep now button, and holding the footer's Home button for 1.5s to sleep.
   * `features/idle/sun.yaml` / `ambient_light.yaml`: the brightness ceiling, from `sun.sun` or from a board's `ambient_light` sensor.
