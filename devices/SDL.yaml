@@ -29,6 +29,17 @@ globals:
     restore_value: false
     initial_value: 'true'
 
+# The same contract as a real board's display_sleep, minus the idle ladder.
+script:
+  - id: display_sleep
+    then:
+      - light.turn_off: backlight
+      - wait_until:
+          condition:
+            - lambda: return id(main_touchscreen)->get_touches().empty();
+      - lvgl.pause:
+          show_snow: false
+
 output:
   - platform: template
     id: fake_backlight_output
@@ -55,6 +66,7 @@ display:
       height: ${sdl_height}
 
 touchscreen:
+  id: main_touchscreen
   platform: sdl
   transform:
     mirror_x: false

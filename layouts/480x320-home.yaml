@@ -122,7 +122,12 @@ lvgl:
     # an already-dimmed screen bothers nobody.
     - timeout: ${idle_home_timeout}
       then:
-        - script.execute: go_home
+        # a sleep clock put up by hand is left alone; it has its own way back
+        - if:
+            condition:
+              - lambda: return !id(sleep_clock)->is_showing();
+            then:
+              - script.execute: go_home
     # with the Sleep clock switch on, the board's sleep leaves the screen lit
     # (it obeys idle_sleep_dark) and this puts the clock up in its place
     - timeout: ${idle_sleep_timeout}

@@ -116,19 +116,39 @@ sensor:
             call.perform();
           }
 
+# Going dark, as a script so a layout can also call it on demand. It waits
+# for the finger to lift before pausing: resume_on_input wakes on a release,
+# so a pause under a held finger would undo itself, and the next tap would
+# land on a live screen instead of being swallowed.
+script:
+  - id: display_sleep
+    then:
+      - light.turn_off: backlight
+      - wait_until:
+          condition:
+            - lambda: return id(main_touchscreen)->get_touches().empty();
+      - lvgl.pause:
+          show_snow: false
+
 lvgl:
   on_idle:
     - timeout: ${idle_dim_timeout}
       then:
-        - light.turn_on:
-            id: backlight
-            brightness: !lambda return id(active_brightness) * 0.25f;
+        # dimming never raises the backlight, so a sleep clock already up at a
+        # lower level -- put there by hand before this fired -- stays put
+        - if:
+            condition:
+              - lambda: |-
+                  return id(backlight).current_values.is_on() &&
+                         id(backlight).current_values.get_brightness() > id(active_brightness) * 0.25f;
+            then:
+              - light.turn_on:
+                  id: backlight
+                  brightness: !lambda return id(active_brightness) * 0.25f;
     - timeout: ${idle_sleep_timeout}
       then:
         - if:
             condition:
               - lambda: return id(idle_sleep_dark);
             then:
-              - light.turn_off: backlight
-              - lvgl.pause:
-                  show_snow: false
+              - script.execute: display_sleep

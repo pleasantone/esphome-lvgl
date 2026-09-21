@@ -469,8 +469,8 @@ With the **Sleep clock** switch on, the 30-minute sleep puts a dim split-flap cl
 dark. The two sleep entries do not race even though they share a timeout. The device's entry goes dark
 only while its `idle_sleep_dark` global is true, and the switch's `on_state` keeps that global the
 inverse of itself, so the device obeys a flag without knowing a clock exists. The layout's entry shows
-the clock. `devices/SDL.yaml` carries stand-ins for `idle_sleep_dark` and `active_brightness` so the
-layout builds there.
+the clock. `devices/SDL.yaml` carries stand-ins for `idle_sleep_dark`, `active_brightness` and
+`display_sleep` so the layout builds there.
 
 Its brightness is the **Sleep clock brightness** number (1–50%), taken relative to `active_brightness`
 so night is dimmer than day, and applied live while the clock is showing. Because `go_home` has run at
@@ -491,6 +491,22 @@ children's outlines, which is why the pair objs have `pad_all: 1`.
 **24-hour time** is a separate switch in `widgets/header/sensors.yaml`, so every layout exposes it. It
 drives the header clock, the sleep clock and the printer end times. The printer tiles pick it up on
 their next remaining-time update rather than at once.
+
+**Sleeping on demand** gives the same sleep as the timer — the clock if the switch is on, otherwise
+dark — from two places: holding the footer's Home button for 1.5s, and the **Sleep now** button in Home
+Assistant. Both run `sleep_now`. Home's own `on_press` still goes home at touch-down, so a hold means go
+home, then sleep. The hold is attached in C++ from the package's `on_boot`, not in `footer/widget.yaml`,
+because the footer is shared with the generic layouts and they have no sleep to call.
+
+The dark path is the device's `display_sleep` script, which **waits for the finger to lift before
+`lvgl.pause`**. `resume_on_input` wakes on a *release* (`LVTouchListener::release()` →
+`maybe_wakeup()`), so a pause under the held finger would undo itself on lift. The next tap would then
+land on a live screen instead of being swallowed.
+
+After a manual sleep the idle timers keep counting from the hold, so both earlier entries had to learn
+to leave a clock alone. `go_home` is skipped while the clock is showing, and the device's dim only ever
+*lowers* the backlight. Without that, the clock would be dimmed *up* to 25% at 5 minutes and replaced by
+the home page at 20.
 
 To see the clock without hardware, build a scratch SDL config with `-DLV_USE_SNAPSHOT=1` in
 `build_flags`. `lv_snapshot_take()` then writes the active screen to a file. The host build ignores

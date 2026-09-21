@@ -1,13 +1,44 @@
-# The sleep clock's non-LVGL half: its two Home Assistant controls, the digit
-# font, and the scripts that show and tick it. Pair with page.yaml, and add
+# The sleep clock's non-LVGL half: its Home Assistant controls, the digit font,
+# and the scripts that show and tick it. Pair with page.yaml, and add
 # flip_clock.h to esphome: includes:.
 #
 # It keeps the screen lit at the sleep timeout, so it needs the board to own
-# an `idle_sleep_dark` global that its own sleep entry obeys, plus `backlight`
-# and `active_brightness`.
+# an `idle_sleep_dark` global that its own sleep entry obeys, a `display_sleep`
+# script that goes dark, plus `backlight` and `active_brightness`.
+#
+# It also owns sleeping on demand: holding the footer's Home button for 1.5s,
+# or the "Sleep now" button in Home Assistant, gives the same sleep as the idle
+# timer -- the clock if the switch is on, otherwise dark.
 #
 # required vars:
 # - digit_size
+
+esphome:
+  on_boot:
+    priority: -100 # after LVGL has built home_btn
+    then:
+      # The hold is attached here rather than in footer/widget.yaml because the
+      # footer is shared with the generic layouts, which have no sleep to call.
+      # home_btn's own on_press (go home) still fires at touch-down.
+      - lambda: |-
+          auto cb = [](lv_event_t *e) {
+            if (lv_event_get_code(e) == LV_EVENT_PRESSED) {
+              id(sleep_hold).execute();
+            } else {  // RELEASED or PRESS_LOST: let go before the hold completed
+              id(sleep_hold).stop();
+            }
+          };
+          lv_obj_add_event_cb(id(home_btn), cb, LV_EVENT_PRESSED, nullptr);
+          lv_obj_add_event_cb(id(home_btn), cb, LV_EVENT_RELEASED, nullptr);
+          lv_obj_add_event_cb(id(home_btn), cb, LV_EVENT_PRESS_LOST, nullptr);
+
+button:
+  - id: sleep_now_button
+    platform: template
+    name: Sleep now
+    icon: mdi:sleep
+    on_press:
+      - script.execute: sleep_now
 
 font:
   - id: flip_digits
@@ -61,10 +92,38 @@ number:
             - script.execute: sleep_clock_backlight
 
 script:
+  - id: sleep_now
+    then:
+      - if:
+          condition:
+            - switch.is_on: sleep_clock_enabled
+          then:
+            - script.execute: sleep_clock_show
+          else:
+            - script.execute: display_sleep
+
+  - id: sleep_hold
+    mode: restart
+    then:
+      - delay: 1500ms # well clear of the 400ms long press the tiles use
+      - script.execute: sleep_now
+      # the finger is still down: drop the rest of this touch so its release
+      # lands on nothing
+      - lambda: |-
+          for (lv_indev_t *i = lv_indev_get_next(nullptr); i != nullptr; i = lv_indev_get_next(i)) {
+            lv_indev_wait_release(i);
+          }
+
   - id: sleep_clock_show
     then:
-      - lambda: id(sleep_clock_origin) = id(main_lvgl)->get_current_page();
-      - lvgl.page.show: sleep_clock
+      # already up (put there by hand, then the idle timer fired): only the
+      # backlight is refreshed, or the origin would become the clock itself
+      - if:
+          condition:
+            - lambda: return !id(sleep_clock)->is_showing();
+          then:
+            - lambda: id(sleep_clock_origin) = id(main_lvgl)->get_current_page();
+            - lvgl.page.show: sleep_clock
       - script.execute: sleep_clock_backlight
 
   - id: sleep_clock_backlight
