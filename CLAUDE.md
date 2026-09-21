@@ -168,6 +168,26 @@ remove it again. Converting tiles to one-package-each does work (`!extend` reach
 substitutions cross package boundaries where anchors cannot), but it appends rather than inserts, so tile
 order silently becomes package order, and it does not close the gaps below. It was tried and reverted.
 
+**One package per *page* was tried too, on 2026-09-20, and rejected for the same reason one level up.**
+It works: a package can contribute a page's `lvgl.pages` entry *and* the `binary_sensor:` / `sensor:`
+entries its tiles need, so the two halves sit in one file and the layout's bottom `packages:` block
+collapses. Moving the printers page out took 55 lines off `480x320-home.yaml` for 10 added, and the
+resolved config was identical as a multiset — every line still there, only reordered.
+
+What kills it: **package-contributed pages merge ahead of the including file's own.** Moving one page into
+a package promotes it to first, so `printers` displaced `splash` as the boot page and the `go_home` that
+`splash`'s `on_load` fires never ran. On this device that hides itself, because `home_page` is already
+`printers`; on a device with `home_page: lighting_main` the panel would boot to printers and stay there.
+Keeping page order would mean moving *every* page into a package and trusting declaration order — trading
+an explicit list for an implicit one, which is the objection above.
+
+There is no escape hatch: `- !include pages/printers.yaml` as a list item under `pages:` keeps the order
+explicit but returns only a page mapping, and a mapping merged into `lvgl:` cannot contribute
+`binary_sensor:` entries. Only a package can, which is the same wall the widget/sensors pair hits.
+
+Worth revisiting only if pages should become pluggable per device — a device file opting a whole page in or
+out. Then package-per-page is the right shape and the ordering cost is paid deliberately.
+
 The five ways a pair breaks, and what catches each:
 
 | failure | caught by |
