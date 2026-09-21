@@ -18,6 +18,7 @@
   * `features/diagnostics/memory.yaml` / `psram.yaml`: heap, loop-time and PSRAM sensors for chasing a leak.
 * `common.yaml` now always reports **Uptime** and **Reset Reason**, so an unexplained restart leaves evidence.
 * [Breaking change] **Restart** is now a button rather than a switch, so Home Assistant shows it as an action instead of an on/off state. Its entity moves from `switch.<name>_restart` to `button.<name>_restart`; update any automation or dashboard that pressed the old one, and delete the orphaned switch.
+* [Breaking change] **WiFi Strength** is gone. It was WiFi Signal rescaled to a percentage, but it kept the dBm sensor's `signal_strength` device class, which Home Assistant only accepts in dB or dBm and warned about. Use WiFi Signal.
 * **Uptime** reports the boot time, once per boot, rather than a seconds count every minute. Home Assistant shows it as "3 hours ago". If it reads unavailable after the update, reload the device in Settings > Devices & services > ESPHome: Home Assistant keeps the old seconds unit on the existing entity and rejects the new value.
 * Every layout goes home from `esphome: on_boot` instead of from the `splash` page's `on_load`, so boot no longer depends on `splash` being the first page. A layout of your own that copied the old `splash` should do the same.
 * A **24-hour time** switch (in the shared header package) sets the header clock, the sleep clock and the printer end times.
