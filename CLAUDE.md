@@ -197,16 +197,24 @@ explicit but returns only a page mapping, and a mapping merged into `lvgl:` cann
 Worth revisiting if navigable pages should become pluggable per panel. Then package-per-page is the right
 shape and the ordering cost is paid deliberately.
 
-**Open, as of 2026-09-21 — waiting on Ryan's reply in upstream #53.** Once boot stopped depending on page
-order, three cleanups became possible. Nothing is built yet; explore and implement once he has answered:
+Once boot stopped depending on page order (2026-09-21), three cleanups became possible:
 
-1. **Package-per-page** — *medium on its own, high if panels should differ by room*. Each page becomes one
-   file holding its tiles and their sensors (a tile's `uid` / `entity_id` are written twice today, 500
-   lines apart), and a top-level config picks its pages — Ryan's per-room complaint in #53. *Cost: high.*
-   Every page leans on the layout's anchors (`*page_styles`, `*button_widget_vars`, …), which do not cross
-   file boundaries, so sizing must be passed as vars or substitutions; it touches every page, and his three
-   generic layouts too. Nav order becomes the order of the `packages:` list. **Asked in #53 first**,
-   because it reshapes his layouts and the payoff is mostly his.
+1. **Package-per-page — prototyped upstream as draft PR #59**, after Ryan answered #53 with "I love this
+   idea". Each page becomes `layouts/<WxH>/<page>.yaml`: its `lvgl.pages` entry plus its sensor packages,
+   side by side, and a top-level config lists the pages it wants. What the prototype established on his
+   generic `480x320.yaml` (`lighting_1`…`printers` converted):
+   - **The anchor problem was cheap.** Each anchor a page used becomes a 3–7 line sibling file —
+     `<<: *page_styles` → `<<: !include _page.yaml`, where `_page.yaml` is the shared style include plus
+     that resolution's numbers — so a page reads the same as before. No substitutions needed.
+   - **The resolved config was identical line for line** (6,048 lines, compared as a multiset), which is
+     the check to repeat on every further conversion.
+   - **Convert from the last page backwards** and navigation never moves: page packages append after the
+     layout's own pages in the order they are listed. Converting a middle page first moved it to the end.
+     Once every page is a package, the top-level list *is* the navigation.
+   - It collides with anything that edits a page inside the layout (it did with #38's printers page) —
+     land those first and redo the moved page in their shape.
+   Still to do if he takes it: `bedroom` / `living_room`, the `800x480` and `320x240` layouts, and his
+   calls on file naming and whether examples list pages or include an "all pages" bundle.
 2. **Detail pages as a package** — *medium*. `detail_light` / `detail_rgb` and their globals move from
    the layout into one package that ships with the dimmable/RGB families, included **once per layout, not
    per tile** (per-tile sensors files would define the page repeatedly). Do it when offering the detail
