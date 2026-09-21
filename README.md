@@ -11,6 +11,9 @@
 
 ## Changelog
 ### 2026-09-20
+* [Breaking change] Personal and example layouts are now separate files. `layouts/480x320.yaml` and `layouts/800x480.yaml` are back to upstream's generic demo content (`light.kitchen_light`, printers Fred/Wilma/Barney), and the personalised versions moved to `layouts/480x320-home.yaml` and `layouts/800x480-home.yaml`. Only `home35.yaml` and the new `sdl-home.yaml` use the `-home` files; every `*-example.yaml` builds the generic ones again. If you had been building an example config and getting someone else's entities, that is what this fixes.
+* The generic layouts' printers pages were recomposed onto `widgets/printers/tile_combined.yaml` + `printer_combined.sensors.yaml`, reproducing upstream's single-AMS combined line with the current widget set. The old `widgets/printers/widget.yaml` and `sensors.yaml` remain removed.
+* Added `sdl-home.yaml`, so the personal layout can still be previewed in an SDL window; `sdl-example.yaml` now previews the generic one.
 * The `480x320` printer page is now composed from `widgets/printers/tile.yaml` (the whole tile body) and one `widgets/printers/printer.sensors.yaml` per printer (core sensors plus all twelve AMS slots), instead of six row includes and 38 sensor includes spelled out per printer. Adding a printer is three lines on the page and four in `packages:`. The resolved config is unchanged, so no reflash is needed; a layout that composes its own tiles inline, as `800x480` does, keeps working untouched.
 * The tile body is now a per-printer choice. `widgets/printers/tile.yaml` is the stacked format (a name line, then a self-revealing row per AMS unit); `widgets/printers/tile_combined.yaml` is upstream's original shape, with the printer name and one unit's four pills on a single line. Combined costs one line less but is statically visible and single-AMS, so it suits a machine whose one AMS is always present. Pair each with the matching `printer.sensors.yaml` or `printer_combined.sensors.yaml` — mismatching them fails at config time.
 * The four tray pills moved to `widgets/printers/ams_tray_strip.yaml`, shared by the stacked row and the combined line. No visual change: the resolved config for the `800x480` boards is identical.
@@ -44,6 +47,11 @@ Every board here draws portrait. The files in `layouts/` are named for the panel
 | Sunton `ESP32-2432S028R` | 240x320 | 240x320 | `layouts/320x240.yaml` |
 | Sunton `ESP32-8048S043` | 800x480 | 480x800, via `rotation: 90` | `layouts/800x480.yaml` |
 | Sunton `ESP32-8048S050` | 800x480 | 480x800, via `rotation: 90` | `layouts/800x480.yaml` |
+
+A layout named `<WxH>.yaml` is the generic example, with demo entities anyone can build. A `<WxH>-home.yaml`
+beside it is the repo author's personal version of the same canvas, wired to real entities; only `home35.yaml`
+and `sdl-home.yaml` use those. Keep your own entities in a `-home` layout so the examples stay buildable by
+other people.
 
 Widget widths in the layouts are percentages, which is what lets one layout serve two different panels. Any size given in pixels has to be budgeted against the canvas width in the table above and not against the layout's filename, which is roughly 150px narrower than the name suggests on the 3.5" boards.
 

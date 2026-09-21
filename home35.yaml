@@ -8,4 +8,4 @@ substitutions:
 packages:
   common: !include common.yaml
   device: !include devices/JC3248W535.yaml
-  layout: !include layouts/480x320.yaml
+  layout: !include layouts/480x320-home.yaml

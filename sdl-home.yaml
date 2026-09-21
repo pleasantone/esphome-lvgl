@@ -1,0 +1,16 @@
+# The personal layout in an SDL window -- no hardware, no secrets, no WiFi.
+# sdl-example.yaml is the generic counterpart; this one previews what home35
+# actually renders.
+
+esphome:
+  name: sdl-home
+  friendly_name: sdl-home
+
+substitutions:
+  home_page: lighting_main
+  sdl_width: "320"
+  sdl_height: "480"
+
+packages:
+  device: !include devices/SDL.yaml
+  layout: !include layouts/480x320-home.yaml

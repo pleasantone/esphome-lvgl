@@ -3,7 +3,7 @@ esphome:
   friendly_name: sdl
 
 substitutions:
-  home_page: lighting_main
+  home_page: lighting_1
   sdl_width: "320"
   sdl_height: "480"
 

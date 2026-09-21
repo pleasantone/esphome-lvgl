@@ -39,11 +39,12 @@ packages:
   common: !include common.yaml               # WiFi, API, OTA, web_server, diagnostic sensors
   device: !include devices/<BOARD>.yaml      # pins, display, touchscreen, backlight, psram, framework
   layout: !include layouts/<WxH>.yaml        # fonts, theme, LVGL pages, and all HA sensors
+                                             # (or <WxH>-home.yaml -- see "Personal vs example layouts")
 ```
 
 **A layout's name is the canvas it was drawn for, not what every board gives it.** The Guition
 `JC3248W535` is natively **320x480 portrait** (see `width=320, height=480` in ESPHome's
-`mipi_spi/models/jc.py`) and this repo sets no rotation for it, so `layouts/480x320.yaml` is actually
+`mipi_spi/models/jc.py`) and this repo sets no rotation for it, so the `480x320` layouts are actually
 driven at 320px wide on that board — about 298px usable inside the page and tile padding. Budget widths
 against the real canvas, not the filename. Boards that need landscape set `lvgl: rotation:` in their
 device file.
@@ -54,6 +55,28 @@ several boards share one layout. Adding a board means adding one file to `device
 
 `home_page` is a required substitution consumed by the `go_home` script in every layout; it is also what the
 footer home button triggers.
+
+### Personal vs example layouts
+
+`layouts/<WxH>.yaml` is the **generic example**, kept as close to upstream as the widget set allows: demo
+entities (`light.kitchen_light`, printers Fred/Wilma/Barney on `p1s_N`) that no real house has. It is what
+every `*-example.yaml` builds, and what can be offered upstream.
+
+`layouts/<WxH>-home.yaml` is the **personal** one -- this author's real lights, alarm, covers and Bambu
+serials. Only `home35.yaml` and `sdl-home.yaml` use it.
+
+The split exists because the personal layout had overwritten the example: for a while `layouts/480x320.yaml`
+*was* this house, so anyone cloning the repo and flashing `guition-35-example` got a panel wired to entities
+they do not own, and `480x320`'s example content survived only in upstream's history. **Put personal
+entities in a `-home` layout; leave `layouts/<WxH>.yaml` generic.**
+
+The generic layouts keep upstream's page names (`lighting_1`/`_2`/`_3`), so the examples keep
+`home_page: lighting_1`. The personal `480x320-home.yaml` renamed them to `lighting_main` / `lighting_second`
+/ `lighting_ground` / `lighting_outside`, which is why `home35.yaml` and `sdl-home.yaml` differ there.
+
+The generic layouts do not carry the old `widgets/printers/widget.yaml`; their printers pages were
+recomposed onto `tile_combined.yaml` + `printer_combined.sensors.yaml`, which reproduces upstream's
+single-AMS combined line using the current widget set.
 
 ## Layout file anatomy (`layouts/<WxH>.yaml`)
 
@@ -259,7 +282,7 @@ file would have had to hardcode a unit count and fork for every combination (1 A
 discovered at runtime rather than spelled out, so one body fits every machine. `800x480` still enumerates
 (see below) and so still composes its tiles inline.
 
-`layouts/480x320.yaml` therefore composes a tile from `&printer_tile` + `&printer_tile_layout` and hands
+`layouts/480x320-home.yaml` therefore composes a tile from `&printer_tile` + `&printer_tile_layout` and hands
 `widgets:` the list in `printers/tile.yaml`, which holds the name label, all twelve rows, status and
 progress. Its sensor side is one `printers/printer.sensors.yaml` per printer, which bundles
 `sensors_core.yaml` plus twelve `ams_unit.sensors.yaml` (itself trays + humidity + drying). Adding a
@@ -295,7 +318,7 @@ Two ESPHome mechanics make that nesting work, both verified on the pinned 2026.9
 - **The include filename is substituted too**, so `!include ams_row${variant}.sensors.yaml` picks the
   4-tray or 1-tray file from a var instead of forking the call site.
 
-`layouts/480x320.yaml` does not enumerate the units a printer actually has. **Each printer carries all
+`layouts/480x320-home.yaml` does not enumerate the units a printer actually has. **Each printer carries all
 twelve slots** — AMS `1`–`4` and AMS HT `128`/`129` — and every row is included (in `printers/tile.yaml`)
 with `hidden: true` as a sibling key of the merge. `ams_row_humidity.sensors.yaml` calls `lvgl.widget.show` on
 `${uid}_ams_${ams_id}_row` when a reading arrives, so **a unit reveals its own row**: every AMS reports
@@ -310,9 +333,9 @@ Drying is subscribed for every slot for the same reason: a unit with no heater h
 its heater icon stays blank on its own rather than because a package was left out. The capability is
 discovered, not declared.
 
-The `800x480` layout still enumerates its units the old way: it names the real X1C and H2C and lists the
-four rows they actually have. Upstream's version of that file is six demo printers — Fred, Wilma, Barney —
-so this one has been personalised since `c9a2b47` and cannot be offered upstream as it stands. Enumerating
+`layouts/800x480-home.yaml` still enumerates its units the old way: it names the real X1C and H2C and lists
+the four rows they actually have. That file is the personalised one; `layouts/800x480.yaml` is back to
+upstream's six demo printers, recomposed onto the current widgets. Enumerating
 is the right call there anyway on a 480x800 canvas showing two printers side by side. Upstream branches
 keep the enumerated form too: the row `id` and the `lvgl.widget.show` are harmless where rows are always
 visible, and only the layout's `hidden: true` opts into the adaptive behaviour.
@@ -364,7 +387,7 @@ hour field, which would be wrong by the local UTC offset. A tray with no RFID re
 ## Idle behaviour is split across two files on purpose
 
 `devices/JC3248W535.yaml` owns the backlight: dim to 25% of `active_brightness` at 5 minutes, backlight
-off plus `lvgl.pause` at 30. `layouts/480x320.yaml` owns the UI half in its own `on_idle` — dismiss
+off plus `lvgl.pause` at 30. `layouts/480x320-home.yaml` owns the UI half in its own `on_idle` — dismiss
 `confirm_box` at 5 minutes, `go_home` at 20 — because those are layout ids and a device file must stay
 UI-free. **Both lists merge**: packages concatenate them and every entry keeps its own timeout, so adding
 one in either file leaves the other alone.
