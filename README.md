@@ -17,6 +17,8 @@
   * `features/sleep_clock/sleep_clock.yaml`: a dim split-flap clock in place of the dark sleep, with its own brightness and optional red night colours.
   * `features/diagnostics/memory.yaml` / `psram.yaml`: heap, loop-time and PSRAM sensors for chasing a leak.
 * `common.yaml` now always reports **Uptime** and **Reset Reason**, so an unexplained restart leaves evidence.
+* [Breaking change] **Restart** is now a button rather than a switch, so Home Assistant shows it as an action instead of an on/off state. Its entity moves from `switch.<name>_restart` to `button.<name>_restart`; update any automation or dashboard that pressed the old one, and delete the orphaned switch.
+* **Uptime** reports the boot time, once per boot, rather than a seconds count every minute. Home Assistant shows it as "3 hours ago".
 * Every layout goes home from `esphome: on_boot` instead of from the `splash` page's `on_load`, so boot no longer depends on `splash` being the first page. A layout of your own that copied the old `splash` should do the same.
 * A **24-hour time** switch (in the shared header package) sets the header clock, the sleep clock and the printer end times.
 * `devices/SDL.yaml` declares its touchscreen as a list, like every other device file, so features can `!extend` it.
