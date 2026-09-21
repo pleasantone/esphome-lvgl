@@ -78,6 +78,35 @@ The generic layouts do not carry the old `widgets/printers/widget.yaml`; their p
 recomposed onto `tile_combined.yaml` + `printer_combined.sensors.yaml`, which reproduces upstream's
 single-AMS combined line using the current widget set.
 
+`320x240.yaml` has no `-home` variant; it was never personalised. `800x480-home.yaml` is only *partly*
+personal — its printers page names the real X1C and H2C, but its lighting pages are still upstream's demo
+entities (`light.kitchen_light`, `light.all_ryan_s_office_lights`). That matters when checking for leaks:
+grepping a `-home` file for "personal" strings produces false positives, because some of what is in there
+is Ryan's.
+
+**Before offering anything upstream, prove no personal entity rides along.** Extract them, subtract the
+ones upstream legitimately has, then scan the branch with word boundaries — a substring match on
+`light.bedroom_light` will hit upstream's own `light.bedroom_light_1`:
+
+```bash
+cat layouts/*-home.yaml | grep -oE '[a-z_]+\.[a-z0-9_]{3,}' \
+  | grep -E '^(light|switch|sensor|binary_sensor|cover|fan|scene|media_player|alarm_control_panel|automation|script)\.' \
+  | sort -u > /tmp/mine.txt
+for f in 480x320 800x480 320x240; do git show "upstream/main:layouts/$f.yaml"; done \
+  | grep -oE '[a-z_]+\.[a-z0-9_]{3,}' | sort -u > /tmp/theirs.txt
+comm -23 /tmp/mine.txt /tmp/theirs.txt > /tmp/only-mine.txt   # 42 entities as of 2026-09-20
+while read e; do grep -rnE "(^|[^a-z0-9_.])${e//./\\.}([^a-z0-9_]|\$)" . --exclude-dir=.git; done < /tmp/only-mine.txt
+```
+
+Also never send `CLAUDE.md`, `home35.yaml`, `sdl-home.yaml` or either `-home` layout upstream. They are
+fork-only.
+
+**The two generic layouts have drifted from the copy in PR #49** and need reconciling when it lands: this
+tree's `480x320.yaml` keeps upstream's original pill sizing (`ams_strip_width: 195`, `ams_tray_width: 45`)
+while the PR uses `175`/`40`, and this tree's anchor block defines neither `ams_label_width`,
+`ams_hum_width` nor `ams_hum_value_width` — so the generic layout here **cannot** switch a tile to
+`tile.yaml` without adding them. Take upstream's side on those two files after the merge.
+
 ## Layout file anatomy (`layouts/<WxH>.yaml`)
 
 Each layout file is the single place where resolution-dependent numbers live, and follows a fixed shape:
