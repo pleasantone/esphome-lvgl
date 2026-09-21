@@ -197,6 +197,28 @@ explicit but returns only a page mapping, and a mapping merged into `lvgl:` cann
 Worth revisiting if navigable pages should become pluggable per panel. Then package-per-page is the right
 shape and the ordering cost is paid deliberately.
 
+**Open, as of 2026-09-21 — waiting on Ryan's reply in upstream #53.** Once boot stopped depending on page
+order, three cleanups became possible. Nothing is built yet; explore and implement once he has answered:
+
+1. **Package-per-page** — *medium on its own, high if panels should differ by room*. Each page becomes one
+   file holding its tiles and their sensors (a tile's `uid` / `entity_id` are written twice today, 500
+   lines apart), and a top-level config picks its pages — Ryan's per-room complaint in #53. *Cost: high.*
+   Every page leans on the layout's anchors (`*page_styles`, `*button_widget_vars`, …), which do not cross
+   file boundaries, so sizing must be passed as vars or substitutions; it touches every page, and his three
+   generic layouts too. Nav order becomes the order of the `packages:` list. **Asked in #53 first**,
+   because it reshapes his layouts and the payoff is mostly his.
+2. **Detail pages as a package** — *medium*. `detail_light` / `detail_rgb` and their globals move from
+   the layout into one package that ships with the dimmable/RGB families, included **once per layout, not
+   per tile** (per-tile sensors files would define the page repeatedly). Do it when offering the detail
+   page upstream, where it does not exist: he would include a package instead of editing his layouts.
+3. **Confirm dialog as a package** — *low–medium*, folded into 2's pass. `confirm_box` +
+   `confirm_entity` move out of the layout into the `confirm_off` family. Never actually blocked by page
+   order — a package could always contribute `msgboxes:` — just never tried.
+
+Still rejected, and unaffected: **package-per-tile** fails on tile order within a grid (`!extend`
+appends), not page order. Not worth doing: removing `splash` — without it, `detail_light`'s `on_load`
+would run at boot against empty globals.
+
 The five ways a pair breaks, and what catches each:
 
 | failure | caught by |
