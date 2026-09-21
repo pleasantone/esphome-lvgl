@@ -199,7 +199,7 @@ shape and the ordering cost is paid deliberately.
 
 Once boot stopped depending on page order (2026-09-21), three cleanups became possible:
 
-1. **Package-per-page — upstream PR #59, finished 2026-09-21 and ready for review.** Ryan answered #53
+1. **Package-per-page — upstream PR #59, merged 2026-09-21.** Ryan answered #53
    with "I love this idea", then chose the shape: pages in a subdirectory, and examples that list their
    pages explicitly with a commented-out `all` line. So each resolution is now:
    - `layouts/<WxH>.yaml` — fonts, theme, header/footer/boot screen, `go_home`, and only `splash`.
@@ -211,10 +211,14 @@ Once boot stopped depending on page order (2026-09-21), three cleanups became po
    - `layouts/<WxH>/all.yaml` — every page, for `pages: !include layouts/<WxH>/all.yaml`.
 
    **`tools/split_layout.py` does the whole conversion from an unsplit layout** (usage in its docstring).
-   Every file in #59 is its output, not hand-edited, so redoing #59 is a re-run: that's the plan for
-   whichever of #38 / #59 lands second (they both rewrite the printers pages). It already handles #38's
-   anchors (`printer_tile`, `printer_tile_layout`, `printer_bar_vars`, `ams_row_vars`) and its
-   `<<: [*a, *b]` form; on #38's layouts merged with main it gave identical configs.
+   Every file in #59 was its output, not hand-edited. It handles #38's anchors (`printer_tile`,
+   `printer_tile_layout`, `printer_bar_vars`, `ams_row_vars`) and its `<<: [*a, *b]` form.
+
+   **This tree's generic `480x320` / `800x480` split is not upstream's.** Upstream split its old printers
+   page; this tree's layouts already carried the printer tiles (#38's content), so the merge of #59
+   re-split them from this tree's own unsplit layouts with the script, and every config resolved
+   identically before and after. When #38 lands, redo #38 the same way: re-run the script on #38's
+   unsplit layouts, since upstream now has only the split form.
 
    **The check for every conversion**: each `*-example.yaml`'s resolved config against the unsplit one —
    same line count, identical as a multiset (bar the `long_press_time` / `long_press_repeat_time` pair,
@@ -222,8 +226,8 @@ Once boot stopped depending on page order (2026-09-21), three cleanups became po
    (`grep -E "^      - id: "` on the resolved output). Then the same with `all.yaml` swapped in.
 
    The fork's own `480x320-home.yaml`, `home35.yaml` and `sdl-home.yaml` are **not converted yet**; do
-   that after #59 merges, with the script (the -home layout's extra anchors will need adding to `VARS`).
-   Draft #61 (page access) is stacked on #59 — rebuild it on #59's new head after any #59 rewrite.
+   it with the script (the -home layout's extra anchors will need adding to `VARS`). They build fine
+   unsplit meanwhile, since the -home layout carries its own pages.
 2. **Detail pages as a package** — *medium*. `detail_light` / `detail_rgb` and their globals move from
    the layout into one package that ships with the dimmable/RGB families, included **once per layout, not
    per tile** (per-tile sensors files would define the page repeatedly). Do it when offering the detail
