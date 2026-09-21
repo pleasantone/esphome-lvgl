@@ -78,11 +78,10 @@ The generic layouts do not carry the old `widgets/printers/widget.yaml`; their p
 recomposed onto `tile_combined.yaml` + `printer_combined.sensors.yaml`, which reproduces upstream's
 single-AMS combined line using the current widget set.
 
-`320x240.yaml` has no `-home` variant; it was never personalised. `800x480-home.yaml` is only *partly*
-personal — its printers page names the real X1C and H2C, but its lighting pages are still upstream's demo
-entities (`light.kitchen_light`, `light.all_ryan_s_office_lights`). That matters when checking for leaks:
-grepping a `-home` file for "personal" strings produces false positives, because some of what is in there
-is Ryan's.
+`480x320-home.yaml` is the only `-home` layout. `320x240` was never personalised, and the personal
+`800x480` was deleted once the split made it plain that nothing built it — Paul has no Sunton 800x480
+board, so it was an unbuilt, unvalidatable copy of his printers page. Its history is in git if a board
+ever arrives.
 
 **Before offering anything upstream, prove no personal entity rides along.** Extract them, subtract the
 ones upstream legitimately has, then scan the branch with word boundaries — a substring match on
@@ -368,9 +367,9 @@ Drying is subscribed for every slot for the same reason: a unit with no heater h
 its heater icon stays blank on its own rather than because a package was left out. The capability is
 discovered, not declared.
 
-`layouts/800x480-home.yaml` still enumerates its units the old way: it names the real X1C and H2C and lists
-the four rows they actually have. That file is the personalised one; `layouts/800x480.yaml` is back to
-upstream's six demo printers, recomposed onto the current widgets. Enumerating
+`layouts/800x480.yaml` is upstream's six demo printers, recomposed onto the current widgets, and it
+enumerates rather than using the self-revealing slots — which is the right call on a 480x800 canvas showing
+two printers side by side. Enumerating
 is the right call there anyway on a 480x800 canvas showing two printers side by side. Upstream branches
 keep the enumerated form too: the row `id` and the `lvgl.widget.show` are harmless where rows are always
 visible, and only the layout's `hidden: true` opts into the adaptive behaviour.
