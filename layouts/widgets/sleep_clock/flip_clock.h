@@ -101,4 +101,15 @@ inline void set(lv_obj_t *card, const char *digit, bool animate) {
   lv_anim_start(&b);
 }
 
+// Recolours a card: the digit on all four halves, their face, and the card's
+// outline. The hinge keeps the page's black.
+inline void set_colors(lv_obj_t *card, uint32_t ink, uint32_t face, uint32_t edge) {
+  for (uint32_t i = 0; i < 4; i++) {
+    lv_obj_t *half = lv_obj_get_child(card, i);
+    lv_obj_set_style_bg_color(half, lv_color_hex(face), 0);
+    lv_obj_set_style_text_color(label_of(half), lv_color_hex(ink), 0);
+  }
+  lv_obj_set_style_outline_color(card, lv_color_hex(edge), 0);
+}
+
 }  // namespace flip

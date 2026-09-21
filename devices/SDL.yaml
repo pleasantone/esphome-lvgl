@@ -28,6 +28,10 @@ globals:
     type: bool
     restore_value: false
     initial_value: 'true'
+  - id: sun_band # 2 day, 1 dusk, 0 night
+    type: int
+    restore_value: false
+    initial_value: '2'
 
 # The same contract as a real board's display_sleep, minus the idle ladder.
 script:

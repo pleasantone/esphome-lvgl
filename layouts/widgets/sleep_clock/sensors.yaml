@@ -4,7 +4,7 @@
 #
 # It keeps the screen lit at the sleep timeout, so it needs the board to own
 # an `idle_sleep_dark` global that its own sleep entry obeys, a `display_sleep`
-# script that goes dark, plus `backlight` and `active_brightness`.
+# script that goes dark, plus `backlight`, `active_brightness` and `sun_band`.
 #
 # It also owns sleeping on demand: holding the footer's Home button for 1.5s,
 # or the "Sleep now" button in Home Assistant, gives the same sleep as the idle
@@ -55,6 +55,27 @@ globals:
     type: int
     restore_value: false
     initial_value: '0'
+  - id: sleep_clock_red # the palette on screen: -1 not yet applied, 0 day, 1 night
+    type: int
+    restore_value: false
+    initial_value: '-1'
+
+# Red at night: the LCD passes only the red part of the white backlight through
+# red pixels, and red is what disturbs dark-adapted eyes least. Everything on
+# the face turns, or the outline and date would be the bluest things left.
+select:
+  - id: sleep_clock_night_colours
+    platform: template
+    name: Night colours
+    icon: mdi:weather-night
+    entity_category: config
+    options:
+      - Follow the sun # night band: sun below -6 degrees
+      - Always
+      - Never
+    initial_option: Follow the sun
+    optimistic: true
+    restore_value: true
 
 switch:
   - id: sleep_clock_enabled
@@ -161,6 +182,27 @@ script:
           lv_label_set_text(id(sleep_clock_ampm), h24 ? "" : (now.hour < 12 ? "AM" : "PM"));
           std::string date = now.strftime("%A, %B ") + std::to_string(now.day_of_month);
           lv_label_set_text(id(sleep_clock_date), date.c_str());
+      - script.execute: sleep_clock_colours
+
+  - id: sleep_clock_colours
+    then:
+      - lambda: |-
+          auto mode = id(sleep_clock_night_colours).current_option();
+          int red = mode == "Always" || (mode == "Follow the sun" && id(sun_band) == 0);
+          if (red == id(sleep_clock_red)) {
+            return;  // restyling invalidates the whole face; only do it on a change
+          }
+          id(sleep_clock_red) = red;
+          // night: 4.1:1 digit on card, 4.5:1 outline and 3.4:1 date on black
+          uint32_t ink = red ? 0xD04028 : 0xD8D8D8;
+          uint32_t face = red ? 0x1A0A08 : 0x1E2024;
+          uint32_t edge = red ? 0xD04028 : 0xFFFFFF;
+          uint32_t text = red ? 0xB03828 : 0x9AA0AE;
+          for (auto *card : {id(sleep_clock_h1), id(sleep_clock_h2), id(sleep_clock_m1), id(sleep_clock_m2)}) {
+            flip::set_colors(card, ink, face, edge);
+          }
+          lv_obj_set_style_text_color(id(sleep_clock_ampm), lv_color_hex(text), 0);
+          lv_obj_set_style_text_color(id(sleep_clock_date), lv_color_hex(text), 0);
 
 interval:
   # every second rather than on the minute: flip::set is a no-op for a card

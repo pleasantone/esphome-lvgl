@@ -469,7 +469,7 @@ With the **Sleep clock** switch on, the 30-minute sleep puts a dim split-flap cl
 dark. The two sleep entries do not race even though they share a timeout. The device's entry goes dark
 only while its `idle_sleep_dark` global is true, and the switch's `on_state` keeps that global the
 inverse of itself, so the device obeys a flag without knowing a clock exists. The layout's entry shows
-the clock. `devices/SDL.yaml` carries stand-ins for `idle_sleep_dark`, `active_brightness` and
+the clock. `devices/SDL.yaml` carries stand-ins for `idle_sleep_dark`, `active_brightness`, `sun_band` and
 `display_sleep` so the layout builds there.
 
 Its brightness is the **Sleep clock brightness** number (1–50%), taken relative to `active_brightness`
@@ -487,6 +487,15 @@ The cards carry a 1px white `outline`, not a `border`. A border insets the conte
 halves relative to the full-height face inside them and splits the digit a pixel off the hinge; an
 outline draws outside and changes nothing. It does need a pixel of room, since a parent clips its
 children's outlines, which is why the pair objs have `pad_all: 1`.
+
+**Night colours** (Follow the sun / Always / Never) turns the whole face red — digits, card tint,
+outline, date and AM/PM. It has to be the whole face: the outline and the date would otherwise be the
+bluest, brightest things left. "Follow the sun" means the device's `sun_band` night band (sun below
+−6°), so the layout reads that device global the way it reads `active_brightness`; SDL has a stand-in.
+The palette is checked every tick but restyled only when it changes (`sleep_clock_red`), because
+restyling invalidates the whole face. The night ink is 4.1:1 on its card, and the outline 4.5:1 and the
+date 3.4:1 on black. Brightness still matters more than colour here: IPS black leaks backlight, so the
+10% slider does most of the work and red refines it.
 
 **24-hour time** is a separate switch in `widgets/header/sensors.yaml`, so every layout exposes it. It
 drives the header clock, the sleep clock and the printer end times. The printer tiles pick it up on
