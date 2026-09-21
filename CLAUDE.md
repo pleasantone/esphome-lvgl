@@ -253,14 +253,51 @@ of AMS units is a composition choice rather than a fork of the whole tile:
 - `ams_row.yaml` (4 pills) / `ams_row_single.yaml` (1 pill) — the **full-width row** for one unit, plus
   `tile_status.yaml` (status / remaining / end) and `tile_progress.yaml` (the bar).
 
-There is deliberately **no per-topology tile file**. A printer tile is composed in
-`layouts/<WxH>.yaml` from `&printer_tile` + `&printer_tile_layout`, a name label, one `ams_row*` include
-per AMS unit, then status and progress. ESPHome YAML has no loops, so a tile file would have to hardcode
-a unit count and fork for every combination (1 AMS, 2 AMS, 2 AMS + HT, 2 HT…).
+There used to be deliberately **no per-topology tile file**, because ESPHome YAML has no loops and a tile
+file would have had to hardcode a unit count and fork for every combination (1 AMS, 2 AMS, 2 AMS + HT,
+2 HT…). **Carrying all twelve slots on every printer retired that objection** — the topology is now
+discovered at runtime rather than spelled out, so one body fits every machine. `800x480` still enumerates
+(see below) and so still composes its tiles inline.
+
+`layouts/480x320.yaml` therefore composes a tile from `&printer_tile` + `&printer_tile_layout` and hands
+`widgets:` the list in `printers/tile.yaml`, which holds the name label, all twelve rows, status and
+progress. Its sensor side is one `printers/printer.sensors.yaml` per printer, which bundles
+`sensors_core.yaml` plus twelve `ams_unit.sensors.yaml` (itself trays + humidity + drying). Adding a
+printer is three lines on the page and four in `packages:`.
+
+**The tile body is a per-printer choice.** `tile.yaml` is the stacked format described above.
+`tile_combined.yaml` is upstream's original shape — the printer name and one unit's four pills share a
+single line — and costs one line less. It is paired with `printer_combined.sensors.yaml`, which subscribes
+to the core sensors and AMS 1's trays only. On `480x320` the X1C runs combined and the H2C stacked.
+
+Two things follow from sharing the line, and both are why this is a choice rather than a default:
+
+- **It cannot reveal itself.** The stacked rows are shown by their humidity sensor; hiding a combined line
+  would take the printer name with it, so the line is statically visible. That suits a machine whose one
+  AMS is always there and nothing else.
+- **It is single-AMS, permanently.** A unit added to a combined printer will not appear — the adaptive
+  slots are exactly what was traded for the line. Move that printer back to `tile.yaml` +
+  `printer.sensors.yaml` if it grows a second unit.
+
+The two halves are enforced against each other the usual way: `tile_combined.yaml` has no
+`${uid}_ams_1_humidity_lbl` or `${uid}_ams_1_heater_icon`, so pairing it with the stacked
+`printer.sensors.yaml` fails at config time on the ids it cannot find.
+
+The four tray pills live in `ams_tray_strip.yaml`, shared by `ams_row.yaml` and `tile_combined.yaml`, so
+pill geometry is written once.
+
+Two ESPHome mechanics make that nesting work, both verified on the pinned 2026.9.0:
+
+- **An include inherits the vars of the file that included it.** A nested `!include` needs no
+  `vars: { uid: "${uid}" }` pass-through — `uid`, `entity_id_prefix` and the `ams_*` sizing numbers reach
+  the leaf files on their own. Anchors still do not cross a file boundary, which is why the layout passes
+  `*ams_row_vars` and `*printer_bar_vars` as vars once per tile with `<<: [*a, *b]`.
+- **The include filename is substituted too**, so `!include ams_row${variant}.sensors.yaml` picks the
+  4-tray or 1-tray file from a var instead of forking the call site.
 
 `layouts/480x320.yaml` does not enumerate the units a printer actually has. **Each printer carries all
-twelve slots** — AMS `1`–`4` and AMS HT `128`/`129` — and every row is included with `hidden: true` as a
-sibling key of the merge. `ams_row_humidity.sensors.yaml` calls `lvgl.widget.show` on
+twelve slots** — AMS `1`–`4` and AMS HT `128`/`129` — and every row is included (in `printers/tile.yaml`)
+with `hidden: true` as a sibling key of the merge. `ams_row_humidity.sensors.yaml` calls `lvgl.widget.show` on
 `${uid}_ams_${ams_id}_row` when a reading arrives, so **a unit reveals its own row**: every AMS reports
 humidity, a slot whose entities do not exist never sends anything and stays hidden, and an AMS moved
 between printers appears on the new one without a reflash. Rows never hide again — a unit that goes away

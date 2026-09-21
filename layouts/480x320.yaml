@@ -608,85 +608,31 @@ lvgl:
             layout:
               <<: *printer_layout
             widgets:
-              - obj: # 1 - X1C
+              # Each tile's body comes from widgets/printers/tile${tile_variant}.yaml,
+              # chosen per printer. "" is the stacked format: a name line and a
+              # full row per AMS unit, all twelve slots revealing themselves.
+              # "_combined" is upstream's original shape, with the name and one
+              # unit's pills on a single line -- a line cheaper, but static and
+              # single-AMS. Pick the matching printer${tile_variant}.sensors.yaml
+              # below; the pair is enforced by the ids each half names.
+              #
+              # The sizing anchors are passed as vars because anchors do not
+              # cross a file boundary; the includes inside inherit them there.
+              - obj: # 1 - X1C -- one AMS, always present, so it takes the line back
                   <<: *printer_tile
                   layout:
                     <<: *printer_tile_layout
-                  widgets:
-                    - label: # printer name
-                        width: 100%
-                        height: SIZE_CONTENT
-                        text: 1 - X1C
-                    - obj: # AMS 1 -- hidden until this unit reports humidity
-                        hidden: true
-                        <<: !include { file: widgets/printers/ams_row.yaml, vars: {
-                          uid: printer_1, ams_id: "1", label: "1", <<: *ams_row_vars } }
-                    - obj: # AMS 2 -- hidden until this unit reports humidity
-                        hidden: true
-                        <<: !include { file: widgets/printers/ams_row.yaml, vars: {
-                          uid: printer_1, ams_id: "2", label: "2", <<: *ams_row_vars } }
-                    - obj: # AMS 3 -- hidden until this unit reports humidity
-                        hidden: true
-                        <<: !include { file: widgets/printers/ams_row.yaml, vars: {
-                          uid: printer_1, ams_id: "3", label: "3", <<: *ams_row_vars } }
-                    - obj: # AMS 4 -- hidden until this unit reports humidity
-                        hidden: true
-                        <<: !include { file: widgets/printers/ams_row.yaml, vars: {
-                          uid: printer_1, ams_id: "4", label: "4", <<: *ams_row_vars } }
-                    - obj: # AMS HT -- hidden until this unit reports humidity
-                        hidden: true
-                        <<: !include { file: widgets/printers/ams_row_single.yaml, vars: {
-                          uid: printer_1, ams_id: "128", label: "HT", <<: *ams_row_vars } }
-                    - obj: # AMS HT2 -- hidden until this unit reports humidity
-                        hidden: true
-                        <<: !include { file: widgets/printers/ams_row_single.yaml, vars: {
-                          uid: printer_1, ams_id: "129", label: "HT2", <<: *ams_row_vars } }
-                    - obj: # status / times
-                        <<: !include { file: widgets/printers/tile_status.yaml, vars: {
-                          uid: printer_1 } }
-                    - bar: # print progress
-                        <<: !include { file: widgets/printers/tile_progress.yaml, vars: {
-                          uid: printer_1, <<: *printer_bar_vars } }
+                  widgets: !include { file: widgets/printers/tile_combined.yaml, vars: {
+                    uid: printer_1, name: 1 - X1C,
+                    <<: [*ams_row_vars, *printer_bar_vars] } }
 
-              - obj: # 2 - H2C
+              - obj: # 2 - H2C -- three units today, so it keeps the stacked rows
                   <<: *printer_tile
                   layout:
                     <<: *printer_tile_layout
-                  widgets:
-                    - label: # printer name
-                        width: 100%
-                        height: SIZE_CONTENT
-                        text: 2 - H2C
-                    - obj: # AMS 1 -- hidden until this unit reports humidity
-                        hidden: true
-                        <<: !include { file: widgets/printers/ams_row.yaml, vars: {
-                          uid: printer_2, ams_id: "1", label: "1", <<: *ams_row_vars } }
-                    - obj: # AMS 2 -- hidden until this unit reports humidity
-                        hidden: true
-                        <<: !include { file: widgets/printers/ams_row.yaml, vars: {
-                          uid: printer_2, ams_id: "2", label: "2", <<: *ams_row_vars } }
-                    - obj: # AMS 3 -- hidden until this unit reports humidity
-                        hidden: true
-                        <<: !include { file: widgets/printers/ams_row.yaml, vars: {
-                          uid: printer_2, ams_id: "3", label: "3", <<: *ams_row_vars } }
-                    - obj: # AMS 4 -- hidden until this unit reports humidity
-                        hidden: true
-                        <<: !include { file: widgets/printers/ams_row.yaml, vars: {
-                          uid: printer_2, ams_id: "4", label: "4", <<: *ams_row_vars } }
-                    - obj: # AMS HT -- hidden until this unit reports humidity
-                        hidden: true
-                        <<: !include { file: widgets/printers/ams_row_single.yaml, vars: {
-                          uid: printer_2, ams_id: "128", label: "HT", <<: *ams_row_vars } }
-                    - obj: # AMS HT2 -- hidden until this unit reports humidity
-                        hidden: true
-                        <<: !include { file: widgets/printers/ams_row_single.yaml, vars: {
-                          uid: printer_2, ams_id: "129", label: "HT2", <<: *ams_row_vars } }
-                    - obj: # status / times
-                        <<: !include { file: widgets/printers/tile_status.yaml, vars: {
-                          uid: printer_2 } }
-                    - bar: # print progress
-                        <<: !include { file: widgets/printers/tile_progress.yaml, vars: {
-                          uid: printer_2, <<: *printer_bar_vars } }
+                  widgets: !include { file: widgets/printers/tile.yaml, vars: {
+                    uid: printer_2, name: 2 - H2C,
+                    <<: [*ams_row_vars, *printer_bar_vars] } }
 
     - id: printer_control
       <<: *page_styles
@@ -974,236 +920,21 @@ packages:
     entity_id: alarm_control_panel.home_alarm_alarm_panel
   }}
 
-  # printers -- each printer carries slots for 4 AMS units and 2 AMS HTs. Every
-  # row starts hidden and is revealed by its own humidity sensor, so a slot whose
-  # entities do not exist never appears, and moving a unit between printers needs
-  # no reflash. Drying is subscribed for every slot too: a unit with no heater has
-  # no _drying entity, so its heater icon simply stays blank.
+  # printers -- widgets/printers/printer.sensors.yaml carries the core sensors
+  # plus all twelve AMS slots (units 1-4 and the AMS HTs at 128/129). Every row
+  # starts hidden and is revealed by its own humidity sensor, so a slot whose
+  # entities do not exist never appears, and moving a unit between printers
+  # needs no reflash. Drying is subscribed for every slot too: a unit with no
+  # heater has no _drying entity, so its heater icon simply stays blank.
 
-  printer_1_sensors: !include { file: widgets/printers/sensors_core.yaml, vars: {
+  printer_1_sensors: !include { file: widgets/printers/printer_combined.sensors.yaml, vars: {
     uid: printer_1,
     entity_id_prefix: x1c_x1c_00m09d460801484
   }}
 
-  printer_1_ams_1_sensors: !include { file: widgets/printers/ams_row.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "1"
-  }}
-
-  printer_1_ams_1_humidity: !include { file: widgets/printers/ams_row_humidity.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "1"
-  }}
-
-  printer_1_ams_1_drying: !include { file: widgets/printers/ams_row_drying.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "1"
-  }}
-
-  printer_1_ams_2_sensors: !include { file: widgets/printers/ams_row.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "2"
-  }}
-
-  printer_1_ams_2_humidity: !include { file: widgets/printers/ams_row_humidity.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "2"
-  }}
-
-  printer_1_ams_2_drying: !include { file: widgets/printers/ams_row_drying.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "2"
-  }}
-
-  printer_1_ams_3_sensors: !include { file: widgets/printers/ams_row.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "3"
-  }}
-
-  printer_1_ams_3_humidity: !include { file: widgets/printers/ams_row_humidity.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "3"
-  }}
-
-  printer_1_ams_3_drying: !include { file: widgets/printers/ams_row_drying.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "3"
-  }}
-
-  printer_1_ams_4_sensors: !include { file: widgets/printers/ams_row.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "4"
-  }}
-
-  printer_1_ams_4_humidity: !include { file: widgets/printers/ams_row_humidity.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "4"
-  }}
-
-  printer_1_ams_4_drying: !include { file: widgets/printers/ams_row_drying.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "4"
-  }}
-
-  printer_1_ams_128_sensors: !include { file: widgets/printers/ams_row_single.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "128"
-  }}
-
-  printer_1_ams_128_humidity: !include { file: widgets/printers/ams_row_humidity.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "128"
-  }}
-
-  printer_1_ams_128_drying: !include { file: widgets/printers/ams_row_drying.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "128"
-  }}
-
-  printer_1_ams_129_sensors: !include { file: widgets/printers/ams_row_single.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "129"
-  }}
-
-  printer_1_ams_129_humidity: !include { file: widgets/printers/ams_row_humidity.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "129"
-  }}
-
-  printer_1_ams_129_drying: !include { file: widgets/printers/ams_row_drying.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484,
-    ams_id: "129"
-  }}
-
-  printer_2_sensors: !include { file: widgets/printers/sensors_core.yaml, vars: {
+  printer_2_sensors: !include { file: widgets/printers/printer.sensors.yaml, vars: {
     uid: printer_2,
     entity_id_prefix: h2c_h2c_31b8ap630100072
-  }}
-
-  printer_2_ams_1_sensors: !include { file: widgets/printers/ams_row.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "1"
-  }}
-
-  printer_2_ams_1_humidity: !include { file: widgets/printers/ams_row_humidity.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "1"
-  }}
-
-  printer_2_ams_1_drying: !include { file: widgets/printers/ams_row_drying.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "1"
-  }}
-
-  printer_2_ams_2_sensors: !include { file: widgets/printers/ams_row.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "2"
-  }}
-
-  printer_2_ams_2_humidity: !include { file: widgets/printers/ams_row_humidity.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "2"
-  }}
-
-  printer_2_ams_2_drying: !include { file: widgets/printers/ams_row_drying.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "2"
-  }}
-
-  printer_2_ams_3_sensors: !include { file: widgets/printers/ams_row.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "3"
-  }}
-
-  printer_2_ams_3_humidity: !include { file: widgets/printers/ams_row_humidity.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "3"
-  }}
-
-  printer_2_ams_3_drying: !include { file: widgets/printers/ams_row_drying.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "3"
-  }}
-
-  printer_2_ams_4_sensors: !include { file: widgets/printers/ams_row.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "4"
-  }}
-
-  printer_2_ams_4_humidity: !include { file: widgets/printers/ams_row_humidity.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "4"
-  }}
-
-  printer_2_ams_4_drying: !include { file: widgets/printers/ams_row_drying.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "4"
-  }}
-
-  printer_2_ams_128_sensors: !include { file: widgets/printers/ams_row_single.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "128"
-  }}
-
-  printer_2_ams_128_humidity: !include { file: widgets/printers/ams_row_humidity.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "128"
-  }}
-
-  printer_2_ams_128_drying: !include { file: widgets/printers/ams_row_drying.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "128"
-  }}
-
-  printer_2_ams_129_sensors: !include { file: widgets/printers/ams_row_single.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "129"
-  }}
-
-  printer_2_ams_129_humidity: !include { file: widgets/printers/ams_row_humidity.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "129"
-  }}
-
-  printer_2_ams_129_drying: !include { file: widgets/printers/ams_row_drying.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072,
-    ams_id: "129"
   }}
 
   # printer control
