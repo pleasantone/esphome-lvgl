@@ -127,6 +127,12 @@ and never fire one. ESPHome resolves that id at config time, so the pair is now 
 pairing the wrong sensors file with a family fails too (plain light sensors under a `dimmable` tile trips
 on the missing `${uid}_brightness`). It costs 736 bytes of RAM for the trigger objects.
 
+A widget that already names its own sensor elsewhere needs no such line. `toggle_buttons/confirm_off.yaml`
+gates on `binary_sensor.is_on: ${uid}_widget_sensor`, and that takes a `cv.use_id`, so a forgotten package
+already fails there — verified by deleting the `x1c_plug` sensors package and watching the config be
+rejected with `Couldn't find ID 'x1c_plug_widget_sensor'`. Check for an existing reference before adding
+the lambda.
+
 The pair exists because the two halves live in different top-level sections: a fragment merged into
 `lvgl:` cannot also contribute `binary_sensor:` entries — only a **package** can contribute both. That is
 what makes the duplication structural rather than lazy, and it is worth knowing before anyone tries to
