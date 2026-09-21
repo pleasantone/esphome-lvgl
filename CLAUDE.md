@@ -199,22 +199,31 @@ shape and the ordering cost is paid deliberately.
 
 Once boot stopped depending on page order (2026-09-21), three cleanups became possible:
 
-1. **Package-per-page — prototyped upstream as draft PR #59**, after Ryan answered #53 with "I love this
-   idea". Each page becomes `layouts/<WxH>/<page>.yaml`: its `lvgl.pages` entry plus its sensor packages,
-   side by side, and a top-level config lists the pages it wants. What the prototype established on his
-   generic `480x320.yaml` (`lighting_1`…`printers` converted):
-   - **The anchor problem was cheap.** Each anchor a page used becomes a 3–7 line sibling file —
-     `<<: *page_styles` → `<<: !include _page.yaml`, where `_page.yaml` is the shared style include plus
-     that resolution's numbers — so a page reads the same as before. No substitutions needed.
-   - **The resolved config was identical line for line** (6,048 lines, compared as a multiset), which is
-     the check to repeat on every further conversion.
-   - **Convert from the last page backwards** and navigation never moves: page packages append after the
-     layout's own pages in the order they are listed. Converting a middle page first moved it to the end.
-     Once every page is a package, the top-level list *is* the navigation.
-   - It collides with anything that edits a page inside the layout (it did with #38's printers page) —
-     land those first and redo the moved page in their shape.
-   Still to do if he takes it: `bedroom` / `living_room`, the `800x480` and `320x240` layouts, and his
-   calls on file naming and whether examples list pages or include an "all pages" bundle.
+1. **Package-per-page — upstream PR #59, finished 2026-09-21 and ready for review.** Ryan answered #53
+   with "I love this idea", then chose the shape: pages in a subdirectory, and examples that list their
+   pages explicitly with a commented-out `all` line. So each resolution is now:
+   - `layouts/<WxH>.yaml` — fonts, theme, header/footer/boot screen, `go_home`, and only `splash`.
+   - `layouts/<WxH>/pages/<page>.yaml` — the page plus its sensor packages; the top-level config lists
+     them after `layout:`, and that list *is* the navigation order.
+   - `layouts/<WxH>/vars/<name>.yaml` — what the `.sizing` anchors were (`<<: *page_styles` →
+     `<<: !include ../vars/page.yaml`), since anchors don't cross files. `nav_widget_vars` stays an anchor
+     in the layout, the only thing still using one.
+   - `layouts/<WxH>/all.yaml` — every page, for `pages: !include layouts/<WxH>/all.yaml`.
+
+   **`tools/split_layout.py` does the whole conversion from an unsplit layout** (usage in its docstring).
+   Every file in #59 is its output, not hand-edited, so redoing #59 is a re-run: that's the plan for
+   whichever of #38 / #59 lands second (they both rewrite the printers pages). It already handles #38's
+   anchors (`printer_tile`, `printer_tile_layout`, `printer_bar_vars`, `ams_row_vars`) and its
+   `<<: [*a, *b]` form; on #38's layouts merged with main it gave identical configs.
+
+   **The check for every conversion**: each `*-example.yaml`'s resolved config against the unsplit one —
+   same line count, identical as a multiset (bar the `long_press_time` / `long_press_repeat_time` pair,
+   whose order ESPHome varies run to run), and the same page ids in the same order
+   (`grep -E "^      - id: "` on the resolved output). Then the same with `all.yaml` swapped in.
+
+   The fork's own `480x320-home.yaml`, `home35.yaml` and `sdl-home.yaml` are **not converted yet**; do
+   that after #59 merges, with the script (the -home layout's extra anchors will need adding to `VARS`).
+   Draft #61 (page access) is stacked on #59 — rebuild it on #59's new head after any #59 rewrite.
 2. **Detail pages as a package** — *medium*. `detail_light` / `detail_rgb` and their globals move from
    the layout into one package that ships with the dimmable/RGB families, included **once per layout, not
    per tile** (per-tile sensors files would define the page repeatedly). Do it when offering the detail
