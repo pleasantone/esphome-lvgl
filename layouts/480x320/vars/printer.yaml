@@ -1,0 +1,6 @@
+# 480x320: sizing inside a printer tile.
+bar_height: 4
+ams_strip_width: 195 # 4 * ams_tray_width + 3 * ams_tray_padding
+ams_tray_width: 45
+ams_tray_height: 20
+ams_tray_padding: 5
