@@ -1,0 +1,318 @@
+# Outside: MOCK -- every value here is hardcoded, to judge the layout in SDL.
+# Nothing subscribes to Home Assistant yet.
+
+lvgl:
+  pages:
+    - id: outside
+      <<: !include ../vars/page.yaml
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Outside
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout:
+              type: FLEX
+              flex_flow: COLUMN
+              flex_align_main: START
+              pad_row: 6
+
+            widgets:
+              # ---- time and date -------------------------------------------
+              - obj:
+                  width: 100%
+                  height: 70
+                  border_width: 0
+                  radius: 20
+                  pad_all: 4
+                  widgets:
+                    - label:
+                        text: "9:41"
+                        text_font: roboto_xxl
+                        align: TOP_MID
+                    - label:
+                        text: "Mon 22 September"
+                        text_font: roboto_sm
+                        text_color: 0x9AA0AE
+                        align: BOTTOM_MID
+
+              # ---- sunrise .. now .. sunset ---------------------------------
+              - obj:
+                  width: 100%
+                  height: 44
+                  border_width: 0
+                  radius: 20
+                  pad_all: 6
+                  widgets:
+                    - label: # sunrise icon
+                        text: "\U000F059C"
+                        text_font: mdi_sm
+                        text_color: 0xFFAF00
+                        align: TOP_LEFT
+                    - label:
+                        text: "6:58"
+                        text_font: roboto_sm
+                        align: TOP_LEFT
+                        x: 26
+                        y: 2
+                    - label: # sunset icon
+                        text: "\U000F059B"
+                        text_font: mdi_sm
+                        text_color: 0xFFAF00
+                        align: TOP_RIGHT
+                    - label:
+                        text: "7:06"
+                        text_font: roboto_sm
+                        align: TOP_RIGHT
+                        x: -26
+                        y: 2
+                    - label: # what you actually want to know
+                        text: "7h 5m of light left"
+                        text_font: roboto_sm
+                        text_color: 0x9AA0AE
+                        align: TOP_MID
+                        y: 2
+                    - bar:
+                        width: 100%
+                        height: 6
+                        align: BOTTOM_MID
+                        value: 62
+                        indicator:
+                          bg_color: 0xFFAF00
+                    - obj: # now
+                        width: 12
+                        height: 12
+                        radius: 6
+                        border_width: 0
+                        bg_color: 0xFFFFFF
+                        align: BOTTOM_LEFT
+                        x: 168
+                        y: 3
+
+              # ---- temperature ---------------------------------------------
+              - obj:
+                  width: 100%
+                  height: 72
+                  border_width: 0
+                  radius: 20
+                  pad_all: 8
+                  widgets:
+                    - label:
+                        text: "60°"
+                        text_font: roboto_xxl
+                        align: LEFT_MID
+                    - label:
+                        text: "Cloudy"
+                        text_font: roboto_md
+                        align: TOP_RIGHT
+                    - label:
+                        text: "Feels 60°   88%"
+                        text_font: roboto_sm
+                        text_color: 0x9AA0AE
+                        align: BOTTOM_RIGHT
+
+              # ---- the three indexes ---------------------------------------
+              - obj:
+                  width: 100%
+                  height: 92
+                  border_width: 0
+                  radius: 20
+                  pad_all: 8
+                  layout:
+                    type: FLEX
+                    flex_flow: COLUMN
+                    flex_align_main: SPACE_EVENLY
+                  widgets:
+                    - obj: # air
+                        width: 100%
+                        height: 26
+                        border_width: 0
+                        bg_opa: TRANSP
+                        pad_all: 0
+                        widgets:
+                          - label:
+                              text: "Air"
+                              text_font: roboto_md
+                              align: LEFT_MID
+                          - bar:
+                              width: 120
+                              height: 10
+                              align: LEFT_MID
+                              x: 62
+                              value: 14
+                              indicator:
+                                bg_color: 0x34C759
+                          - label:
+                              text: "14 Good"
+                              text_font: roboto_md
+                              align: RIGHT_MID
+                    - obj: # pollen
+                        width: 100%
+                        height: 26
+                        border_width: 0
+                        bg_opa: TRANSP
+                        pad_all: 0
+                        widgets:
+                          - label:
+                              text: "Pollen"
+                              text_font: roboto_md
+                              align: LEFT_MID
+                          - bar:
+                              width: 120
+                              height: 10
+                              align: LEFT_MID
+                              x: 62
+                              value: 45
+                              indicator:
+                                bg_color: 0xFFD60A
+                          - label:
+                              text: "5.4 Med"
+                              text_font: roboto_md
+                              align: RIGHT_MID
+                    - obj: # dust and dander
+                        width: 100%
+                        height: 26
+                        border_width: 0
+                        bg_opa: TRANSP
+                        pad_all: 0
+                        widgets:
+                          - label:
+                              text: "Dust"
+                              text_font: roboto_md
+                              align: LEFT_MID
+                          - bar:
+                              width: 120
+                              height: 10
+                              align: LEFT_MID
+                              x: 62
+                              value: 30
+                              indicator:
+                                bg_color: 0x34C759
+                          - label:
+                              text: "3.1 Low"
+                              text_font: roboto_md
+                              align: RIGHT_MID
+
+              # ---- rain, next 12 hours -------------------------------------
+              - obj:
+                  width: 100%
+                  height: 72
+                  border_width: 0
+                  radius: 20
+                  pad_all: 6
+                  widgets:
+                    - label:
+                        text: "Rain next 12h"
+                        text_font: roboto_sm
+                        align: TOP_LEFT
+                    - label:
+                        text: "80% at 2pm"
+                        text_font: roboto_sm
+                        align: TOP_RIGHT
+                    - obj: # the columns
+                        width: 100%
+                        height: 36
+                        align: BOTTOM_MID
+                        border_width: 0
+                        bg_opa: TRANSP
+                        pad_all: 0
+                        layout:
+                          type: FLEX
+                          flex_flow: ROW
+                          flex_align_main: SPACE_BETWEEN
+                          flex_align_cross: END
+                        widgets:
+                          - obj: # slot track
+                              width: 40
+                              height: 34
+                              radius: 4
+                              border_width: 0
+                              bg_color: 0x353B4A
+                              pad_all: 0
+                              widgets:
+                                - obj:
+                                    width: 100%
+                                    height: 3
+                                    radius: 4
+                                    border_width: 0
+                                    bg_color: 0x00B6FF
+                                    align: BOTTOM_MID
+                          - obj: # slot track
+                              width: 40
+                              height: 34
+                              radius: 4
+                              border_width: 0
+                              bg_color: 0x353B4A
+                              pad_all: 0
+                              widgets:
+                                - obj:
+                                    width: 100%
+                                    height: 5
+                                    radius: 4
+                                    border_width: 0
+                                    bg_color: 0x00B6FF
+                                    align: BOTTOM_MID
+                          - obj: # slot track
+                              width: 40
+                              height: 34
+                              radius: 4
+                              border_width: 0
+                              bg_color: 0x353B4A
+                              pad_all: 0
+                              widgets:
+                                - obj:
+                                    width: 100%
+                                    height: 27
+                                    radius: 4
+                                    border_width: 0
+                                    bg_color: 0x00B6FF
+                                    align: BOTTOM_MID
+                          - obj: # slot track
+                              width: 40
+                              height: 34
+                              radius: 4
+                              border_width: 0
+                              bg_color: 0x353B4A
+                              pad_all: 0
+                              widgets:
+                                - obj:
+                                    width: 100%
+                                    height: 15
+                                    radius: 4
+                                    border_width: 0
+                                    bg_color: 0x00B6FF
+                                    align: BOTTOM_MID
+                          - obj: # slot track
+                              width: 40
+                              height: 34
+                              radius: 4
+                              border_width: 0
+                              bg_color: 0x353B4A
+                              pad_all: 0
+                              widgets:
+                                - obj:
+                                    width: 100%
+                                    height: 3
+                                    radius: 4
+                                    border_width: 0
+                                    bg_color: 0x00B6FF
+                                    align: BOTTOM_MID
+                          - obj: # slot track
+                              width: 40
+                              height: 34
+                              radius: 4
+                              border_width: 0
+                              bg_color: 0x353B4A
+                              pad_all: 0
+                              widgets:
+                                - obj:
+                                    width: 100%
+                                    height: 3
+                                    radius: 4
+                                    border_width: 0
+                                    bg_color: 0x00B6FF
+                                    align: BOTTOM_MID
+
+packages:
+  outside_access: !include { file: ../../widgets/page_access.yaml, vars: { page: outside } }
