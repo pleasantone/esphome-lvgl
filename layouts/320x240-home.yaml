@@ -1,0 +1,137 @@
+# The personal layout on the 240x320 canvas (ESP32-2432S028 boards). Its pages
+# are layouts/480x320-home/pages/, shared by symlink: a page's includes resolve
+# from where the link sits, so the same page picks up this directory's vars/.
+# Only the sizes differ -- fonts and the header/footer here, the rest in vars/.
+
+esphome:
+  includes:
+    - widgets/printers/tray_color.h # tray::bg / tray::ink, shared by every tray pill
+  # Go home once everything is set up, rather than from splash's on_load: a
+  # page.show inside the first page's own load event is dropped, and splash is
+  # only the first page while no package adds one ahead of it.
+  on_boot:
+    - priority: -100
+      then:
+        - script.execute: go_home
+
+font: !include
+  file: fonts/fonts.yaml
+  vars:
+    text_sm: 12 # the printer tiles and the sleep clock AM/PM only; "100%" must fit a 31px tray pill
+    text_md: 16 # tile names: "TV Backlight" in a 114px tile
+    text_lg: 22
+    text_xl: 26
+    text_xxl: 30
+    icons_sm: 18
+    icons_md: 24
+    icons_lg: 32
+    icons_xl: 40
+    icons_xxl: 48
+
+.sizing:
+  - &nav_widget_vars
+    height: 40
+    padding: 4
+
+globals:
+  - id: detail_entity # which light the shared detail page is currently editing
+    type: std::string
+    restore_value: false
+  - id: detail_title
+    type: std::string
+    restore_value: false
+  - id: detail_origin # page index to return to
+    type: int
+    restore_value: false
+    initial_value: '0'
+
+  - id: confirm_entity # which entity the shared confirm dialog would turn off
+    type: std::string
+    restore_value: false
+
+script:
+  - id: go_home
+    then:
+      - lvgl.page.show: ${home_page}
+
+lvgl:
+  on_idle:
+    # the confirm dialog must not outlive whoever opened it: with features/idle
+    # the screen dims but stays fully touch-live, so a forgotten dialog would
+    # leave a live Turn Off under the next finger that lands on the panel --
+    # exactly the stray touch the dialog exists to stop
+    - timeout: 5min
+      then:
+        - lvgl.widget.hide: confirm_box
+  id: main_lvgl # needed by the detail page's Back button
+  default_font: roboto_md
+  theme: !include themes/main.yaml
+  top_layer:
+    widgets:
+      - <<: !include { file: widgets/header/widget.yaml, vars: { <<: *nav_widget_vars } }
+      - <<: !include { file: widgets/footer/widget.yaml, vars: { <<: *nav_widget_vars } }
+      - <<: !include { file: widgets/boot_screen/widget.yaml }
+  msgboxes:
+    # Shared confirm dialog. The entity to act on is stashed in confirm_entity
+    # by the tile that opened it, so one dialog serves every guarded tile.
+    - id: confirm_box
+      width: 300
+      close_button: false
+      title: Are you sure?
+      widgets:
+        - label:
+            id: confirm_body
+            width: 100%
+            long_mode: WRAP
+            text: ""
+      buttons:
+        # 64px tall and nearly half the box wide: a wall panel is operated with a
+        # fingertip, and the default footer button is about half that. radius is
+        # set to the height, as the AMS tray pills do -- LVGL clamps it to half,
+        # which is a full pill. Cancel takes the theme's button colour; only the
+        # destructive one is recoloured, in the same red status/alarm uses.
+        - id: confirm_cancel
+          text: Cancel
+          width: 46%
+          height: 64
+          radius: 64
+          on_click:
+            - lvgl.widget.hide: confirm_box
+        - id: confirm_ok
+          text: Turn Off
+          width: 46%
+          height: 64
+          radius: 64
+          bg_color: 0xD32F2F # white on this is 4.98:1; the brighter red was 3.55
+          on_click:
+            - homeassistant.action:
+                action: homeassistant.turn_off
+                data:
+                  entity_id: !lambda return id(confirm_entity);
+            - lvgl.widget.hide: confirm_box
+  pages:
+    - id: splash # blank until on_boot goes home; top_layer's boot screen covers it
+      skip: true
+
+    - id: detail_light
+      <<: !include { file: widgets/detail/light_page.yaml, vars: {
+        page_styles_pad_top: 50, page_styles_pad_bottom: 50,
+        container_pad_left: 6, container_pad_right: 6,
+        pad_row: 8, slider_height: 40, back_height: 60 }}
+
+    - id: detail_rgb
+      <<: !include { file: widgets/detail/rgb_page.yaml, vars: {
+        page_pad_top: 50, page_pad_bottom: 50,
+        container_pad_left: 6, container_pad_right: 6,
+        pad_row: 8, slider_height: 40, arc_size: 130,
+        roller_height: 90, back_height: 50 }}
+
+  # every other page is a package in layouts/480x320-home/pages/, listed by the
+  # top-level config after layout: -- see the README
+
+packages:
+  # header
+  header_sensors: !include { file: widgets/header/sensors.yaml }
+
+  # boot screen
+  boot_screen_sensors: !include { file: widgets/boot_screen/sensors.yaml }

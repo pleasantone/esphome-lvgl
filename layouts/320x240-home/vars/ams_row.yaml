@@ -1,0 +1,9 @@
+# 320x240-home: an AMS row, on a 240px canvas with roboto_sm at 12 / mdi_sm at 18.
+# Row total 26 + 3 + 56 + 3 + 133 = 221 of 222 inside the tile.
+ams_label_width: 26 # fits 'HT2'
+ams_hum_width: 56
+ams_hum_value_width: 16 # fits '99'; keeps the heater icon in one place
+ams_strip_width: 133 # 4 * ams_tray_width + 3 * ams_tray_padding
+ams_tray_width: 31
+ams_tray_height: 18
+ams_tray_padding: 3

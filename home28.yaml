@@ -1,0 +1,36 @@
+esphome:
+  name: home28
+  friendly_name: Home 2.8"
+
+substitutions:
+  home_page: printers
+  # the sleep clock sized for the 240px canvas
+  sleep_clock_card_width: "50"
+  sleep_clock_card_height: "84"
+  sleep_clock_card_gap: "4"
+  sleep_clock_pair_gap: "12"
+  sleep_clock_digit_size: "66"
+
+packages:
+  common: !include common.yaml
+  device: !include devices/ESP32-2432S028-9342.yaml
+  layout: !include layouts/320x240-home.yaml
+  # the same pages as home35, shared by symlink -- see layouts/320x240-home.yaml
+  living_room: !include layouts/320x240-home/pages/living_room.yaml
+  climate: !include layouts/320x240-home/pages/climate.yaml
+  lighting_main: !include layouts/320x240-home/pages/lighting_main.yaml
+  lighting_second: !include layouts/320x240-home/pages/lighting_second.yaml
+  lighting_ground: !include layouts/320x240-home/pages/lighting_ground.yaml
+  lighting_outside: !include layouts/320x240-home/pages/lighting_outside.yaml
+  printers: !include layouts/320x240-home/pages/printers.yaml
+  printer_control: !include layouts/320x240-home/pages/printer_control.yaml
+  idle: !include features/idle/idle.yaml
+  ceiling: !include features/idle/sun.yaml
+  sleep_clock: !include features/sleep_clock/sleep_clock.yaml
+  memory: !include features/diagnostics/memory.yaml # no PSRAM on this board, so no psram.yaml
+
+# No PSRAM: a 25% draw buffer is one 38KB block, taken before the Home
+# Assistant subscriptions grow into what is left, and the full page set ran
+# out there. 12% costs a few more redraw strips per frame.
+lvgl:
+  buffer_size: 12%
