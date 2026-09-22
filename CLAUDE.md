@@ -332,7 +332,7 @@ own config — the only value it overrides is `running_dead_zone: 10`, which is 
 start-up grace, not a wattage. Read the blueprint's inputs, not just the automation, before matching
 a threshold to it.
 
-### Stepper tiles (`widgets/stepper/`) — upstream #63
+### Stepper tiles (`widgets/stepper/`) — upstream #63, merged
 
 `[-] value [+]` on an `obj` tile; `stepper/climate/` sets a thermostat's single target, `stepper/number/`
 a `number` / `input_number`. Taps move a `${uid}_pending` global and restart a `${uid}_nudge` script that
@@ -345,8 +345,7 @@ The tile is a flex row: the name column `flex_grow`s into what the buttons leave
 `long_mode: DOT` with `max_height: 50%` — DOT only truncates when the height is bounded; with
 `SIZE_CONTENT` it wraps under the buttons instead. Sizes per canvas are in `vars/stepper.yaml` (buttons
 40/52/80, value 52/60/88 for 240/320/480px), checked with SDL snapshots against "21.5°", "100%" and a
-"Thermostat" name. main carries the widgets byte-identical to the PR branch so the merge after it lands
-is clean; the personal layout's Climate page drives `climate.upstairs`.
+"Thermostat" name. The personal layout's Climate page drives `climate.upstairs`.
 
 ### The shared light detail page
 
@@ -616,9 +615,9 @@ board whose device file configures `psram:`). They report every minute, which is
 each — turn them on for the panel you are chasing a problem on. A leak shows as Free or Min Free trending
 down over hours; Largest Block falling while Free holds is fragmentation.
 
-### Work that lives on branches, not main
+### Where recent work lives
 
-- **BLE proxy** — upstream #62 (`ble-proxy`), exploration `explore/ble-proxy`. Measured on home35
+- **BLE proxy** — upstream #62, merged into `features/ble_proxy/` (home35 doesn't use it). Measured on home35
   (2026-09-21): ~95KB internal RAM while running (the S3 controller cannot use PSRAM; `use_psram` saved
   11KB), ~400KB flash, ~2% of a core. Interleaved on/off pings: no extra loss, p99 1.0s -> 2.5s with a
   30ms/320ms scan window, worse with ESPHome's default continuous scan. Doesn't fit the CYD (app
@@ -628,8 +627,9 @@ down over hours; Largest Block falling while Free holds is fragmentation.
 - **Guition JC1060P470C (ESP32-P4, 7" 1024x600)** — `explore/p4-jc1060p470`, unverified. Base file uses
   ESPHome's own `JC1060P470` model; `-V2` for the 2026 panel (V2 on the rear label: different init, reset
   GPIO0, SDIO 10MHz). Needs `engineering_sample: true`. No 1024x600 layout yet.
-- **Diagnostics** (#64) and **sleep clock + 24h** (#65) are on main already; their PR branches carry the
-  upstream versions, with per-canvas clock sizes (240: 50/84/4/12/66, 480: 102/168/8/24/132).
+- **Sleep clock + 24h** (#65, branch `sleep-clock`) is on main already; the PR carries per-canvas clock
+  sizes (240: 50/84/4/12/66, 480: 102/168/8/24/132) and adds `id: main_lvgl` to the generic layouts.
+  Diagnostics (#64) is merged.
 
 ### Testing features in SDL
 
