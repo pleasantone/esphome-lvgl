@@ -16,7 +16,21 @@ esphome compile <top-level>.yaml    # compile firmware
 esphome run <top-level>.yaml        # compile + upload (USB or OTA)
 esphome run sdl-example.yaml        # run the UI on the host in an SDL window — no hardware needed
 esphome logs <top-level>.yaml
+
+tools/lint_configs.py [cfg ...]       # undefined ${var}s, missing glyphs, page_access includes (#70)
+tools/compare_configs.py --base REF   # every config resolved at REF vs the tree; pages + line diff (#70)
+tools/snapshot.py sdl-example.yaml    # a PNG per page, no hardware, no HA (#70)
+tools/check_glyphs.py cfg ...         # MDI subset: used-but-missing (blank) and unused (#70)
+tools/check_leaks.py <branch>         # fork-only: personal entities / files headed upstream
+tools/check_entities.py home35.yaml   # fork-only: every subscribed entity exists in HA (via ssh)
+tools/flash.sh home35.yaml --expect 'regex' ...   # fork-only: gated build + OTA + verify
 ```
+
+**Flash with `tools/flash.sh`, not a hand-chained `esphome upload`.** It encodes the OTA lessons of
+2026-09-21/22: every `--expect` regex must match the resolved config (the approved values), the lint must
+pass, the upload log is fresh (a stale "OTA successful" was once reported as a flash), the device is found
+by `.local` or by Home Assistant's ESPHome entry, and it ends by reading the device's own "compiled on"
+and requiring it to equal the build's. `--dry-run` does all but the upload.
 
 Only the top-level files in the repo root (`*-example.yaml`) are directly buildable; everything under
 `devices/` and `layouts/` is a package fragment that fails on its own.
@@ -88,22 +102,14 @@ single-AMS combined line using the current widget set.
 board, so it was an unbuilt, unvalidatable copy of his printers page. Its history is in git if a board
 ever arrives.
 
-**Before offering anything upstream, prove no personal entity rides along.** Extract them, subtract the
-ones upstream legitimately has, then scan the branch with word boundaries — a substring match on
-`light.bedroom_light` will hit upstream's own `light.bedroom_light_1`:
+**Before offering anything upstream, prove no personal entity rides along:** `tools/check_leaks.py
+<branch>`. It collects the entities the `-home` layouts use, subtracts the ones upstream's own layouts
+have, and scans the lines the branch adds over `upstream/main` with word boundaries (a substring match on
+`light.bedroom_light` would hit upstream's own `light.bedroom_light_1`), plus the file list for anything
+fork-only. Exit 1 on a hit; say what it printed rather than asserting the branch is clean.
 
-```bash
-cat layouts/*-home.yaml layouts/*-home/pages/*.yaml | grep -oE '[a-z_]+\.[a-z0-9_]{3,}' \
-  | grep -E '^(light|switch|sensor|binary_sensor|cover|fan|scene|media_player|alarm_control_panel|automation|script)\.' \
-  | sort -u > /tmp/mine.txt
-for f in 480x320 800x480 320x240; do git show "upstream/main:layouts/$f.yaml"
-  for p in $(git ls-tree -r --name-only upstream/main "layouts/$f/"); do git show "upstream/main:$p"; done; done \
-  | grep -oE '[a-z_]+\.[a-z0-9_]{3,}' | sort -u > /tmp/theirs.txt
-comm -23 /tmp/mine.txt /tmp/theirs.txt > /tmp/only-mine.txt   # 41 entities as of 2026-09-21
-while read e; do grep -rnE "(^|[^a-z0-9_.])${e//./\\.}([^a-z0-9_]|\$)" . --exclude-dir=.git; done < /tmp/only-mine.txt
-```
-
-Also never send `CLAUDE.md`, `home35.yaml`, `home28.yaml`, `sdl-home.yaml`, `tools/split_layout.py`, the
+Also never send `CLAUDE.md`, `home35.yaml`, `home28.yaml`, `sdl-home.yaml`, `tools/split_layout.py`,
+`tools/check_leaks.py`, `tools/check_entities.py`, `tools/flash.sh`, `layouts/fonts/glyphs-home*`, the
 `-home` layouts or their `layouts/*-home/` directories upstream. They are fork-only.
 
 **The two generic layouts have drifted from the copy in PR #49** and need reconciling when it lands: this
@@ -638,9 +644,12 @@ down over hours; Largest Block falling while Free holds is fragmentation.
 
 `sdl-home.yaml` opts into the same features as home35. To run the idle ladder in seconds, publish
 fractional minutes straight to the numbers — `id(idle_sleep_minutes).publish_state(15.0f / 60)` —
-since the HA controls take whole minutes. To see the clock without hardware, build a scratch SDL config
-with `-DLV_USE_SNAPSHOT=1` in `build_flags`; `lv_snapshot_take()` then writes the active screen to a
-file. The host build ignores `set_epoch_time()`, because `settimeofday` fails there and the host clock
+since the HA controls take whole minutes. `tools/snapshot.py <sdl config>` writes a PNG of every page
+(it wraps the config with `-DLV_USE_SNAPSHOT=1` and an `on_boot` that shows each page, hides the boot
+screen and snapshots the screen plus `lv_layer_top()`); a raw `lv_snapshot_take()` misses the header and
+footer, which live on the top layer, and shows only the boot screen until something hides it. Name any
+helper namespace other than `snapshot` -- ESPHome has an `esphome::snapshot` that makes it ambiguous. To
+see the clock itself, snapshot while it shows. The host build ignores `set_epoch_time()`, because `settimeofday` fails there and the host clock
 wins, so to catch a flip call `flip::set()` on a card directly. A second LVGL pointer created in an
 `on_boot` lambda (`lv_indev_create()` + a scripted `read_cb`) drives touches deterministically; its
 first gesture after boot is dropped, so lead with a throwaway tap.
@@ -656,14 +665,13 @@ esphome config home35.yaml > /tmp/cfg.txt   # then grep the resolved config, nev
 ```
 
 To check every entity the panel subscribes to actually exists in Home Assistant — the one failure the
-build cannot catch — pull them out of the resolved config and ask HA in one call:
+build cannot catch — run `tools/check_entities.py home35.yaml`. It reads all states in one call through
+the Advanced SSH add-on's `SUPERVISOR_TOKEN` (`ssh homeassistant`, no token to manage; or `HA_URL` +
+`HA_TOKEN`) and lists missing entities, with absent AMS slots counted separately as expected (which ones
+are absent tells you the real topology). 87 entities, 0 missing on home35 as of 2026-09-22.
 
-```bash
-grep -oE 'entity_id: [a-z_]+\.[a-z0-9_]+' /tmp/cfg.txt | awk '{print $2}' | sort -u
-```
-
-then `ha_get_state` with that list (max 100 per call; the AMS slots that do not exist are expected to
-fail, and which ones fail tells you the real topology).
+Ryan runs no GitHub Actions (no `.github/` upstream). #70 offers to run `lint_configs.py` on PRs if he
+wants it.
 
 To audit the MDI subset, run `tools/check_glyphs.py <config>.yaml ...`: it resolves each config and
 reports glyphs used but missing from the fonts (they render blank; exit 1) and glyphs included but unused.

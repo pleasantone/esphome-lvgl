@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """Check that every MDI icon a config uses is in its font subset.
 
-The MDI fonts carry only the glyphs listed in layouts/fonts/glyphs.yaml (plus
-glyphs-home.yaml on the personal layouts). An icon missing from the list
+The MDI fonts carry only the glyphs listed in layouts/fonts/glyphs.yaml (or
+any other list a config adds to them). An icon missing from the list
 renders as a blank or a box with no build error, and one listed but never used
 is flash spent on nothing. This resolves a config and reports both.
 
-    tools/check_glyphs.py home35.yaml [more.yaml ...]
+    tools/check_glyphs.py sdl-example.yaml [more.yaml ...]
     tools/check_glyphs.py --resolved /tmp/cfg.txt   # already `esphome config`-ed
 
 Exits 1 if any config uses a glyph its fonts lack. Unused glyphs only warn:
-glyphs.yaml is shared, so a layout that shows fewer pages always has some.
+glyphs.yaml is shared, so a config that shows fewer pages always has some.
 """
 import re
 import subprocess
@@ -47,7 +47,7 @@ def codepoints(text):
     return cps
 
 
-def check(label, text, names):
+def check(label, text, names, show_unused=True):
     font, rest = split_font_section(text)
     fonts = {}
     for m in re.finditer(r"^  - id: (mdi_\w+)\n(.*?)(?=^  - id: |\Z)", font, re.M | re.S):
@@ -67,7 +67,7 @@ def check(label, text, names):
           + ("" if len(sizes) == 1 else f" (fonts disagree: {sorted(sizes)})"))
     if missing:
         print(f"  MISSING (renders blank): {fmt(missing)}")
-    if unused:
+    if unused and show_unused:
         print(f"  unused: {fmt(unused)}")
     return not missing
 
