@@ -75,7 +75,7 @@ lvgl:
     # Shared confirm dialog. The entity to act on is stashed in confirm_entity
     # by the tile that opened it, so one dialog serves every guarded tile.
     - id: confirm_box
-      width: 300
+      width: 228 # 6px clear of each edge of the 240px canvas
       close_button: false
       title: Are you sure?
       widgets:
