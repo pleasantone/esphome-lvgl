@@ -5,6 +5,7 @@
 
 packages:
   living_room: !include pages/living_room.yaml
+  climate: !include pages/climate.yaml
   lighting_main: !include pages/lighting_main.yaml
   lighting_second: !include pages/lighting_second.yaml
   lighting_ground: !include pages/lighting_ground.yaml

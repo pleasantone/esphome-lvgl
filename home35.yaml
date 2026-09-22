@@ -12,6 +12,7 @@ packages:
   # pages, in navigation order -- or every page at once:
   # pages: !include layouts/480x320-home/all.yaml
   living_room: !include layouts/480x320-home/pages/living_room.yaml
+  climate: !include layouts/480x320-home/pages/climate.yaml
   lighting_main: !include layouts/480x320-home/pages/lighting_main.yaml
   lighting_second: !include layouts/480x320-home/pages/lighting_second.yaml
   lighting_ground: !include layouts/480x320-home/pages/lighting_ground.yaml
