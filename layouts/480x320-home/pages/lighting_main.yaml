@@ -1,0 +1,128 @@
+# Main Floor Lighting: the page and the sensors its tiles need.
+# Include it from the top-level config after `layout:`; pages appear in the
+# order they are listed.
+
+lvgl:
+  pages:
+    - id: lighting_main
+      <<: !include ../vars/page.yaml
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Main Floor Lighting
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout:
+              <<: !include ../vars/button_layout.yaml
+            widgets:
+              - button: # main floor lights
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_group_buttons/widget.yaml
+                    vars:
+                      uid: main_floor_lights
+                      entity_id: light.main_floor_lights
+                      text: Main Floor
+                      <<: !include ../vars/wide_button.yaml
+
+              - button: # kitchen light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: kitchen_light
+                      entity_id: light.kitchen_main_lights
+                      text: Kitchen
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
+                      <<: !include ../vars/button.yaml
+
+              - button: # dining room light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: dining_room_light
+                      entity_id: light.dining_room_main_lights
+                      text: Dining
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
+                      <<: !include ../vars/button.yaml
+
+              - button: # living room chandelier
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: living_room_light
+                      entity_id: light.living_room_chandelier
+                      text: Living Rm
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
+                      <<: !include ../vars/button.yaml
+
+              - button: # office light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: office_light
+                      entity_id: light.office_main_lights
+                      text: Office
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
+                      <<: !include ../vars/button.yaml
+
+              - button: # foyer light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: foyer_light
+                      entity_id: light.front_foyer_main_lights
+                      text: Foyer
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
+                      <<: !include ../vars/button.yaml
+
+              - button: # hallway light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: hallway_light
+                      entity_id: light.hallway_main_lights
+                      text: Hallway
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
+                      <<: !include ../vars/button.yaml
+
+packages:
+  main_floor_lights_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_group_buttons/sensors.yaml, vars: {
+    uid: main_floor_lights,
+    entity_id: light.main_floor_lights
+  }}
+
+  kitchen_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: kitchen_light,
+    entity_id: light.kitchen_main_lights
+  }}
+
+  dining_room_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: dining_room_light,
+    entity_id: light.dining_room_main_lights
+  }}
+
+  living_room_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: living_room_light,
+    entity_id: light.living_room_chandelier
+  }}
+
+  office_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: office_light,
+    entity_id: light.office_main_lights
+  }}
+
+  foyer_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: foyer_light,
+    entity_id: light.front_foyer_main_lights
+  }}
+
+  hallway_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: hallway_light,
+    entity_id: light.hallway_main_lights
+  }}

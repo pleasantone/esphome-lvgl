@@ -1,0 +1,157 @@
+# Printer Control: the page and the sensors its tiles need.
+# Include it from the top-level config after `layout:`; pages appear in the
+# order they are listed.
+
+lvgl:
+  pages:
+    - id: printer_control
+      <<: !include ../vars/page.yaml
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Printer Control
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout:
+              <<: !include ../vars/button_layout.yaml
+            widgets:
+              - button: # x1c plug
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/confirm_off.yaml
+                    vars:
+                      uid: x1c_plug
+                      entity_id: switch.x1c_plug
+                      domain: switch
+                      text: X1C Plug
+                      icon_on: "\U000F06A5"
+                      icon_off: "\U000F06A6"
+                      confirm_text: Cut power to the X1C? A print in progress will be lost.
+                      <<: !include ../vars/button.yaml
+
+              - button: # h2c plug
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/confirm_off.yaml
+                    vars:
+                      uid: h2c_plug
+                      entity_id: switch.h2c_plug
+                      domain: switch
+                      text: H2C Plug
+                      icon_on: "\U000F06A5"
+                      icon_off: "\U000F06A6"
+                      confirm_text: Cut power to the H2C? A print in progress will be lost.
+                      <<: !include ../vars/button.yaml
+
+              - button: # x1c chamber
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: x1c_chamber_light
+                      entity_id: light.x1c_x1c_00m09d460801484_chamber_light
+                      domain: light
+                      text: X1C Chamber
+                      icon_on: "\U000F06E8"
+                      icon_off: "\U000F0336"
+                      <<: !include ../vars/button.yaml
+
+              - button: # h2c chamber
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: h2c_chamber_light
+                      entity_id: light.h2c_h2c_31b8ap630100072_chamber_light
+                      domain: light
+                      text: H2C Chamber
+                      icon_on: "\U000F06E8"
+                      icon_off: "\U000F0336"
+                      <<: !include ../vars/button.yaml
+
+              - button: # riser lights
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/rgb.yaml
+                    vars:
+                      uid: riser_lights
+                      entity_id: light.riser_lights
+                      text: Riser
+                      icon_on: "\U000F1051"
+                      icon_off: "\U000F1A4B"
+                      <<: !include ../vars/button.yaml
+
+              - button: # exhaust
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: window_exhaust
+                      entity_id: fan.window_exhaust
+                      domain: fan
+                      text: Exhaust
+                      icon_on: "\U000F0210"
+                      icon_off: "\U000F081D"
+                      <<: !include ../vars/button.yaml
+
+              - button: # bento box
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: bento_box
+                      entity_id: fan.bento_box
+                      domain: fan
+                      text: Bento Box
+                      icon_on: "\U000F0D44"
+                      icon_off: "\U000F1B57"
+                      <<: !include ../vars/button.yaml
+
+              - button: # heater
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: chamber_heater
+                      entity_id: switch.chamber_heater
+                      domain: switch
+                      text: Heater
+                      icon_on: "\U000F0438"
+                      icon_off: "\U000F0AD8"
+                      <<: !include ../vars/button.yaml
+
+packages:
+  x1c_plug_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: x1c_plug,
+    entity_id: switch.x1c_plug
+  }}
+
+  h2c_plug_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: h2c_plug,
+    entity_id: switch.h2c_plug
+  }}
+
+  x1c_chamber_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/gated_sensors.yaml, vars: {
+    uid: x1c_chamber_light,
+    entity_id: light.x1c_x1c_00m09d460801484_chamber_light,
+    available_entity_id: binary_sensor.x1c_x1c_00m09d460801484_online
+  }}
+
+  h2c_chamber_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/gated_sensors.yaml, vars: {
+    uid: h2c_chamber_light,
+    entity_id: light.h2c_h2c_31b8ap630100072_chamber_light,
+    available_entity_id: binary_sensor.h2c_h2c_31b8ap630100072_online
+  }}
+
+  window_exhaust_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: window_exhaust,
+    entity_id: fan.window_exhaust
+  }}
+
+  bento_box_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: bento_box,
+    entity_id: fan.bento_box
+  }}
+
+  chamber_heater_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: chamber_heater,
+    entity_id: switch.chamber_heater
+  }}
+
+  riser_lights_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/rgb_sensors.yaml, vars: {
+    uid: riser_lights,
+    entity_id: light.riser_lights
+  }}

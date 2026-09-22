@@ -67,7 +67,8 @@ entities (`light.kitchen_light`, printers Fred/Wilma/Barney on `p1s_N`) that no 
 every `*-example.yaml` builds, and what can be offered upstream.
 
 `layouts/<WxH>-home.yaml` is the **personal** one -- this author's real lights, alarm, covers and Bambu
-serials. Only `home35.yaml` and `sdl-home.yaml` use it.
+serials -- with its pages in `layouts/<WxH>-home/pages/`, split the same way as the generic layouts.
+Only `home35.yaml` and `sdl-home.yaml` use it, and list its pages.
 
 The split exists because the personal layout had overwritten the example: for a while `layouts/480x320.yaml`
 *was* this house, so anyone cloning the repo and flashing `guition-35-example` got a panel wired to entities
@@ -92,17 +93,18 @@ ones upstream legitimately has, then scan the branch with word boundaries — a 
 `light.bedroom_light` will hit upstream's own `light.bedroom_light_1`:
 
 ```bash
-cat layouts/*-home.yaml | grep -oE '[a-z_]+\.[a-z0-9_]{3,}' \
+cat layouts/*-home.yaml layouts/*-home/pages/*.yaml | grep -oE '[a-z_]+\.[a-z0-9_]{3,}' \
   | grep -E '^(light|switch|sensor|binary_sensor|cover|fan|scene|media_player|alarm_control_panel|automation|script)\.' \
   | sort -u > /tmp/mine.txt
-for f in 480x320 800x480 320x240; do git show "upstream/main:layouts/$f.yaml"; done \
+for f in 480x320 800x480 320x240; do git show "upstream/main:layouts/$f.yaml"
+  for p in $(git ls-tree -r --name-only upstream/main "layouts/$f/"); do git show "upstream/main:$p"; done; done \
   | grep -oE '[a-z_]+\.[a-z0-9_]{3,}' | sort -u > /tmp/theirs.txt
-comm -23 /tmp/mine.txt /tmp/theirs.txt > /tmp/only-mine.txt   # 42 entities as of 2026-09-20
+comm -23 /tmp/mine.txt /tmp/theirs.txt > /tmp/only-mine.txt   # 41 entities as of 2026-09-21
 while read e; do grep -rnE "(^|[^a-z0-9_.])${e//./\\.}([^a-z0-9_]|\$)" . --exclude-dir=.git; done < /tmp/only-mine.txt
 ```
 
-Also never send `CLAUDE.md`, `home35.yaml`, `sdl-home.yaml` or either `-home` layout upstream. They are
-fork-only.
+Also never send `CLAUDE.md`, `home35.yaml`, `sdl-home.yaml`, `tools/split_layout.py`, the `-home` layout
+or its `layouts/480x320-home/` directory upstream. They are fork-only.
 
 **The two generic layouts have drifted from the copy in PR #49** and need reconciling when it lands: this
 tree's `480x320.yaml` keeps upstream's original pill sizing (`ams_strip_width: 195`, `ams_tray_width: 45`)
@@ -225,9 +227,10 @@ Once boot stopped depending on page order (2026-09-21), three cleanups became po
    whose order ESPHome varies run to run), and the same page ids in the same order
    (`grep -E "^      - id: "` on the resolved output). Then the same with `all.yaml` swapped in.
 
-   The fork's own `480x320-home.yaml`, `home35.yaml` and `sdl-home.yaml` are **not converted yet**; do
-   it with the script (the -home layout's extra anchors will need adding to `VARS`). They build fine
-   unsplit meanwhile, since the -home layout carries its own pages.
+   The fork's own `480x320-home.yaml` was converted the same way on 2026-09-21, with
+   `detail_light,detail_rgb` as the script's last argument so the shared light detail pages stay in the
+   layout rather than becoming pages someone must list. `home35.yaml` and `sdl-home.yaml` resolved
+   identically before and after, `all.yaml` route too.
 2. **Detail pages as a package** — *medium*. `detail_light` / `detail_rgb` and their globals move from
    the layout into one package that ships with the dimmable/RGB families, included **once per layout, not
    per tile** (per-tile sensors files would define the page repeatedly). Do it when offering the detail
@@ -388,7 +391,8 @@ file would have had to hardcode a unit count and fork for every combination (1 A
 discovered at runtime rather than spelled out, so one body fits every machine. `800x480` still enumerates
 (see below) and so still composes its tiles inline.
 
-`layouts/480x320-home.yaml` therefore composes a tile from `&printer_tile` + `&printer_tile_layout` and hands
+`layouts/480x320-home/pages/printers.yaml` therefore composes a tile from `vars/printer_tile.yaml` +
+`vars/printer_tile_layout.yaml` and hands
 `widgets:` the list in `printers/tile.yaml`, which holds the name label, all twelve rows, status and
 progress. Its sensor side is one `printers/printer.sensors.yaml` per printer, which bundles
 `sensors_core.yaml` plus twelve `ams_unit.sensors.yaml` (itself trays + humidity + drying). Adding a
@@ -424,7 +428,7 @@ Two ESPHome mechanics make that nesting work, both verified on the pinned 2026.9
 - **The include filename is substituted too**, so `!include ams_row${variant}.sensors.yaml` picks the
   4-tray or 1-tray file from a var instead of forking the call site.
 
-`layouts/480x320-home.yaml` does not enumerate the units a printer actually has. **Each printer carries all
+`layouts/480x320-home/pages/printers.yaml` does not enumerate the units a printer actually has. **Each printer carries all
 twelve slots** — AMS `1`–`4` and AMS HT `128`/`129` — and every row is included (in `printers/tile.yaml`)
 with `hidden: true` as a sibling key of the merge. `ams_row_humidity.sensors.yaml` calls `lvgl.widget.show` on
 `${uid}_ams_${ams_id}_row` when a reading arrives, so **a unit reveals its own row**: every AMS reports

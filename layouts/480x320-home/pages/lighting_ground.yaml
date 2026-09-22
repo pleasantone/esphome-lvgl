@@ -1,0 +1,118 @@
+# Ground Floor: the page and the sensors its tiles need.
+# Include it from the top-level config after `layout:`; pages appear in the
+# order they are listed.
+
+lvgl:
+  pages:
+    - id: lighting_ground
+      <<: !include ../vars/page.yaml
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Ground Floor
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout:
+              <<: !include ../vars/button_layout.yaml
+            widgets:
+              - button: # garage wall light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: garage_light
+                      entity_id: light.garage_wall_lights
+                      text: Garage
+                      icon_on: "\U000F091C"
+                      icon_off: "\U000F17CB"
+                      <<: !include ../vars/button.yaml
+
+              - button: # garage door
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/cover_buttons/widget.yaml
+                    vars:
+                      uid: garage_door
+                      entity_id: cover.garage_door
+                      text: Door
+                      icon_open: "\U000F06DA"
+                      icon_closed: "\U000F06D9"
+                      <<: !include ../vars/button.yaml
+
+              - button: # front sump pump
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: front_sump_pump
+                      entity_id: switch.front_sump_pump
+                      domain: switch
+                      text: Front Sump
+                      icon_on: "\U000F058F"
+                      icon_off: "\U000F0F93"
+                      <<: !include ../vars/button.yaml
+
+              - button: # rear sump pump
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: rear_sump_pump
+                      entity_id: switch.rear_sump_pump
+                      domain: switch
+                      text: Rear Sump
+                      icon_on: "\U000F058F"
+                      icon_off: "\U000F0F93"
+                      <<: !include ../vars/button.yaml
+
+              - obj: # clothes dryer -- on while it is actually drawing power
+                  <<: !include
+                    file: ../../widgets/status/threshold/widget.yaml
+                    vars:
+                      uid: clothes_dryer
+                      text: Dryer
+                      icon_on: "\U000F0917"
+                      icon_off: "\U000F11BB"
+                      color_on: 0xFFD700
+                      <<: !include ../vars/button.yaml
+
+              - obj: # sump flooding
+                  <<: !include
+                    file: ../../widgets/status/binary/widget.yaml
+                    vars:
+                      uid: sump_flooding
+                      text: Flooding
+                      icon_on: "\U000F1502"
+                      icon_off: "\U000F1503"
+                      color_on: 0xFF6B60
+                      <<: !include ../vars/button.yaml
+
+packages:
+  garage_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: garage_light,
+    entity_id: light.garage_wall_lights
+  }}
+
+  garage_door_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/cover_buttons/sensors.yaml, vars: {
+    uid: garage_door,
+    entity_id: cover.garage_door,
+    text: Door
+  }}
+
+  clothes_dryer_widget_sensors: !include { file: ../../widgets/status/threshold/sensors.yaml, vars: {
+    uid: clothes_dryer,
+    entity_id: sensor.clothes_dryer_power,
+    threshold: '5'
+  }}
+
+  sump_flooding_widget_sensors: !include { file: ../../widgets/status/binary/sensors.yaml, vars: {
+    uid: sump_flooding,
+    entity_id: binary_sensor.home_alarm_rear_yard_sump_flooding
+  }}
+
+  front_sump_pump_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: front_sump_pump,
+    entity_id: switch.front_sump_pump
+  }}
+
+  rear_sump_pump_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: rear_sump_pump,
+    entity_id: switch.rear_sump_pump
+  }}

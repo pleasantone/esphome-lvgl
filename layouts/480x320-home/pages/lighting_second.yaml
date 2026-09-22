@@ -1,0 +1,112 @@
+# Second Floor Lighting: the page and the sensors its tiles need.
+# Include it from the top-level config after `layout:`; pages appear in the
+# order they are listed.
+
+lvgl:
+  pages:
+    - id: lighting_second
+      <<: !include ../vars/page.yaml
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Second Floor Lighting
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout:
+              <<: !include ../vars/button_layout.yaml
+            widgets:
+              - button: # second floor lights
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_group_buttons/widget.yaml
+                    vars:
+                      uid: second_floor_lights
+                      entity_id: light.second_floor_lights
+                      text: Second Floor
+                      <<: !include ../vars/wide_button.yaml
+
+              - button: # bedroom light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: bedroom_main_light
+                      entity_id: light.bedroom_light
+                      text: Bedroom
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
+                      <<: !include ../vars/button.yaml
+
+              - button: # bedroom closet light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: bedroom_closet_light
+                      entity_id: light.bedroom_closet_light
+                      text: Closet
+                      icon_on: "\U000F091C"
+                      icon_off: "\U000F17CB"
+                      <<: !include ../vars/button.yaml
+
+              - button: # deb's office light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: deb_light
+                      entity_id: light.deb_main_lights
+                      text: Deb
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
+                      <<: !include ../vars/button.yaml
+
+              - button: # stairway light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: stairway_light
+                      entity_id: light.stairs_main_lights
+                      text: Stairway
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
+                      <<: !include ../vars/button.yaml
+
+              - button: # main bathroom light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    vars:
+                      uid: main_bathroom_light
+                      entity_id: light.main_bathroom_light
+                      text: Bathroom
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
+                      <<: !include ../vars/button.yaml
+
+packages:
+  second_floor_lights_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_group_buttons/sensors.yaml, vars: {
+    uid: second_floor_lights,
+    entity_id: light.second_floor_lights
+  }}
+
+  bedroom_main_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: bedroom_main_light,
+    entity_id: light.bedroom_light
+  }}
+
+  bedroom_closet_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: bedroom_closet_light,
+    entity_id: light.bedroom_closet_light
+  }}
+
+  deb_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: deb_light,
+    entity_id: light.deb_main_lights
+  }}
+
+  stairway_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: stairway_light,
+    entity_id: light.stairs_main_lights
+  }}
+
+  main_bathroom_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+    uid: main_bathroom_light,
+    entity_id: light.main_bathroom_light
+  }}

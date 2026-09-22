@@ -1,0 +1,54 @@
+# Printers: the page and the sensors its tiles need.
+# Include it from the top-level config after `layout:`; pages appear in the
+# order they are listed.
+
+lvgl:
+  pages:
+    - id: printers
+      <<: !include ../vars/page.yaml
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Printers
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout:
+              <<: !include ../vars/printer_layout.yaml
+            widgets:
+              # Each tile's body comes from widgets/printers/tile${tile_variant}.yaml,
+              # chosen per printer. "" is the stacked format: a name line and a
+              # full row per AMS unit, all twelve slots revealing themselves.
+              # "_combined" is upstream's original shape, with the name and one
+              # unit's pills on a single line -- a line cheaper, but static and
+              # single-AMS. Pick the matching printer${tile_variant}.sensors.yaml
+              # below; the pair is enforced by the ids each half names.
+              #
+              # The sizing anchors are passed as vars because anchors do not
+              # cross a file boundary; the includes inside inherit them there.
+              - obj: # 1 - X1C -- one AMS, always present, so it takes the line back
+                  <<: !include ../vars/printer_tile.yaml
+                  layout:
+                    <<: !include ../vars/printer_tile_layout.yaml
+                  widgets: !include { file: ../../widgets/printers/tile_combined.yaml, vars: {
+                    uid: printer_1, name: 1 - X1C,
+                    <<: [!include ../vars/ams_row.yaml, !include ../vars/printer_bar.yaml] } }
+
+              - obj: # 2 - H2C -- three units today, so it keeps the stacked rows
+                  <<: !include ../vars/printer_tile.yaml
+                  layout:
+                    <<: !include ../vars/printer_tile_layout.yaml
+                  widgets: !include { file: ../../widgets/printers/tile.yaml, vars: {
+                    uid: printer_2, name: 2 - H2C,
+                    <<: [!include ../vars/ams_row.yaml, !include ../vars/printer_bar.yaml] } }
+
+packages:
+  printer_1_sensors: !include { file: ../../widgets/printers/printer_combined.sensors.yaml, vars: {
+    uid: printer_1,
+    entity_id_prefix: x1c_x1c_00m09d460801484
+  }}
+
+  printer_2_sensors: !include { file: ../../widgets/printers/printer.sensors.yaml, vars: {
+    uid: printer_2,
+    entity_id_prefix: h2c_h2c_31b8ap630100072
+  }}

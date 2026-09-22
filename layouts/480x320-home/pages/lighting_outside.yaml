@@ -1,0 +1,124 @@
+# Outside: the page and the sensors its tiles need.
+# Include it from the top-level config after `layout:`; pages appear in the
+# order they are listed.
+
+lvgl:
+  pages:
+    - id: lighting_outside
+      <<: !include ../vars/page.yaml
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Outside
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout:
+              <<: !include ../vars/button_layout.yaml
+            widgets:
+              - button: # outside lights
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_group_buttons/widget.yaml
+                    vars:
+                      uid: outside_lights
+                      entity_id: light.outside_lights
+                      text: Outside Lights
+                      <<: !include ../vars/wide_button.yaml
+
+              - button: # front porch light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: front_porch_light
+                      entity_id: light.front_porch_main_lights
+                      text: Front Porch
+                      icon_on: "\U000F091C"
+                      icon_off: "\U000F17CB"
+                      <<: !include ../vars/button.yaml
+
+              - button: # rope lights
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    vars:
+                      uid: rope_lights
+                      entity_id: light.rope_lights
+                      text: Rope Lights
+                      icon_on: "\U000F12BA"
+                      icon_off: "\U000F12BB"
+                      <<: !include ../vars/button.yaml
+
+              - button: # back yard light
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    vars:
+                      uid: back_yard_light
+                      entity_id: light.back_yard_light
+                      text: Back Yard
+                      icon_on: "\U000F091D"
+                      icon_off: "\U000F17C9"
+                      <<: !include ../vars/button.yaml
+
+              - obj: # alarm state
+                  <<: !include
+                    file: ../../widgets/status/alarm/widget.yaml
+                    vars:
+                      uid: home_alarm
+                      <<: !include ../vars/button.yaml
+
+              - obj: # doorbell
+                  <<: !include
+                    file: ../../widgets/status/binary/widget.yaml
+                    vars:
+                      uid: doorbell
+                      text: Doorbell
+                      icon_on: "\U000F009E"
+                      icon_off: "\U000F009C"
+                      color_on: 0xFFD700
+                      <<: !include ../vars/button.yaml
+
+              - obj: # package still sitting on the porch
+                  <<: !include
+                    file: ../../widgets/status/binary/widget.yaml
+                    vars:
+                      uid: package
+                      text: Package
+                      icon_on: "\U000F03D7"
+                      icon_off: "\U000F03D7"
+                      color_on: 0xFFD700
+                      <<: !include ../vars/button.yaml
+
+packages:
+  outside_lights_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_group_buttons/sensors.yaml, vars: {
+    uid: outside_lights,
+    entity_id: light.outside_lights
+  }}
+
+  front_porch_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: front_porch_light,
+    entity_id: light.front_porch_main_lights
+  }}
+
+  rope_lights_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+    uid: rope_lights,
+    entity_id: light.rope_lights
+  }}
+
+  back_yard_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+    uid: back_yard_light,
+    entity_id: light.back_yard_light
+  }}
+
+  doorbell_widget_sensors: !include { file: ../../widgets/status/binary/sensors.yaml, vars: {
+    uid: doorbell,
+    entity_id: binary_sensor.front_porch_ringing
+  }}
+
+  package_widget_sensors: !include { file: ../../widgets/status/binary/sensors.yaml, vars: {
+    uid: package,
+    entity_id: binary_sensor.front_porch_package_stranded
+  }}
+
+  home_alarm_widget_sensors: !include { file: ../../widgets/status/alarm/sensors.yaml, vars: {
+    uid: home_alarm,
+    entity_id: alarm_control_panel.home_alarm_alarm_panel
+  }}

@@ -2,12 +2,14 @@
 
 The one-package-per-page conversion behind upstream #59. Fork-only; see CLAUDE.md.
 
-Usage: split_layout.py <src layout> <repo root> <WxH>
+Usage: split_layout.py <src layout> <repo root> <WxH> [page,page,...]
   cp layouts/480x320.yaml /tmp/480x320.orig.yaml
   python3 tools/split_layout.py /tmp/480x320.orig.yaml . 480x320
 Reads the original (unsplit) layout and writes layouts/<WxH>.yaml, layouts/<WxH>/pages/,
 layouts/<WxH>/vars/ and layouts/<WxH>/all.yaml. Prints the page order, which the top-level
-configs must list. It does not edit the examples.
+configs must list. It does not edit the examples. The optional last argument names pages
+that stay in the layout beside `splash` -- shared `skip: true` pages such as the light detail
+pages, which tiles on many pages open and nobody should have to list.
 
 Every `<<: *anchor` a page uses must be in VARS below; a sensors package is placed on the
 page whose widget has its `uid`, falling back to the `# <page>` comment above it.
@@ -17,6 +19,7 @@ import sys
 from pathlib import Path
 
 src, root, res = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
+KEEP_PAGES = {"splash"} | set(filter(None, (sys.argv[4] if len(sys.argv) > 4 else "").split(",")))
 L = src.read_text().split("\n")
 
 VARS = {
@@ -75,8 +78,8 @@ for i in range(p0 + 1, p1):
         chunks.append([m.group(1), []])
     if chunks:
         chunks[-1][1].append(L[i])
-keep_pages = [c for c in chunks if c[0] == "splash"]
-pages = [c for c in chunks if c[0] != "splash"]
+keep_pages = [c for c in chunks if c[0] in KEEP_PAGES]
+pages = [c for c in chunks if c[0] not in KEEP_PAGES]
 for c in pages:
     while c[1] and not c[1][-1].strip():
         c[1].pop()
