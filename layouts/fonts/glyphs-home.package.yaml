@@ -1,0 +1,13 @@
+# Adds glyphs-home.yaml to every MDI font size. Include it from a personal
+# layout's packages block; the generic layouts don't need it.
+font:
+  - id: !extend mdi_sm
+    glyphs: !include glyphs-home.yaml
+  - id: !extend mdi_md
+    glyphs: !include glyphs-home.yaml
+  - id: !extend mdi_lg
+    glyphs: !include glyphs-home.yaml
+  - id: !extend mdi_xl
+    glyphs: !include glyphs-home.yaml
+  - id: !extend mdi_xxl
+    glyphs: !include glyphs-home.yaml

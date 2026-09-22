@@ -160,6 +160,9 @@ lvgl:
   # top-level config after layout: -- see the README
 
 packages:
+  # the personal pages' icons, on top of the shared glyphs.yaml
+  glyphs_home: !include fonts/glyphs-home.package.yaml
+
   # header
   header_sensors: !include { file: widgets/header/sensors.yaml }
 

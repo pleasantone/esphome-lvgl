@@ -118,7 +118,8 @@ Each layout file is the single place where resolution-dependent numbers live, an
 
 1. `font: !include fonts/fonts.yaml` with `vars:` giving the pixel sizes for the `roboto_*` and `mdi_*`
    font ladders (sm/md/lg/xl/xxl). The MDI font is downloaded from Pictogrammers and subset by
-   `layouts/fonts/glyphs.yaml` — **any new icon must be added to `glyphs.yaml` or it renders blank.**
+   `layouts/fonts/glyphs.yaml` — **any new icon must be added to `glyphs.yaml` or it renders blank.** An icon
+   only the personal pages use goes in `glyphs-home.yaml` instead (see the audit under "Checks").
 2. A `.sizing:` block of YAML anchors (`*page_styles`, `*container_styles`, `*button_layout`,
    `*button_widget_vars`, `*printer_widget_vars`, …). Top-level keys starting with `.` are ignored by
    ESPHome, which is what makes this legal. Anchors merge a shared style file from `layouts/styles/` and
@@ -664,9 +665,17 @@ grep -oE 'entity_id: [a-z_]+\.[a-z0-9_]+' /tmp/cfg.txt | awk '{print $2}' | sort
 then `ha_get_state` with that list (max 100 per call; the AMS slots that do not exist are expected to
 fail, and which ones fail tells you the real topology).
 
-To audit the MDI subset, compare the codepoints in the resolved config against `layouts/fonts/glyphs.yaml`:
-anything used but not listed renders as a box, anything listed but unused is flash spent on nothing. Both
-sets were exactly 53 as of 2026-09-19.
+To audit the MDI subset, run `tools/check_glyphs.py <config>.yaml ...`: it resolves each config and
+reports glyphs used but missing from the fonts (they render blank; exit 1) and glyphs included but unused.
+It also catches `\U000F…` escapes left as text inside lambdas. Unused is normal for the shared list, since
+a layout shows only some pages.
+
+The subset is split so merges with upstream never touch it: `glyphs.yaml` stays byte-identical to
+upstream's, and the personal layouts' extra icons live in `glyphs-home.yaml`, which
+`fonts/glyphs-home.package.yaml` appends to all five MDI sizes with `!extend` (ESPHome appends to a
+font's `glyphs:` list rather than replacing it; verified: 35 + 34 = 69 per size on home35, 35 on the
+examples). The rebuild on 2026-09-22 showed why: the fork's additions to the shared file conflicted,
+and the resolution left five duplicates that failed every config.
 
 **Never `git add -A` in this repo on a branch cut from upstream.** Upstream carries no `.gitignore`, so
 that stages the whole `.esphome/` build tree and `secrets.yaml` — the WiFi password and the API key. Add
