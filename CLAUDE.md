@@ -8,6 +8,21 @@ A pure-YAML ESPHome configuration repo (no code, no build system of its own) tha
 dashboards on cheap ESP32 display boards, backed by Home Assistant. Every file is ESPHome YAML consumed
 through the `packages:` / `!include` mechanism.
 
+## How main relates to upstream
+
+main is **upstream/main + #61 + #68 + the fork's own commits**, rebuilt and force-pushed on 2026-09-22 as
+if Ryan had merged those two (tags: `main-pre-rebuild-6168`, and `main-pre-rebase` from the 2026-09-21
+rebuild). The fork's own copies of merged work (#62 BLE proxy, #63 steppers, #64 diagnostics, #65 sleep
+clock, #67 the ILI9342 device file) were dropped in favour of upstream's.
+
+**No shared file diverges any more**: every file upstream also has is byte-identical to upstream plus the
+open PRs, so a merge of upstream/main is clean. Everything fork-only is a separate file (the list under
+"Personal vs example layouts"). Keep it that way -- a fork-only note about a shared file belongs here, not
+in that file.
+
+Sync with a plain merge of upstream/main; rebuilding again would need another force-push, which is Paul's
+call. When #61 and #68 land, `git log main..upstream/main` should show only Ryan's merge commits.
+
 ## Commands
 
 ```bash
@@ -84,10 +99,9 @@ every `*-example.yaml` builds, and what can be offered upstream.
 serials -- with its pages in `layouts/<WxH>-home/pages/`, split the same way as the generic layouts.
 Only `home35.yaml` and `sdl-home.yaml` use it, and list its pages.
 
-The split exists because the personal layout had overwritten the example: for a while `layouts/480x320.yaml`
-*was* this house, so anyone cloning the repo and flashing `guition-35-example` got a panel wired to entities
-they do not own, and `480x320`'s example content survived only in upstream's history. **Put personal
-entities in a `-home` layout; leave `layouts/<WxH>.yaml` generic.**
+The split exists because the personal layout had once overwritten the example, so anyone cloning the repo
+and flashing `guition-35-example` got a panel wired to entities they do not own. **Put personal entities in
+a `-home` layout; leave `layouts/<WxH>.yaml` generic.**
 
 The generic layouts keep upstream's page names (`lighting_1`/`_2`/`_3`), so the examples keep
 `home_page: lighting_1`. The personal `480x320-home.yaml` renamed them to `lighting_main` / `lighting_second`
@@ -97,10 +111,8 @@ The generic layouts do not carry the old `widgets/printers/widget.yaml`; their p
 recomposed onto `tile_combined.yaml` + `printer_combined.sensors.yaml`, which reproduces upstream's
 single-AMS combined line using the current widget set.
 
-`480x320-home.yaml` is the only `-home` layout. `320x240` was never personalised, and the personal
-`800x480` was deleted once the split made it plain that nothing built it — Paul has no Sunton 800x480
-board, so it was an unbuilt, unvalidatable copy of his printers page. Its history is in git if a board
-ever arrives.
+There are two `-home` layouts, `480x320-home` (home35, sdl-home) and `320x240-home` (home28); the personal
+`800x480` was deleted as an unbuilt copy, since Paul has no such board. Its history is in git.
 
 **Before offering anything upstream, prove no personal entity rides along:** `tools/check_leaks.py
 <branch>`. It collects the entities the `-home` layouts use, subtracts the ones upstream's own layouts
@@ -111,12 +123,6 @@ fork-only. Exit 1 on a hit; say what it printed rather than asserting the branch
 Also never send `CLAUDE.md`, `home35.yaml`, `home28.yaml`, `sdl-home.yaml`, `tools/split_layout.py`,
 `tools/check_leaks.py`, `tools/check_entities.py`, `tools/flash.sh`, `layouts/fonts/glyphs-home*`, the
 `-home` layouts or their `layouts/*-home/` directories upstream. They are fork-only.
-
-**The two generic layouts have drifted from the copy in PR #49** and need reconciling when it lands: this
-tree's `480x320.yaml` keeps upstream's original pill sizing (`ams_strip_width: 195`, `ams_tray_width: 45`)
-while the PR uses `175`/`40`, and this tree's anchor block defines neither `ams_label_width`,
-`ams_hum_width` nor `ams_hum_value_width` — so the generic layout here **cannot** switch a tile to
-`tile.yaml` without adding them. Take upstream's side on those two files after the merge.
 
 ## Layout file anatomy (`layouts/<WxH>.yaml`)
 
@@ -181,76 +187,28 @@ remove it again. Converting tiles to one-package-each does work (`!extend` reach
 substitutions cross package boundaries where anchors cannot), but it appends rather than inserts, so tile
 order silently becomes package order, and it does not close the gaps below. It was tried and reverted.
 
-**One package per *page* was tried too, on 2026-09-20, and rejected for the same reason one level up.**
-It works: a package can contribute a page's `lvgl.pages` entry *and* the `binary_sensor:` / `sensor:`
-entries its tiles need, so the two halves sit in one file and the layout's bottom `packages:` block
-collapses. Moving the printers page out took 55 lines off `480x320-home.yaml` for 10 added, and the
-resolved config was identical as a multiset — every line still there, only reordered.
+**Package-per-page is how pages ship now** (upstream #59): `layouts/<WxH>/pages/<page>.yaml` holds a page
+*and* the sensor packages its tiles need, `layouts/<WxH>/vars/` holds what the `.sizing` anchors were (anchors
+don't cross files), `all.yaml` lists them all, and the top-level config's list *is* the navigation order.
+`tools/split_layout.py` does the conversion from an unsplit layout (usage in its docstring); every file in
+#59 was its output. Re-split from a merge with upstream, never from a PR's own old layouts.
 
-What killed it then: **a package's pages merge in package order, and a package included *inside* a file
-is processed before that file's own content** — so a page moved into a package the layout includes lands
-ahead of the layout's pages. `printers` displaced `splash` as the boot page, and the `go_home` that
-`splash`'s `on_load` fired never ran.
+The ordering rules that shape all of this: **a package's pages merge in package order, and a package
+included inside a file is processed before that file's own content**, so a page a layout includes lands
+ahead of the layout's own pages. A feature listed after `layout:` therefore appends its page at the end,
+which is how `features/sleep_clock/` brings one. There is no escape hatch for ordering: `- !include
+pages/printers.yaml` under `pages:` returns only a page mapping, and a mapping merged into `lvgl:` cannot
+contribute `binary_sensor:` entries. Boot no longer depends on any of it (see "Boot-time page selection").
 
-Two things have changed since (2026-09-21). Boot no longer depends on the first page: every layout now goes
-home from `esphome: on_boot`, not from `splash` (see "Boot-time page selection"). And top-level packages
-merge in the order they are listed, so a feature listed *after* `layout:` appends its page at the end
-(`… printer_control sleep_clock`), which is how `features/sleep_clock/` brings its own page. What is left
-of the objection is prev/next order: pages a package contributes land in package order, not where you would
-write them in the list — fine for a `skip: true` page, a real cost for a navigable one.
+Two moves still open, both worth doing when the detail page goes upstream: **detail pages as a package**
+(`detail_light` / `detail_rgb` plus their globals, included once per layout, not per tile) and, folded into
+that pass, **the confirm dialog as a package** (`confirm_box` + `confirm_entity` into the `confirm_off`
+family; a package can always contribute `msgboxes:`). Still rejected: **package-per-tile**, which loses tile
+order within a grid because `!extend` appends. Not worth doing: removing `splash`, without which
+`detail_light`'s `on_load` runs at boot against empty globals.
 
-There is no escape hatch: `- !include pages/printers.yaml` as a list item under `pages:` keeps the order
-explicit but returns only a page mapping, and a mapping merged into `lvgl:` cannot contribute
-`binary_sensor:` entries. Only a package can, which is the same wall the widget/sensors pair hits.
-
-Worth revisiting if navigable pages should become pluggable per panel. Then package-per-page is the right
-shape and the ordering cost is paid deliberately.
-
-Once boot stopped depending on page order (2026-09-21), three cleanups became possible:
-
-1. **Package-per-page — upstream PR #59, merged 2026-09-21.** Ryan answered #53
-   with "I love this idea", then chose the shape: pages in a subdirectory, and examples that list their
-   pages explicitly with a commented-out `all` line. So each resolution is now:
-   - `layouts/<WxH>.yaml` — fonts, theme, header/footer/boot screen, `go_home`, and only `splash`.
-   - `layouts/<WxH>/pages/<page>.yaml` — the page plus its sensor packages; the top-level config lists
-     them after `layout:`, and that list *is* the navigation order.
-   - `layouts/<WxH>/vars/<name>.yaml` — what the `.sizing` anchors were (`<<: *page_styles` →
-     `<<: !include ../vars/page.yaml`), since anchors don't cross files. `nav_widget_vars` stays an anchor
-     in the layout, the only thing still using one.
-   - `layouts/<WxH>/all.yaml` — every page, for `pages: !include layouts/<WxH>/all.yaml`.
-
-   **`tools/split_layout.py` does the whole conversion from an unsplit layout** (usage in its docstring).
-   Every file in #59 was its output, not hand-edited. It handles #38's anchors (`printer_tile`,
-   `printer_tile_layout`, `printer_bar_vars`, `ams_row_vars`) and its `<<: [*a, *b]` form.
-
-   #38 landed after #59 and was merged into its branch the same way: the branch's unsplit layouts merged
-   with upstream first, then split with the script. Re-split from a merge, never from a PR's own old
-   layouts, or upstream's later layout changes get lost.
-
-   **main was rebuilt on 2026-09-21 as upstream/main plus the fork's own commits** (tag
-   `main-pre-rebase` holds the old history). The generic layouts are upstream's again, byte for byte.
-   Keep syncing with a plain merge of upstream/main; rebuilding again would need another force-push.
-
-   **The check for every conversion**: each `*-example.yaml`'s resolved config against the unsplit one —
-   same line count, identical as a multiset (bar the `long_press_time` / `long_press_repeat_time` pair,
-   whose order ESPHome varies run to run), and the same page ids in the same order
-   (`grep -E "^      - id: "` on the resolved output). Then the same with `all.yaml` swapped in.
-
-   The fork's own `480x320-home.yaml` was converted the same way on 2026-09-21, with
-   `detail_light,detail_rgb` as the script's last argument so the shared light detail pages stay in the
-   layout rather than becoming pages someone must list. `home35.yaml` and `sdl-home.yaml` resolved
-   identically before and after, `all.yaml` route too.
-2. **Detail pages as a package** — *medium*. `detail_light` / `detail_rgb` and their globals move from
-   the layout into one package that ships with the dimmable/RGB families, included **once per layout, not
-   per tile** (per-tile sensors files would define the page repeatedly). Do it when offering the detail
-   page upstream, where it does not exist: he would include a package instead of editing his layouts.
-3. **Confirm dialog as a package** — *low–medium*, folded into 2's pass. `confirm_box` +
-   `confirm_entity` move out of the layout into the `confirm_off` family. Never actually blocked by page
-   order — a package could always contribute `msgboxes:` — just never tried.
-
-Still rejected, and unaffected: **package-per-tile** fails on tile order within a grid (`!extend`
-appends), not page order. Not worth doing: removing `splash` — without it, `detail_light`'s `on_load`
-would run at boot against empty globals.
+The check for any such conversion: each config's resolved output against the old one -- identical as a
+multiset and the same page ids in the same order. `tools/compare_configs.py --base <ref>` does it.
 
 The five ways a pair breaks, and what catches each:
 
@@ -265,19 +223,11 @@ The five ways a pair breaks, and what catches each:
 The last two share one symptom — a tile stuck on the unknown glyph — so treat that glyph as "check the
 entity_id", not "check the wiring".
 
-An on tile is distinguished by its glyph, not by an edge or a colour. A gold 4px bar down the left of
-every lit tile was tried and removed (tag `gold-edge`, `git revert` the commit after it to bring it back).
-Two things sank it: it cost 4px of content width in *every* state, because LVGL's
-`lv_obj_get_style_space_left()` adds `border_width` to the content inset whenever `border_side` includes
-`LEFT` whether or not the border is painted — so the width has to be reserved permanently or the text
-shifts on every toggle — and the tiles here already carry state by shape, since each one passes a real
-`icon_on` / `icon_off` pair.
-
-That shape cue is what makes the colour redundant, and it is worth knowing why: gold `0xFFD700` against
-white `0xFFFFFF` is **1.40:1**, well under the 3:1 floor for a non-text indicator. A tile that used one
-glyph for both states would be carrying its state on that 1.40:1 alone, which is the case the edge was
-built for. None do any more. If a same-glyph tile ever appears here, give it an `icon_off` before
-reaching for colour.
+**An on tile is distinguished by its glyph, not by a colour or an edge**, because every tile passes a real
+`icon_on` / `icon_off` pair. A gold left edge was tried and removed (tag `gold-edge`): it cost 4px of content
+width in every state, since `lv_obj_get_style_space_left()` adds `border_width` whenever `border_side`
+includes `LEFT`, painted or not -- and gold on white is 1.40:1, far under the 3:1 floor for a non-text
+indicator. If a same-glyph tile ever appears, give it an `icon_off` before reaching for colour.
 
 The button tree specializes by shape and then by function: `buttons/{icon,text,icon_text}_buttons/` provide
 generic `stateless.yaml` / `stateful.yaml` bases, and subdirectories (`light_buttons/`,
@@ -467,10 +417,9 @@ Drying is subscribed for every slot for the same reason: a unit with no heater h
 its heater icon stays blank on its own rather than because a package was left out. The capability is
 discovered, not declared.
 
-`layouts/800x480.yaml` is upstream's six demo printers, recomposed onto the current widgets, and it
-enumerates rather than using the self-revealing slots — which is the right call on a 480x800 canvas showing
-two printers side by side. Enumerating
-is the right call there anyway on a 480x800 canvas showing two printers side by side. Upstream branches
+`layouts/800x480.yaml` is upstream's six demo printers, recomposed onto the current widgets. It enumerates
+rather than using the self-revealing slots, which is the right call on a 480x800 canvas showing two printers
+side by side. Upstream branches
 keep the enumerated form too: the row `id` and the `lvgl.widget.show` are harmless where rows are always
 visible, and only the layout's `hidden: true` opts into the adaptive behaviour.
 
@@ -636,9 +585,6 @@ down over hours; Largest Block falling while Free holds is fragmentation.
 - **Guition JC1060P470C (ESP32-P4, 7" 1024x600)** — `explore/p4-jc1060p470`, unverified. Base file uses
   ESPHome's own `JC1060P470` model; `-V2` for the 2026 panel (V2 on the rear label: different init, reset
   GPIO0, SDIO 10MHz). Needs `engineering_sample: true`. No 1024x600 layout yet.
-- **Sleep clock + 24h** (#65, branch `sleep-clock`) is on main already; the PR carries per-canvas clock
-  sizes (240: 50/84/4/12/66, 480: 102/168/8/24/132) and adds `id: main_lvgl` to the generic layouts.
-  Diagnostics (#64) is merged.
 
 ### Testing features in SDL
 
@@ -656,7 +602,15 @@ first gesture after boot is dropped, so lead with a throwaway tap.
 
 ## Checks that pay for themselves
 
-Each of these replaced a pile of exploratory calls at least once, and each is verified:
+The tools in `tools/` are the checks; run them rather than re-deriving them. `lint_configs.py` covers the
+two failures nothing else catches — an undefined `${var}` (the tile subscribes to the literal string) and
+an icon missing from the MDI subset (it renders blank) — plus, since #61, a page that forgot its
+`page_access.yaml` include. `check_entities.py home35.yaml` catches the third: an `entity_id` that no
+longer exists in Home Assistant. It reads every state in one call through the SSH add-on's
+`SUPERVISOR_TOKEN` (`ssh homeassistant`; or `HA_URL` + `HA_TOKEN`), and counts absent AMS slots separately,
+since which ones are absent *is* the real topology. 87 entities, 0 missing on home35 on 2026-09-22.
+
+One-off commands still worth knowing:
 
 ```bash
 git log main..upstream/main                 # empty => everything upstream merged is integrated
@@ -664,26 +618,13 @@ gh pr list --repo RyanEwen/esphome-lvgl --state open --author pleasantone
 esphome config home35.yaml > /tmp/cfg.txt   # then grep the resolved config, never read it inline
 ```
 
-To check every entity the panel subscribes to actually exists in Home Assistant — the one failure the
-build cannot catch — run `tools/check_entities.py home35.yaml`. It reads all states in one call through
-the Advanced SSH add-on's `SUPERVISOR_TOKEN` (`ssh homeassistant`, no token to manage; or `HA_URL` +
-`HA_TOKEN`) and lists missing entities, with absent AMS slots counted separately as expected (which ones
-are absent tells you the real topology). 87 entities, 0 missing on home35 as of 2026-09-22.
+Ryan runs no GitHub Actions (no `.github/` upstream); #70 offers to run the lint on PRs if he wants it.
 
-Ryan runs no GitHub Actions (no `.github/` upstream). #70 offers to run `lint_configs.py` on PRs if he
-wants it.
-
-To audit the MDI subset, run `tools/check_glyphs.py <config>.yaml ...`: it resolves each config and
-reports glyphs used but missing from the fonts (they render blank; exit 1) and glyphs included but unused.
-It also catches `\U000F…` escapes left as text inside lambdas. Unused is normal for the shared list, since
-a layout shows only some pages.
-
-The subset is split so merges with upstream never touch it: `glyphs.yaml` stays byte-identical to
-upstream's, and the personal layouts' extra icons live in `glyphs-home.yaml`, which
-`fonts/glyphs-home.package.yaml` appends to all five MDI sizes with `!extend` (ESPHome appends to a
-font's `glyphs:` list rather than replacing it; verified: 35 + 34 = 69 per size on home35, 35 on the
-examples). The rebuild on 2026-09-22 showed why: the fork's additions to the shared file conflicted,
-and the resolution left five duplicates that failed every config.
+**The MDI subset is split so merges never touch it:** `glyphs.yaml` stays byte-identical to upstream's, and
+the personal icons live in `glyphs-home.yaml`, which `fonts/glyphs-home.package.yaml` appends to all five
+MDI sizes with `!extend` (ESPHome appends to a font's `glyphs:` list rather than replacing it: 35 + 34 = 69
+per size on home35, 35 on the examples). Before the split, the fork's additions to the shared file
+conflicted on every merge, and one resolution left five duplicates that failed every config.
 
 **Never `git add -A` in this repo on a branch cut from upstream.** Upstream carries no `.gitignore`, so
 that stages the whole `.esphome/` build tree and `secrets.yaml` — the WiFi password and the API key. Add
@@ -825,10 +766,10 @@ gate on `sensor.living_room_chandelier_brightness`, a template sensor exposing p
 the raw `brightness` attribute, so a threshold and an action can no longer disagree about the unit.
 The panel's own raw-to-percent conversion lives only in `light_buttons/dimmable.yaml` and its sensors.
 
-Upstream's `bedroom` page is dropped here — its lights are already on the Second Floor page and none
-of its media entities exist in this house. `living_room` is rebuilt around the real lights, the
-`scene.watching_tv` button and a temperature tile. `widgets/bedroom_tv.sensor.yaml` and
-`widgets/living_room_tv.sensor.yaml` stay because `layouts/320x240.yaml` still includes them.
+Upstream's `bedroom` page is dropped from the personal layouts — its lights are already on the Second Floor
+page and none of its media entities exist in this house. The personal `living_room` is rebuilt around the
+real lights, the Movie Time button and a temperature tile. `widgets/bedroom_tv.sensor.yaml` and
+`widgets/living_room_tv.sensor.yaml` stay for the generic pages that include them.
 
 `light.living_room_chandelier` appears on both the Main Floor and Living Room pages, with its own `uid`
 on each. That is deliberate, and it is why widget ids derive from `uid` rather than from `entity_id`.
@@ -844,11 +785,3 @@ on each. That is deliberate, and it is why widget ids derive from `uid` rather t
 - Touch-calibration `on_touch:` lambdas are left commented out in each device file; uncomment to log raw
   coordinates when adding or fixing a board.
 - The README carries a dated changelog; note breaking changes there when altering the package contract.
-
-## main was rebuilt on 2026-09-22
-
-main is upstream/main + #61 + #68 (as if Ryan had merged both) + the fork's own commits replayed on
-top, force-pushed with Paul's OK; tag `main-pre-rebuild-6168` holds the old head. The fork's copies of
-diagnostics (#64), the sleep clock (#65) and the ILI9342 device file (#67) were dropped in favour of the
-merged upstream versions. When #61 and #68 really land, `git log main..upstream/main` should show only
-Ryan's merge commits, and a plain merge of upstream/main should be clean.
