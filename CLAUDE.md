@@ -722,7 +722,8 @@ shows `/dev/cu.usbserial-*`; pulse RTS to reset and read the boot (esphome logs 
 
 Upstream #67 carries the device file (built on `ESP32-2432S028R.yaml`, `!remove`-ing its display) with
 `sunton-28-9342-example.yaml`. Once it merges, delete this tree's `cyd-9342-example.yaml`, its
-predecessor. PR B -- a 320x240 printers page and a "no PSRAM" README section -- is planned, not filed.
+predecessor. PR B is upstream #68: a 320x240 printers page (real AMS units) and a "Running without PSRAM" README
+section with the measured table and diet list.
 
 ## Per-device overrides from a top-level config
 
