@@ -722,10 +722,11 @@ tray pill, `text_md: 16` so "TV Backlight" fits a 114px tile, containers scroll 
 more than 240px of height), and the confirm box is 228px wide. Debug serial on this board: a data cable
 shows `/dev/cu.usbserial-*`; pulse RTS to reset and read the boot (esphome logs over serial doesn't).
 
-Upstream #67 carries the device file (built on `ESP32-2432S028R.yaml`, `!remove`-ing its display) with
-`sunton-28-9342-example.yaml`. Once it merges, delete this tree's `cyd-9342-example.yaml`, its
-predecessor. PR B is upstream #68: a 320x240 printers page (real AMS units) and a "Running without PSRAM" README
-section with the measured table and diet list.
+Upstream #67 (merged) carries the device file, built on `ESP32-2432S028R.yaml` and `!remove`-ing its
+display, with `sunton-28-9342-example.yaml`. Upstream #68 is the diet write-up: a "Putting a low-memory
+panel on a diet" README section with the measured table, and `320x240/pages/printers-on-a-diet.yaml`
+(real AMS units, commented out in the 2.8" examples). With page access on `320x240-home`, home28 is at
+49.0% static RAM (was 46.3%) and has not been flashed since; watch Heap Min Free if it is.
 
 ## Per-device overrides from a top-level config
 
@@ -743,10 +744,13 @@ same reason — so rotation or transforms can be extended from above.
 
 ## One image on several panels
 
-Upstream draft #61 (on #59's page files, `480x320` only so far) makes the home page and page visibility
-Home Assistant controls on every panel: a **Home page** select plus a **Show \<page\> page** switch per
+Upstream #61 makes the home page and page visibility Home Assistant controls on every panel, generic and
+personal layouts alike: a **Home page** select plus a **Show \<page\> page** switch per
 page, all from `layouts/widgets/page_access.yaml`, one include per page. `skip: true` in YAML still wins —
-the switch leaves such a page alone. With those, a room differs from another only in runtime settings, so
+the switch leaves such a page alone. The select does **not** restore itself: a template select saves
+its *index*, which points at another page once the page list changes, so the layout keeps a restored
+`home_page_hash` (fnv1 of the name) and each page's `page_access.yaml` puts the select back at boot
+priority 0, before `go_home` at −100. With those, a room differs from another only in runtime settings, so
 one image can serve several panels: `esphome: name_add_mac_suffix: true` in the top-level config makes
 each join Home Assistant as its own device (`<name>-<last 3 MAC bytes>`). That line is the whole opt-in;
 per-panel configs just don't set it.
@@ -823,3 +827,11 @@ on each. That is deliberate, and it is why widget ids derive from `uid` rather t
 - Touch-calibration `on_touch:` lambdas are left commented out in each device file; uncomment to log raw
   coordinates when adding or fixing a board.
 - The README carries a dated changelog; note breaking changes there when altering the package contract.
+
+## main was rebuilt on 2026-09-22
+
+main is upstream/main + #61 + #68 (as if Ryan had merged both) + the fork's own commits replayed on
+top, force-pushed with Paul's OK; tag `main-pre-rebuild-6168` holds the old head. The fork's copies of
+diagnostics (#64), the sleep clock (#65) and the ILI9342 device file (#67) were dropped in favour of the
+merged upstream versions. When #61 and #68 really land, `git log main..upstream/main` should show only
+Ryan's merge commits, and a plain merge of upstream/main should be clean.

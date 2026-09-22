@@ -10,6 +10,9 @@ esphome:
   # page.show inside the first page's own load event is dropped, and splash is
   # only the first page while no package adds one ahead of it.
   on_boot:
+    - priority: -50 # after page_access.yaml restores the Home page at 0
+      then:
+        - lambda: id(home_page_restored) = true;
     - priority: -100
       then:
         - script.execute: go_home
@@ -34,6 +37,17 @@ font: !include
     padding: 4
 
 globals:
+  # The select would restore its position in the list, which points at a
+  # different page once pages are added or removed. So remember the page's
+  # name instead, as a hash, and page_access.yaml puts it back at boot.
+  - id: home_page_hash
+    type: uint32_t
+    restore_value: true
+    initial_value: '0'
+  - id: home_page_restored # on_value stays quiet until the restore is done
+    type: bool
+    initial_value: 'false'
+
   - id: detail_entity # which light the shared detail page is currently editing
     type: std::string
     restore_value: false
@@ -50,9 +64,25 @@ globals:
     restore_value: false
 
 script:
+  # each page's page_access.yaml adds the line that shows it when it's home
   - id: go_home
-    then:
-      - lvgl.page.show: ${home_page}
+    then: []
+
+select:
+  # Which page is home, from Home Assistant; ${home_page} is the default.
+  # Each page's page_access.yaml adds itself to the list.
+  - id: home_page_select
+    platform: template
+    name: Home page
+    icon: mdi:home
+    entity_category: config
+    optimistic: true
+    initial_option: ${home_page}
+    options: []
+    on_value:
+      - lambda: |-
+          if (id(home_page_restored))
+            id(home_page_hash) = fnv1_hash(x);
 
 lvgl:
   on_idle:

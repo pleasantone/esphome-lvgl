@@ -114,6 +114,8 @@ lvgl:
                       <<: !include ../vars/button.yaml
 
 packages:
+  printer_control_access: !include { file: ../../widgets/page_access.yaml, vars: { page: printer_control } }
+
   x1c_plug_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
     uid: x1c_plug,
     entity_id: switch.x1c_plug

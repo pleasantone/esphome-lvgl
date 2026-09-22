@@ -85,6 +85,8 @@ lvgl:
                       <<: !include ../vars/button.yaml
 
 packages:
+  lighting_ground_access: !include { file: ../../widgets/page_access.yaml, vars: { page: lighting_ground } }
+
   garage_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
     uid: garage_light,
     entity_id: light.garage_wall_lights

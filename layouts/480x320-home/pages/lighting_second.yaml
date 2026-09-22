@@ -94,6 +94,8 @@ lvgl:
                         data: { entity_id: script.good_night }
 
 packages:
+  lighting_second_access: !include { file: ../../widgets/page_access.yaml, vars: { page: lighting_second } }
+
   second_floor_lights_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_group_buttons/sensors.yaml, vars: {
     uid: second_floor_lights,
     entity_id: light.second_floor_lights

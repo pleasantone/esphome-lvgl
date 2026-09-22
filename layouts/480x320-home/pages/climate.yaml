@@ -25,6 +25,8 @@ lvgl:
                       <<: !include ../vars/stepper.yaml
 
 packages:
+  climate_access: !include { file: ../../widgets/page_access.yaml, vars: { page: climate } }
+
   upstairs_thermostat_sensors: !include { file: ../../widgets/stepper/climate/sensors.yaml, vars: {
     uid: upstairs_thermostat,
     entity_id: climate.upstairs,

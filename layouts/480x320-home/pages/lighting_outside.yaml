@@ -88,6 +88,8 @@ lvgl:
                       <<: !include ../vars/button.yaml
 
 packages:
+  lighting_outside_access: !include { file: ../../widgets/page_access.yaml, vars: { page: lighting_outside } }
+
   outside_lights_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_group_buttons/sensors.yaml, vars: {
     uid: outside_lights,
     entity_id: light.outside_lights
