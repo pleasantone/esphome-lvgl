@@ -61,6 +61,11 @@ Every board here draws portrait. The files in `layouts/` are named for the panel
 | Sunton `ESP32-8048S043` | 800x480 | 480x800, via `rotation: 90` | `layouts/800x480.yaml` |
 | Sunton `ESP32-8048S050` | 800x480 | 480x800, via `rotation: 90` | `layouts/800x480.yaml` |
 
+A layout named `<WxH>.yaml` is the generic example, with demo entities anyone can build. A `<WxH>-home.yaml`
+beside it is the repo author's personal version of the same canvas, wired to real entities; only `home35.yaml`
+and `sdl-home.yaml` use those. Keep your own entities in a `-home` layout so the examples stay buildable by
+other people.
+
 Widget widths in the layouts are percentages, which is what lets one layout serve two different panels. Any size given in pixels has to be budgeted against the canvas width in the table above and not against the layout's filename, which is roughly 150px narrower than the name suggests on the 3.5" boards.
 
 ## File Structure

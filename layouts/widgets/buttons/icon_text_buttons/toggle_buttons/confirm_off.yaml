@@ -28,6 +28,9 @@
       icon_off: ${icon_off}
       text: ${text}
   on_short_click:
+    # the condition below names this tile's sensor, and binary_sensor.is_on
+    # takes a cv.use_id, so a forgotten sensors package already fails at config
+    # time -- no separate guard lambda is needed here
     - if:
         condition:
           - binary_sensor.is_on: ${uid}_widget_sensor

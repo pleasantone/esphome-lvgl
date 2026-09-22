@@ -1,0 +1,126 @@
+# Living Room: the page and the sensors its tiles need.
+# Include it from the top-level config after `layout:`; pages appear in the
+# order they are listed.
+
+lvgl:
+  pages:
+    - id: living_room
+      <<: !include ../vars/page.yaml
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Living Room
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout:
+              <<: !include ../vars/button_layout.yaml
+            widgets:
+              - button: # movie time scene
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/stateless.yaml
+                    vars:
+                      uid: movie_time
+                      icon: "\U000F0FCE"
+                      text: Movie Time
+                      <<: !include ../vars/button.yaml
+                  on_short_click:
+                    - homeassistant.action:
+                        action: scene.turn_on
+                        data: { entity_id: scene.movie_time }
+
+              - button: # tv
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/media_buttons/widget.yaml
+                    vars:
+                      uid: living_room_tv
+                      entity_id: media_player.lg_webos_tv
+                      text: TV
+                      icon_on: "\U000F0502"
+                      icon_off: "\U000F083B"
+                      <<: !include ../vars/button.yaml
+
+              - button: # chandelier
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable.yaml
+                    vars:
+                      uid: living_room_chandelier
+                      entity_id: light.living_room_chandelier
+                      text: Chandelier
+                      icon_on: "\U000F0769"
+                      icon_off: "\U000F17C7"
+                      <<: !include ../vars/button.yaml
+
+              - button: # tv backlight
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/rgb.yaml
+                    vars:
+                      uid: tv_backlight
+                      entity_id: light.tv_backlight
+                      text: TV Backlight
+                      icon_on: "\U000F1051"
+                      icon_off: "\U000F1A4B"
+                      <<: !include ../vars/button.yaml
+
+              - button: # floor lamp
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    vars:
+                      uid: floor_lamp
+                      entity_id: light.floor_lamp
+                      text: Floor Lamp
+                      icon_on: "\U000F08DD"
+                      icon_off: "\U000F17C8"
+                      <<: !include ../vars/button.yaml
+
+              - button: # floor lamp 2
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/themed.yaml
+                    vars:
+                      uid: floor_lamp_2
+                      entity_id: light.floor_lamp_2
+                      text: Floor Lamp 2
+                      icon_on: "\U000F08DD"
+                      icon_off: "\U000F17C8"
+                      <<: !include ../vars/button.yaml
+
+              - obj: # temperature
+                  <<: !include
+                    file: ../../widgets/status/value/widget.yaml
+                    vars:
+                      uid: living_room_temp
+                      text: Temperature
+                      icon: "\U000F050F"
+                      <<: !include ../vars/button.yaml
+
+packages:
+  living_room_tv_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/media_buttons/sensors.yaml, vars: {
+    uid: living_room_tv,
+    entity_id: media_player.lg_webos_tv
+  }}
+
+  living_room_chandelier_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/dimmable_sensors.yaml, vars: {
+    uid: living_room_chandelier,
+    entity_id: light.living_room_chandelier
+  }}
+
+  floor_lamp_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+    uid: floor_lamp,
+    entity_id: light.floor_lamp
+  }}
+
+  floor_lamp_2_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/sensors.yaml, vars: {
+    uid: floor_lamp_2,
+    entity_id: light.floor_lamp_2
+  }}
+
+  tv_backlight_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/rgb_sensors.yaml, vars: {
+    uid: tv_backlight,
+    entity_id: light.tv_backlight
+  }}
+
+  living_room_temp_widget_sensors: !include { file: ../../widgets/status/value/sensors.yaml, vars: {
+    uid: living_room_temp,
+    entity_id: sensor.living_room_temperature,
+    unit: "°"
+  }}
