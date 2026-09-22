@@ -720,6 +720,10 @@ tray pill, `text_md: 16` so "TV Backlight" fits a 114px tile, containers scroll 
 more than 240px of height), and the confirm box is 228px wide. Debug serial on this board: a data cable
 shows `/dev/cu.usbserial-*`; pulse RTS to reset and read the boot (esphome logs over serial doesn't).
 
+Upstream #67 carries the device file (built on `ESP32-2432S028R.yaml`, `!remove`-ing its display) with
+`sunton-28-9342-example.yaml`. Once it merges, delete this tree's `cyd-9342-example.yaml`, its
+predecessor. PR B -- a 320x240 printers page and a "no PSRAM" README section -- is planned, not filed.
+
 ## Per-device overrides from a top-level config
 
 Because packages are merged, a top-level or device file can reach into the layout with `!extend`:
