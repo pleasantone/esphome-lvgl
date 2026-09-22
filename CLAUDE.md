@@ -332,6 +332,22 @@ own config — the only value it overrides is `running_dead_zone: 10`, which is 
 start-up grace, not a wattage. Read the blueprint's inputs, not just the automation, before matching
 a threshold to it.
 
+### Stepper tiles (`widgets/stepper/`) — upstream #63
+
+`[-] value [+]` on an `obj` tile; `stepper/climate/` sets a thermostat's single target, `stepper/number/`
+a `number` / `input_number`. Taps move a `${uid}_pending` global and restart a `${uid}_nudge` script that
+sends one call 1s after the last tap, then takes HA's value back 3s later (in case it clamped or refused).
+While the script runs, inbound HA updates are ignored so the display doesn't jump back. Range comes from
+the entity's attributes; climate's `step` is a var, since thermostats rarely report one. `off` and
+`heat_cool` have no single target: the tile shows `--` and the buttons do nothing.
+
+The tile is a flex row: the name column `flex_grow`s into what the buttons leave, and the name label is
+`long_mode: DOT` with `max_height: 50%` — DOT only truncates when the height is bounded; with
+`SIZE_CONTENT` it wraps under the buttons instead. Sizes per canvas are in `vars/stepper.yaml` (buttons
+40/52/80, value 52/60/88 for 240/320/480px), checked with SDL snapshots against "21.5°", "100%" and a
+"Thermostat" name. main carries the widgets byte-identical to the PR branch so the merge after it lands
+is clean; the personal layout's Climate page drives `climate.upstairs`.
+
 ### The shared light detail page
 
 Long-pressing a dimmable light opens `detail_light` — one `skip: true` page shared by all 13 of them,
@@ -599,6 +615,21 @@ the panel rebooted twice before these existed, and why was lost. The memory sens
 board whose device file configures `psram:`). They report every minute, which is a recorder row a minute
 each — turn them on for the panel you are chasing a problem on. A leak shows as Free or Min Free trending
 down over hours; Largest Block falling while Free holds is fragmentation.
+
+### Work that lives on branches, not main
+
+- **BLE proxy** — upstream #62 (`ble-proxy`), exploration `explore/ble-proxy`. Measured on home35
+  (2026-09-21): ~95KB internal RAM while running (the S3 controller cannot use PSRAM; `use_psram` saved
+  11KB), ~400KB flash, ~2% of a core. Interleaved on/off pings: no extra loss, p99 1.0s -> 2.5s with a
+  30ms/320ms scan window, worse with ESPHome's default continuous scan. Doesn't fit the CYD (app
+  partition overflows by 69KB). Its HA switch must be re-applied from `on_boot` at priority 300: the
+  template switch restores at setup 798, before esp32_ble (350), and an early `ble.enable` is dropped.
+  Enabling/disabling blocks the loop ~210ms; the heap stays fragmented after disable until reboot.
+- **Guition JC1060P470C (ESP32-P4, 7" 1024x600)** — `explore/p4-jc1060p470`, unverified. Base file uses
+  ESPHome's own `JC1060P470` model; `-V2` for the 2026 panel (V2 on the rear label: different init, reset
+  GPIO0, SDIO 10MHz). Needs `engineering_sample: true`. No 1024x600 layout yet.
+- **Diagnostics** (#64) and **sleep clock + 24h** (#65) are on main already; their PR branches carry the
+  upstream versions, with per-canvas clock sizes (240: 50/84/4/12/66, 480: 102/168/8/24/132).
 
 ### Testing features in SDL
 
