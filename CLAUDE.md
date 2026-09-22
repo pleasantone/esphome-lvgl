@@ -103,8 +103,8 @@ comm -23 /tmp/mine.txt /tmp/theirs.txt > /tmp/only-mine.txt   # 41 entities as o
 while read e; do grep -rnE "(^|[^a-z0-9_.])${e//./\\.}([^a-z0-9_]|\$)" . --exclude-dir=.git; done < /tmp/only-mine.txt
 ```
 
-Also never send `CLAUDE.md`, `home35.yaml`, `sdl-home.yaml`, `tools/split_layout.py`, the `-home` layout
-or its `layouts/480x320-home/` directory upstream. They are fork-only.
+Also never send `CLAUDE.md`, `home35.yaml`, `home28.yaml`, `sdl-home.yaml`, `tools/split_layout.py`, the
+`-home` layouts or their `layouts/*-home/` directories upstream. They are fork-only.
 
 **The two generic layouts have drifted from the copy in PR #49** and need reconciling when it lands: this
 tree's `480x320.yaml` keeps upstream's original pill sizing (`ams_strip_width: 195`, `ams_tray_width: 45`)
@@ -689,6 +689,36 @@ feature at priority 0 lands after the layout's −100 `go_home` instead of befor
 `on_boot` merged after a dict-form one *replaces* it, silently dropping the layout's `go_home`. Lists
 concatenate and each keeps its own priority. Found on 2026-09-21, when `features/page_access/` needed its
 pages registered (priority 0) before `go_home` ran; until then every file used −100, which hid it.
+
+## The ILI9342 CYD and `320x240-home` (home28) — 2026-09-21
+
+`devices/ESP32-2432S028-9342.yaml` is the USB-C + Micro-USB CYD revision (ILI9342, natively landscape
+320x240), verified on hardware: ESPHome's own `mipi_spi` model `ESP32-2432S028-9342` with
+`color_order: RGB` (the model's default BGR swaps red and blue), `lvgl: rotation: 270` for the portrait
+canvas, and `swap_xy` as the *only* touch transform. LVGL rotates touch points itself
+(`lvgl_esphome.cpp` `rotate_coordinates()` on every read), so a touch/display mismatch is a transform
+problem and rotation never fixes it. `home28.yaml` runs the personal layout on it; the board normally
+runs Paul's other project (`~/ESPHome-touch-display-mount/.../cyd-2432s028-ili9342/home-like.yaml`) as
+`smartdisplay`, sharing this repo's API key, so HA reuses one entry keyed by MAC for either firmware.
+
+`layouts/320x240-home/pages/` are **symlinks** into `480x320-home/pages/` — an include resolves from the
+link's own path, so each page picks up `320x240-home/vars/`. `printers.yaml` is the one real file.
+
+**No PSRAM is the whole story on this board** (180KB DRAM, 4MB flash):
+
+| build | static RAM | HA subscriptions | result |
+|---|---|---|---|
+| all pages, 12 AMS slots, sleep clock, 25% buffer | 48.4% | 104 | crash in setup (mDNS task, then abort) |
+| no printers, no sleep clock | 41.2% | 64 | 95KB free, 86KB min |
+| + printers (12 slots) | — | — | LVGL "Failed to allocate", task_wdt |
+| printers enumerated (3 H2C units) + clock, 25% | 46.3% | 104 | abort growing the HA subscription vector |
+| same, `buffer_size: 12%` | 46.3% | 104 | **boots; 73KB free, 63KB min, loop 46ms** |
+
+The 25% draw buffer is one 38KB block taken before the subscriptions grow into what is left; 12% was
+the fix. Flash is 90% (the OTA partition is 1.79MB). Other fits: `text_sm: 12` so "100%" fits a 31px
+tray pill, `text_md: 16` so "TV Backlight" fits a 114px tile, containers scroll (four pages have a row
+more than 240px of height), and the confirm box is 228px wide. Debug serial on this board: a data cable
+shows `/dev/cu.usbserial-*`; pulse RTS to reset and read the boot (esphome logs over serial doesn't).
 
 ## Per-device overrides from a top-level config
 
