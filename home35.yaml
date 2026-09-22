@@ -3,7 +3,7 @@ esphome:
   friendly_name: Home 3.5"
 
 substitutions:
-  home_page: printers
+  home_page: lighting_second
 
 packages:
   common: !include common.yaml

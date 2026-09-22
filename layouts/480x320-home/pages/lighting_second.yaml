@@ -80,6 +80,19 @@ lvgl:
                       icon_off: "\U000F17C7"
                       <<: !include ../vars/button.yaml
 
+              - button: # good night: every light on a floor, off
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/stateless.yaml
+                    vars:
+                      uid: good_night
+                      icon: "\U000F0594"
+                      text: Good Night
+                      <<: !include ../vars/button.yaml
+                  on_short_click:
+                    - homeassistant.action:
+                        action: script.turn_on
+                        data: { entity_id: script.good_night }
+
 packages:
   second_floor_lights_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_group_buttons/sensors.yaml, vars: {
     uid: second_floor_lights,

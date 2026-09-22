@@ -789,6 +789,13 @@ The Living Room page's Movie Time button fires `scene.movie_time`, which lives o
 Deleting or renaming that scene there silently breaks the button — `homeassistant.action` has nothing to
 validate against at build time.
 
+The Second Floor page's Good Night button (home35's home page) runs `script.good_night`, also HA-only.
+It works out its targets at run time from **areas assigned to a floor**, so floorless areas (printers,
+SpoolBuddy, the car) are never touched: it pauses any media player there that is playing, powers off
+those labelled `good_night_power_off` (LG TV, Apple TV, Denon receiver), and turns off every light not
+labelled `not_room_lighting` (panel backlights). home35 sits in the Bedroom area, which is why its
+backlight carries that label. Change what it does with labels and areas in HA, not by editing the script.
+
 Brightness crosses this boundary in two units. **Author in percent everywhere; raw 0-255 only where
 Home Assistant forces it**, which is scene storage — a scene holds attributes, and there is no
 `brightness_pct` attribute for it to hold, so `scene.movie_time` keeps `brightness: 38`. Automations
