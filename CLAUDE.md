@@ -618,7 +618,7 @@ down over hours; Largest Block falling while Free holds is fragmentation.
 ### Where recent work lives
 
 - **BLE proxy** — upstream #62, merged into `features/ble_proxy/`. home35 runs it since 2026-09-21, with
-  `scan_parameters: active: false` (passive scan) set in `home35.yaml`. Measured on home35
+  the feature's default active scan (briefly passive the same day). Measured on home35
   (2026-09-21): ~95KB internal RAM while running (the S3 controller cannot use PSRAM; `use_psram` saved
   11KB), ~400KB flash, ~2% of a core. Interleaved on/off pings: no extra loss, p99 1.0s -> 2.5s with a
   30ms/320ms scan window, worse with ESPHome's default continuous scan. Doesn't fit the CYD (app
