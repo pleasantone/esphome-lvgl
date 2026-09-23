@@ -1,0 +1,42 @@
+{
+  "page": "layouts/480x320-home/pages/outside.yaml",
+  "out": "outside-rain.png",
+  "labels": {
+    "out_temp": "62°",
+    "out_highlow": "H 71° L 58°",
+    "out_sunrise": "6:59",
+    "out_sunset": "7:04",
+    "out_light_left": "9h 6m of light left",
+    "out_cond": "Rain · UV 1",
+    "out_feels": "Feels 62° · 90% · 12-18 mph",
+    "out_verdict": "Rain in 90 min — go now",
+    "out_narrative": "Hazy air · pollen high",
+    "out_air_val": "Moderate",
+    "out_pollen_val": "High",
+    "out_dust_val": "Low",
+    "out_rain_summary": "80% at 2pm"
+  },
+  "bars": {
+    "out_air_bar": 55,
+    "out_pollen_bar": 78,
+    "out_dust_bar": 18,
+    "out_sun_bar": 25
+  },
+  "heights": {
+    "out_rain_1": 6,
+    "out_rain_2": 12,
+    "out_rain_3": 27,
+    "out_rain_4": 21,
+    "out_rain_5": 9,
+    "out_rain_6": 6
+  },
+  "x": {
+    "out_sun_dot": 69
+  },
+  "visible": [
+    "out_rain_block"
+  ],
+  "hidden": [
+    "out_dry_block"
+  ]
+}

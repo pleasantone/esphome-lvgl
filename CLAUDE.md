@@ -35,6 +35,7 @@ esphome logs <top-level>.yaml
 tools/lint_configs.py [cfg ...]       # undefined ${var}s, missing glyphs, page_access includes (#70)
 tools/compare_configs.py --base REF   # every config resolved at REF vs the tree; pages + line diff (#70)
 tools/snapshot.py sdl-example.yaml    # a PNG per page, no hardware, no HA (#70)
+tools/preview.py sdl-home.yaml tools/previews/outside-rain.json   # fork-only: a page with simulated values
 tools/check_glyphs.py cfg ...         # MDI subset: used-but-missing (blank) and unused (#70)
 tools/check_leaks.py <branch>         # fork-only: personal entities / files headed upstream
 tools/check_entities.py home35.yaml   # fork-only: every subscribed entity exists in HA (via ssh)
@@ -121,8 +122,10 @@ have, and scans the lines the branch adds over `upstream/main` with word boundar
 fork-only. Exit 1 on a hit; say what it printed rather than asserting the branch is clean.
 
 Also never send `CLAUDE.md`, `home35.yaml`, `home28.yaml`, `sdl-home.yaml`, `tools/split_layout.py`,
-`tools/check_leaks.py`, `tools/check_entities.py`, `tools/flash.sh`, `layouts/fonts/glyphs-home*`, the
-`-home` layouts or their `layouts/*-home/` directories upstream. They are fork-only.
+`tools/check_leaks.py`, `tools/check_entities.py`, `tools/flash.sh`, `tools/previews/`,
+`layouts/fonts/glyphs-home*`, the `-home` layouts or their `layouts/*-home/` directories upstream. They
+are fork-only. (`tools/preview.py` itself is generic and could be offered upstream one day; only the
+scenarios under `tools/previews/` name personal pages.)
 
 ## Layout file anatomy (`layouts/<WxH>.yaml`)
 
@@ -467,6 +470,56 @@ The integration namespaces trays by unit: `sensor.<prefix>_ams_<n>_tray_<m>`, **
 tile derives the displayed end time from `ha_time.now() + remaining_time` instead of reading `end_time`'s
 hour field, which would be wrong by the local UTC offset. A tray with no RFID reports `remain: -1`.
 
+## The Outside page (fork-only) — 2026-09-23
+
+`layouts/480x320-home/pages/outside.yaml` is a glance page: time, the walk verdict, daylight, temperature,
+the three air indexes, and a rain strip. It is on `home35` between Climate and Lighting Main. Its data
+comes from two Home Assistant packages this repo does not contain — `/config/packages/panel_outside.yaml`
+(rain, sun, pollen, the walk verdict, today's high/low) and `/config/packages/air_quality.yaml` (Google
+Air Quality PM10, and a local dust-conditions model). Renaming a sensor there silently blanks a label
+here; `tools/check_entities.py` is what catches it.
+
+**A page file is a package, so it can carry its own `sensor:` and `text_sensor:` blocks.** The widget /
+sensors pairing exists only because a fragment merged into `lvgl:` cannot contribute sensors — a page
+file is not such a fragment. A bespoke page with ~20 subscriptions is clearer with its wiring inline than
+split across a widget pair that nothing else will ever reuse.
+
+What is load-bearing, and all of it was found by rendering rather than by reasoning:
+
+- **The page hides the header** (`on_load`/`on_unload` on `titlebar`) and overrides `pad_top: 0`, since the
+  shared page vars reserve 50px for a header this page does not draw. A sibling key beats a merge key.
+  Safe alongside `features/sleep_clock/`, which hides the same widget: LVGL fires the outgoing screen's
+  `SCREEN_UNLOAD_START` before the incoming screen's `SCREEN_LOAD_START` (`lv_display.c`), and ESPHome maps
+  `on_unload`/`on_load` to exactly those, so the clock's hide always lands after this page's show.
+- **The theme styles `obj:`, which does not reach a screen.** A page therefore keeps LVGL's near-white
+  default. Every other page hides that behind the titlebar; this one showed it as a white band the moment
+  `pad_top` was non-zero. The page sets its own `bg_color`.
+- **A scrollbar means content overflows its box**, not that someone asked for scrolling. A 48px font has a
+  ~56px line height, and a marker nudged 3px past the bottom edge to centre it on a bar is still 3px of
+  overflow. Every block sets `scrollable: false`, but that only hides the symptom — fix the height too.
+- **Exactly one of the rain strip and the dry line is visible, always.** A hidden strip must mean "dry",
+  never "the forecast failed and nobody noticed". The dry line starts visible saying nothing is known, and
+  the parser checks the string arrived at all before believing twelve zeroes — an unavailable entity
+  publishes an empty string, which parses to a perfectly good dry forecast.
+- **The walk verdict is a 300px contract.** Every branch of the verdict is measured against `roboto_lg` and
+  must fit; the longest is `Rain in 115 min — go now` at 273px. Where a string might still overflow, put
+  the actionable half first, because `long_mode: DOT` keeps the front. Do not reach for a scrolling label:
+  moving text never settles, and this page is meant to be absorbed in a glance.
+- **`long_mode: DOT` only truncates when the height is bounded.** With `SIZE_CONTENT` it wraps instead, and
+  the verdict's second line lands on top of the narrative. Both labels carry an explicit `height:`.
+- **Three lines beside the temperature sit in their own flex column on `SPACE_EVENLY`**, not pinned to
+  TOP/MID/BOTTOM. Pinning left them touching, and their spacing then depended on the block height rather
+  than on anything settable.
+- `roboto_temp` (56) and `roboto_clock` (40) are declared in the page file, because the layout's ladder
+  jumps 32 → 48 and `widgets/detail/light_page.yaml` also draws at `roboto_xxl` and has no reason to grow.
+
+The block heights are a budget, not decoration: usable height is 480 − 50 for the footer = 430, and the
+wet-day stack is 424 of it. Changing one height means finding the pixels somewhere else. `tools/snapshot.py`
+renders what the YAML says, which for an HA-driven page is a screen full of `--`; `tools/preview.py` injects
+simulated values from a scenario in `tools/previews/` and is how the wet case was checked. It edits a COPY
+and restores the page in a `finally` — verify with md5 either side, because the file it edits is one that
+gets flashed.
+
 ## Features (`features/`)
 
 A feature is an opt-in package: behaviour a panel may or may not want, kept out of `devices/` (hardware
@@ -608,7 +661,12 @@ an icon missing from the MDI subset (it renders blank) — plus, since #61, a pa
 `page_access.yaml` include. `check_entities.py home35.yaml` catches the third: an `entity_id` that no
 longer exists in Home Assistant. It reads every state in one call through the SSH add-on's
 `SUPERVISOR_TOKEN` (`ssh homeassistant`; or `HA_URL` + `HA_TOKEN`), and counts absent AMS slots separately,
-since which ones are absent *is* the real topology. 87 entities, 0 missing on home35 on 2026-09-22.
+since which ones are absent *is* the real topology. 104 entities, 0 missing on home35 on 2026-09-23.
+
+**`esphome config` does not compile lambdas.** It resolves and validates the YAML, which is what makes it
+the fastest feedback loop — but a lambda that does not build passes it untouched. A page whose C++ was
+rewritten needs `esphome compile` before it can be called working; `tools/flash.sh` compiles before it
+uploads, which is the other reason to use it rather than a hand-chained upload.
 
 One-off commands still worth knowing:
 
@@ -785,3 +843,9 @@ on each. That is deliberate, and it is why widget ids derive from `uid` rather t
 - Touch-calibration `on_touch:` lambdas are left commented out in each device file; uncomment to log raw
   coordinates when adding or fixing a board.
 - The README carries a dated changelog; note breaking changes there when altering the package contract.
+- **Measure text, do not estimate it** — PIL against the cached font in `.esphome/font/` gives the width
+  and the line height. It is how the AMS columns were sized and how the Outside page's verdict strings,
+  block heights and font sizes were chosen. Guessing costs a flash cycle to find out.
+- **A hidden widget must not be able to mean two things.** If a block hides when a value is absent and also
+  when the value is benign, the panel is lying on one of those days. Either show a statement of the benign
+  case, or keep the block and say what is missing.

@@ -1,14 +1,44 @@
-# Outside: MOCK -- every value here is hardcoded, to judge the layout in SDL.
-# Nothing subscribes to Home Assistant yet.
+# Outside: time, the walk verdict, daylight, temperature, the three air
+# indexes and the rain forecast, driven from Home Assistant.
+#
+# It hides the header while shown (see the page's on_load / on_unload) and
+# overrides pad_top to claim the 50px the shared page vars reserve for it.
+#
+# The Home Assistant side lives in /config/packages/panel_outside.yaml and
+# /config/packages/air_quality.yaml -- every sensor read here is defined there,
+# not by an integration, so check both before renaming anything.
+#
+# This page is bespoke rather than a grid of widgets, so it carries its own
+# sensors inline. That is legal because a PAGE FILE IS A PACKAGE: the widget /
+# sensors pairing exists only because a fragment merged into `lvgl:` cannot
+# contribute `sensor:` entries, and this file is not such a fragment.
 
 lvgl:
   pages:
     - id: outside
       <<: !include ../vars/page.yaml
+      # This page hides the header (below), so it does not need the 50px the
+      # shared page vars reserve for it -- and with the header gone, that is
+      # usable space, not margin. A sibling key beats a merge key.
+      pad_top: 0
+      # The theme styles `obj:`, which does not reach a screen, so a page keeps
+      # LVGL's default near-white. Every other page hides that behind the
+      # titlebar's 50px; this one does not, so any padding here shows as a white
+      # band along the top edge. Colour the page too, so a future tweak to the
+      # padding cannot bring the band back.
+      bg_color: 0x42495A
       on_load:
         - lvgl.label.update:
             id: page_title
             text: Outside
+        # The header is a page title and a clock, and this page is already a
+        # clock -- so it buys 44px of nothing. The footer stays: it is the only
+        # way off this page.
+        - lvgl.widget.hide: titlebar
+        - script.execute: refresh_outside_clock
+        - script.execute: refresh_outside_link
+      on_unload:
+        - lvgl.widget.show: titlebar
       widgets:
         - obj:
             <<: !include ../vars/container.yaml
@@ -16,26 +46,65 @@ lvgl:
               type: FLEX
               flex_flow: COLUMN
               flex_align_main: START
-              pad_row: 6
+              pad_row: 4 # the wet-day stack is 422 of the 430 usable px
 
             widgets:
-              # ---- time and date -------------------------------------------
+              # ---- time ----------------------------------------------------
               - obj:
                   width: 100%
-                  height: 70
+                  height: 52
+                  border_width: 0
+                  radius: 20
+                  pad_all: 2
+                  scrollable: false
+                  widgets:
+                    # 40px: 32 was legible but too quiet to read at a glance,
+                    # and 48 costs 9px the wet-day stack does not have. Line
+                    # height is 48px, so 52 - 4 of padding clears it.
+                    - label:
+                        id: out_clock
+                        text: "--:--"
+                        text_font: roboto_clock
+                        align: CENTER
+                    - label: # the header carried this; without the header the
+                             # page has to say when it has stopped being true
+                        id: out_link_lost
+                        text: "\U000F0319"
+                        text_font: mdi_sm
+                        text_color: 0xFF6B60
+                        align: TOP_RIGHT
+                        hidden: true
+
+              # ---- the answer ----------------------------------------------
+              - obj:
+                  width: 100%
+                  height: 56
                   border_width: 0
                   radius: 20
                   pad_all: 4
+                  scrollable: false
                   widgets:
+                    # Both labels carry an explicit height: LV_LABEL_LONG_DOT
+                    # only truncates when the height is bounded -- with
+                    # SIZE_CONTENT it wraps instead, and the second line of the
+                    # verdict lands on top of the narrative.
                     - label:
-                        text: "9:41"
-                        text_font: roboto_xxl
-                        align: TOP_MID
+                        id: out_verdict
+                        text: " "
+                        text_font: roboto_lg
+                        width: 100%
+                        height: 30
+                        long_mode: DOT
+                        align: TOP_LEFT
                     - label:
-                        text: "Mon 22 September"
+                        id: out_narrative
+                        text: " "
                         text_font: roboto_sm
                         text_color: 0x9AA0AE
-                        align: BOTTOM_MID
+                        width: 100%
+                        height: 18
+                        long_mode: DOT
+                        align: BOTTOM_LEFT
 
               # ---- sunrise .. now .. sunset ---------------------------------
               - obj:
@@ -44,81 +113,118 @@ lvgl:
                   border_width: 0
                   radius: 20
                   pad_all: 6
+                  scrollable: false
                   widgets:
-                    - label: # sunrise icon
+                    - label: # weather-sunset-up
                         text: "\U000F059C"
                         text_font: mdi_sm
                         text_color: 0xFFAF00
                         align: TOP_LEFT
                     - label:
-                        text: "6:58"
+                        id: out_sunrise
+                        text: "--:--"
                         text_font: roboto_sm
                         align: TOP_LEFT
                         x: 26
                         y: 2
-                    - label: # sunset icon
+                    - label: # weather-sunset-down
                         text: "\U000F059B"
                         text_font: mdi_sm
                         text_color: 0xFFAF00
                         align: TOP_RIGHT
                     - label:
-                        text: "7:06"
+                        id: out_sunset
+                        text: "--:--"
                         text_font: roboto_sm
                         align: TOP_RIGHT
                         x: -26
                         y: 2
                     - label: # what you actually want to know
-                        text: "7h 5m of light left"
+                        id: out_light_left
+                        text: " "
                         text_font: roboto_sm
                         text_color: 0x9AA0AE
                         align: TOP_MID
                         y: 2
                     - bar:
+                        id: out_sun_bar
                         width: 100%
                         height: 6
                         align: BOTTOM_MID
-                        value: 62
+                        value: 0
                         indicator:
                           bg_color: 0xFFAF00
                     - obj: # now
+                        id: out_sun_dot
                         width: 12
                         height: 12
                         radius: 6
                         border_width: 0
                         bg_color: 0xFFFFFF
                         align: BOTTOM_LEFT
-                        x: 168
-                        y: 3
+                        x: 0
+                        y: 0 # NOT past the bottom edge: any overflow makes the
+                             # block scrollable and LVGL draws a scrollbar
 
               # ---- temperature ---------------------------------------------
               - obj:
                   width: 100%
-                  height: 72
+                  height: 94
                   border_width: 0
                   radius: 20
                   pad_all: 8
+                  scrollable: false
                   widgets:
                     - label:
-                        text: "60°"
-                        text_font: roboto_xxl
+                        id: out_temp
+                        text: "--°"
+                        text_font: roboto_temp
                         align: LEFT_MID
-                    - label:
-                        text: "Cloudy"
-                        text_font: roboto_md
-                        align: TOP_RIGHT
-                    - label:
-                        text: "Feels 60°   88%"
-                        text_font: roboto_sm
-                        text_color: 0x9AA0AE
-                        align: BOTTOM_RIGHT
+                    # Three lines beside the big temperature: what it is doing,
+                    # today's range, what it feels like. They live in their own
+                    # flex column on SPACE_EVENLY rather than being pinned to
+                    # TOP/MID/BOTTOM -- pinning left them touching, and the
+                    # spacing then depends on the block height rather than on
+                    # anything you can set. 196px is the widest line measured
+                    # against the cached font ("Feels 62 . 90% . 12-18 mph"),
+                    # and 84 + 196 leaves 12px clear of the temperature.
+                    - obj:
+                        width: 196
+                        height: 100%
+                        align: RIGHT_MID
+                        bg_opa: TRANSP
+                        border_width: 0
+                        pad_all: 0
+                        scrollable: false
+                        layout:
+                          type: FLEX
+                          flex_flow: COLUMN
+                          flex_align_main: SPACE_EVENLY
+                          flex_align_cross: END
+                        widgets:
+                          - label:
+                              id: out_cond
+                              text: " "
+                              text_font: roboto_md
+                          - label:
+                              id: out_highlow
+                              text: " "
+                              text_font: roboto_sm
+                              text_color: 0x9AA0AE
+                          - label:
+                              id: out_feels
+                              text: " "
+                              text_font: roboto_sm
+                              text_color: 0x9AA0AE
 
               # ---- the three indexes ---------------------------------------
               - obj:
                   width: 100%
-                  height: 92
+                  height: 90
                   border_width: 0
                   radius: 20
-                  pad_all: 8
+                  pad_all: 6 # 3 x 26px rows need exactly 78 of content
+                  scrollable: false
                   layout:
                     type: FLEX
                     flex_flow: COLUMN
@@ -136,15 +242,17 @@ lvgl:
                               text_font: roboto_md
                               align: LEFT_MID
                           - bar:
+                              id: out_air_bar
                               width: 120
                               height: 10
                               align: LEFT_MID
                               x: 62
-                              value: 14
+                              value: 0
                               indicator:
                                 bg_color: 0x34C759
                           - label:
-                              text: "14 Good"
+                              id: out_air_val
+                              text: "--"
                               text_font: roboto_md
                               align: RIGHT_MID
                     - obj: # pollen
@@ -159,15 +267,17 @@ lvgl:
                               text_font: roboto_md
                               align: LEFT_MID
                           - bar:
+                              id: out_pollen_bar
                               width: 120
                               height: 10
                               align: LEFT_MID
                               x: 62
-                              value: 45
+                              value: 0
                               indicator:
-                                bg_color: 0xFFD60A
+                                bg_color: 0x34C759
                           - label:
-                              text: "5.4 Med"
+                              id: out_pollen_val
+                              text: "--"
                               text_font: roboto_md
                               align: RIGHT_MID
                     - obj: # dust and dander
@@ -182,32 +292,43 @@ lvgl:
                               text_font: roboto_md
                               align: LEFT_MID
                           - bar:
+                              id: out_dust_bar
                               width: 120
                               height: 10
                               align: LEFT_MID
                               x: 62
-                              value: 30
+                              value: 0
                               indicator:
                                 bg_color: 0x34C759
                           - label:
-                              text: "3.1 Low"
+                              id: out_dust_val
+                              text: "--"
                               text_font: roboto_md
                               align: RIGHT_MID
 
               # ---- rain, next 12 hours -------------------------------------
+              # Six two-hour slots, not twelve hourly ones: twelve 18px bars on a
+              # 298px canvas read as noise from across the room. The whole block
+              # hides when the 12 hours are dry, which in San Francisco is most
+              # of them -- hiding a child drops it out of the flex column, so
+              # everything above simply sits lower down the page.
               - obj:
+                  id: out_rain_block
                   width: 100%
-                  height: 72
+                  height: 68
+                  hidden: true
                   border_width: 0
                   radius: 20
                   pad_all: 6
+                  scrollable: false
                   widgets:
                     - label:
                         text: "Rain next 12h"
                         text_font: roboto_sm
                         align: TOP_LEFT
                     - label:
-                        text: "80% at 2pm"
+                        id: out_rain_summary
+                        text: " "
                         text_font: roboto_sm
                         align: TOP_RIGHT
                     - obj: # the columns
@@ -223,96 +344,491 @@ lvgl:
                           flex_align_main: SPACE_BETWEEN
                           flex_align_cross: END
                         widgets:
-                          - obj: # slot track
-                              width: 40
-                              height: 34
-                              radius: 4
-                              border_width: 0
-                              bg_color: 0x353B4A
-                              pad_all: 0
+                          - obj: # slot track -- visible even when dry, so the
+                                 # strip reads as six slots rather than a gap
+                              <<: &rain_slot
+                                width: 40
+                                height: 34
+                                radius: 4
+                                border_width: 0
+                                bg_color: 0x353B4A
+                                pad_all: 0
                               widgets:
                                 - obj:
-                                    width: 100%
-                                    height: 3
-                                    radius: 4
-                                    border_width: 0
-                                    bg_color: 0x00B6FF
-                                    align: BOTTOM_MID
-                          - obj: # slot track
-                              width: 40
-                              height: 34
-                              radius: 4
-                              border_width: 0
-                              bg_color: 0x353B4A
-                              pad_all: 0
+                                    id: out_rain_1
+                                    <<: &rain_fill
+                                      width: 100%
+                                      height: 3
+                                      radius: 4
+                                      border_width: 0
+                                      bg_color: 0x00B6FF
+                                      align: BOTTOM_MID
+                          - obj:
+                              <<: *rain_slot
                               widgets:
                                 - obj:
-                                    width: 100%
-                                    height: 5
-                                    radius: 4
-                                    border_width: 0
-                                    bg_color: 0x00B6FF
-                                    align: BOTTOM_MID
-                          - obj: # slot track
-                              width: 40
-                              height: 34
-                              radius: 4
-                              border_width: 0
-                              bg_color: 0x353B4A
-                              pad_all: 0
+                                    id: out_rain_2
+                                    <<: *rain_fill
+                          - obj:
+                              <<: *rain_slot
                               widgets:
                                 - obj:
-                                    width: 100%
-                                    height: 27
-                                    radius: 4
-                                    border_width: 0
-                                    bg_color: 0x00B6FF
-                                    align: BOTTOM_MID
-                          - obj: # slot track
-                              width: 40
-                              height: 34
-                              radius: 4
-                              border_width: 0
-                              bg_color: 0x353B4A
-                              pad_all: 0
+                                    id: out_rain_3
+                                    <<: *rain_fill
+                          - obj:
+                              <<: *rain_slot
                               widgets:
                                 - obj:
-                                    width: 100%
-                                    height: 15
-                                    radius: 4
-                                    border_width: 0
-                                    bg_color: 0x00B6FF
-                                    align: BOTTOM_MID
-                          - obj: # slot track
-                              width: 40
-                              height: 34
-                              radius: 4
-                              border_width: 0
-                              bg_color: 0x353B4A
-                              pad_all: 0
+                                    id: out_rain_4
+                                    <<: *rain_fill
+                          - obj:
+                              <<: *rain_slot
                               widgets:
                                 - obj:
-                                    width: 100%
-                                    height: 3
-                                    radius: 4
-                                    border_width: 0
-                                    bg_color: 0x00B6FF
-                                    align: BOTTOM_MID
-                          - obj: # slot track
-                              width: 40
-                              height: 34
-                              radius: 4
-                              border_width: 0
-                              bg_color: 0x353B4A
-                              pad_all: 0
+                                    id: out_rain_5
+                                    <<: *rain_fill
+                          - obj:
+                              <<: *rain_slot
                               widgets:
                                 - obj:
-                                    width: 100%
-                                    height: 3
-                                    radius: 4
-                                    border_width: 0
-                                    bg_color: 0x00B6FF
-                                    align: BOTTOM_MID
+                                    id: out_rain_6
+                                    <<: *rain_fill
+
+              # ---- ... or one line saying why the strip is not here ---------
+              # Starts VISIBLE and saying nothing is known: a hidden rain strip
+              # must mean "dry", never "the forecast failed and nobody noticed".
+              - obj:
+                  id: out_dry_block
+                  width: 100%
+                  height: 22
+                  border_width: 0
+                  radius: 20
+                  pad_all: 2
+                  scrollable: false
+                  widgets:
+                    - label:
+                        id: out_dry_text
+                        text: "Waiting for the rain forecast"
+                        text_font: roboto_sm
+                        text_color: 0x9AA0AE
+                        align: LEFT_MID
+
+# ---------------------------------------------------------------------------
+# Home Assistant wiring
+# ---------------------------------------------------------------------------
+
+font:
+  # 56px sits between the layout's xl (32) and xxl (48) ladder rungs. Defined
+  # here rather than moving text_xxl, because widgets/detail/light_page.yaml
+  # also draws at roboto_xxl and has no reason to grow.
+  - id: roboto_temp
+    file:
+      type: gfonts
+      family: Roboto
+    size: 56
+    bpp: 4
+
+  - id: roboto_clock
+    file:
+      type: gfonts
+      family: Roboto
+    size: 40
+    bpp: 4
+
+script:
+  # The header owns ha_time and its own clock; this page keeps a second, bigger
+  # one. Both honour the 24-hour switch in widgets/header/sensors.yaml.
+  - id: refresh_outside_clock
+    then:
+      - lvgl.label.update:
+          id: out_clock
+          text: !lambda |-
+            auto now = id(ha_time).now();
+            if (!now.is_valid()) {
+              return std::string("--:--");
+            }
+            if (id(clock_24h).state) {
+              return now.strftime("%H:%M");
+            }
+            // %I pads the hour with a zero; a wall clock does not
+            auto s = now.strftime("%I:%M");
+            if (s[0] == '0') s.erase(0, 1);
+            return s;
+
+  - id: refresh_outside_cond
+    then:
+      - lvgl.label.update:
+          id: out_cond
+          text: !lambda |-
+            std::string s = id(out_cond_text);
+            // UV is 0 after dark, so this also serves as the daylight gate --
+            // no extra entity needed to keep it off the page at night
+            if (!std::isnan(id(out_uv_val)) && id(out_uv_val) >= 1.0f) {
+              if (!s.empty()) s += " \xc2\xb7 ";
+              s += "UV " + std::to_string((int) lroundf(id(out_uv_val)));
+            }
+            return s.empty() ? std::string(" ") : s;
+
+  - id: refresh_outside_link
+    then:
+      - if:
+          condition:
+            - binary_sensor.is_on: api_link
+          then:
+            - lvgl.widget.hide: out_link_lost
+          else:
+            - lvgl.widget.show: out_link_lost
+
+  - id: refresh_outside_feels
+    then:
+      - lvgl.label.update:
+          id: out_feels
+          text: !lambda |-
+            std::string s;
+            if (!std::isnan(id(out_feels_val))) {
+              s = "Feels " + std::to_string((int) lroundf(id(out_feels_val))) + "°";
+            }
+            if (!std::isnan(id(out_humidity_val))) {
+              if (!s.empty()) s += " \xc2\xb7 ";
+              s += std::to_string((int) lroundf(id(out_humidity_val))) + "%";
+            }
+            if (!std::isnan(id(out_wind_val))) {
+              if (!s.empty()) s += " \xc2\xb7 ";
+              int w = (int) lroundf(id(out_wind_val));
+              int g = std::isnan(id(out_gust_val)) ? w : (int) lroundf(id(out_gust_val));
+              // only name the gust when it is actually gusting
+              s += std::to_string(w) + (g >= w + 3 ? "-" + std::to_string(g) : "") + " mph";
+            }
+            return s.empty() ? std::string(" ") : s;
+
+  - id: refresh_outside_air
+    then:
+      - lambda: |-
+          // EPA AQI bands. The bar tops out at 150 rather than 500: above that
+          // the number is the story, and a bar pinned at 7% is not.
+          float a = id(out_aqi_val);
+          if (std::isnan(a)) {
+            lv_bar_set_value(id(out_air_bar), 0, LV_ANIM_OFF);
+            lv_label_set_text(id(out_air_val), "--");
+            return;
+          }
+          int aqi = (int) lroundf(a);
+          uint32_t c = aqi <= 50 ? 0x34C759 : aqi <= 100 ? 0xFFD60A
+                     : aqi <= 150 ? 0xFF9F0A : 0xFF3B30;
+          int v = aqi > 150 ? 100 : (aqi * 100) / 150;
+          lv_bar_set_value(id(out_air_bar), v, LV_ANIM_OFF);
+          lv_obj_set_style_bg_color(id(out_air_bar), lv_color_hex(c), LV_PART_INDICATOR);
+          // the bar already says how much; the words say whether to care
+          lv_label_set_text(id(out_air_val),
+                            id(out_air_desc).empty() ? "--" : id(out_air_desc).c_str());
+
+  - id: refresh_outside_dust
+    then:
+      - lambda: |-
+          // The dust score is a local model, 0-100, and in San Francisco it
+          // lives in the teens -- so the bar is scaled to 60, not 100.
+          float d = id(out_dust_val_num);
+          if (std::isnan(d)) {
+            lv_bar_set_value(id(out_dust_bar), 0, LV_ANIM_OFF);
+            lv_label_set_text(id(out_dust_val), "--");
+            return;
+          }
+          int score = (int) lroundf(d);
+          uint32_t c = score < 20 ? 0x34C759 : score < 40 ? 0xFFD60A
+                     : score < 60 ? 0xFF9F0A : 0xFF3B30;
+          int v = score >= 60 ? 100 : (score * 100) / 60;
+          lv_bar_set_value(id(out_dust_bar), v, LV_ANIM_OFF);
+          lv_obj_set_style_bg_color(id(out_dust_bar), lv_color_hex(c), LV_PART_INDICATOR);
+          // the bar already says how much; the words say whether to care
+          lv_label_set_text(id(out_dust_val),
+                            id(out_dust_level).empty() ? "--" : id(out_dust_level).c_str());
+
+interval:
+  # Cheaper and far less fragile than reaching into the header's ha_time
+  # automation with !extend; ten seconds is under half a minute of skew.
+  - interval: 10s
+    then:
+      - script.execute: refresh_outside_clock
+      - script.execute: refresh_outside_link
+
+text_sensor:
+  - id: out_sunrise_sensor
+    platform: homeassistant
+    entity_id: sensor.sunrise_time
+    on_value:
+      - lvgl.label.update:
+          id: out_sunrise
+          text: !lambda |-
+            if (x.empty()) return std::string("--:--");
+            return x;
+
+  - id: out_sunset_sensor
+    platform: homeassistant
+    entity_id: sensor.sunset_time
+    on_value:
+      - lvgl.label.update:
+          id: out_sunset
+          text: !lambda |-
+            if (x.empty()) return std::string("--:--");
+            return x;
+
+  - id: out_light_left_sensor
+    platform: homeassistant
+    entity_id: sensor.daylight_left
+    on_value:
+      - lvgl.label.update:
+          id: out_light_left
+          text: !lambda |-
+            if (x == "dark" || x.empty()) return std::string("after dark");
+            return x + " of light left";
+
+  - id: out_cond_sensor
+    platform: homeassistant
+    entity_id: weather.forecast_home
+    on_value:
+      - lambda: |-
+          std::string s;
+          // Home Assistant's condition slugs are not for reading aloud
+          if (x == "clear-night") s = "Clear";
+          else if (x == "partlycloudy") s = "Partly cloudy";
+          else if (x == "lightning" || x == "lightning-rainy") s = "Storm";
+          else if (x == "snowy-rainy") s = "Sleet";
+          else if (x == "windy-variant") s = "Windy";
+          else if (x == "pouring") s = "Pouring";
+          else if (x == "rainy") s = "Rain";
+          else if (x == "exceptional" || x.empty()) s = "";
+          else { s = x; s[0] = toupper(s[0]); }
+          id(out_cond_text) = s;
+      - script.execute: refresh_outside_cond
+
+  - id: out_air_desc_sensor
+    platform: homeassistant
+    entity_id: sensor.airnow_air_quality_index
+    attribute: description
+    on_value:
+      - lambda: id(out_air_desc) = x;
+      - script.execute: refresh_outside_air
+
+  - id: out_pollen_sensor
+    platform: homeassistant
+    entity_id: sensor.pollen_summary
+    on_value:
+      - lvgl.label.update:
+          id: out_pollen_val
+          text: !lambda |-
+            if (x.empty()) return std::string("--");
+            return x;
+      - lambda: |-
+          // Google's five categories, spread across the bar
+          int v = 0;
+          uint32_t c = 0x34C759;
+          if (x == "Very Low")       { v = 10; c = 0x34C759; }
+          else if (x == "Low")       { v = 30; c = 0x34C759; }
+          else if (x == "Moderate")  { v = 55; c = 0xFFD60A; }
+          else if (x == "High")      { v = 78; c = 0xFF9F0A; }
+          else if (x == "Very High") { v = 95; c = 0xFF3B30; }
+          lv_bar_set_value(id(out_pollen_bar), v, LV_ANIM_OFF);
+          lv_obj_set_style_bg_color(id(out_pollen_bar), lv_color_hex(c), LV_PART_INDICATOR);
+
+  - id: out_dust_level_sensor
+    platform: homeassistant
+    entity_id: sensor.dust_conditions
+    attribute: level
+    on_value:
+      - lambda: id(out_dust_level) = x;
+      - script.execute: refresh_outside_dust
+
+  - id: out_verdict_sensor
+    platform: homeassistant
+    entity_id: sensor.walk_verdict
+    on_value:
+      - lvgl.label.update:
+          id: out_verdict
+          text: !lambda |-
+            if (x.empty()) return std::string(" ");
+            return x;
+
+  - id: out_narrative_sensor
+    platform: homeassistant
+    entity_id: sensor.walk_verdict
+    attribute: narrative
+    on_value:
+      - lvgl.label.update:
+          id: out_narrative
+          text: !lambda |-
+            if (x.empty()) return std::string(" ");
+            return x;
+
+  - id: out_highlow_sensor
+    platform: homeassistant
+    entity_id: sensor.today_high_low
+    on_value:
+      - lvgl.label.update:
+          id: out_highlow
+          text: !lambda |-
+            if (x.empty()) return std::string(" ");
+            return x;
+
+  - id: out_rain_summary_sensor
+    platform: homeassistant
+    entity_id: sensor.rain_next_12h
+    attribute: summary
+    on_value:
+      - lvgl.label.update:
+          id: out_rain_summary
+          text: !lambda |-
+            if (x.empty()) return std::string(" ");
+            return x;
+
+
+  - id: out_rain_hours_sensor
+    platform: homeassistant
+    entity_id: sensor.rain_next_12h
+    on_value:
+      - lambda: |-
+          // "0,0,10,20,..." -- twelve hourly probabilities, folded into six
+          // two-hour slots by taking the worse hour of each pair.
+          int p[12] = {0};
+          size_t start = 0;
+          for (int i = 0; i < 12 && start <= x.size(); i++) {
+            size_t comma = x.find(',', start);
+            std::string tok = x.substr(start, comma == std::string::npos
+                                              ? std::string::npos : comma - start);
+            p[i] = tok.empty() ? 0 : atoi(tok.c_str());
+            if (comma == std::string::npos) break;
+            start = comma + 1;
+          }
+          lv_obj_t *slots[6] = {id(out_rain_1), id(out_rain_2), id(out_rain_3),
+                                id(out_rain_4), id(out_rain_5), id(out_rain_6)};
+          int worst = 0;
+          for (int s = 0; s < 6; s++) {
+            int v = p[s * 2] > p[s * 2 + 1] ? p[s * 2] : p[s * 2 + 1];
+            if (v < 0) v = 0;
+            if (v > 100) v = 100;
+            if (v > worst) worst = v;
+            // 3px even at zero, so a dry slot still reads as a slot
+            lv_obj_set_height(slots[s], 3 + (31 * v) / 100);
+          }
+          // An unavailable entity publishes an empty or placeholder string,
+          // which parses to twelve zeroes -- indistinguishable from a genuine
+          // dry forecast unless it is caught here, before worst is believed.
+          bool known = !(x.empty() || x == "unknown" || x == "unavailable");
+          lv_label_set_text(id(out_dry_text),
+                            known ? "No rain in the next 12 hours"
+                                  : "Rain forecast unavailable");
+          // Nothing to forecast is not worth 68px of six flat slots -- but
+          // exactly one of the two blocks is always shown, so a missing strip
+          // can never be mistaken for a dry one.
+          bool wet = known && worst > 0;
+          lv_obj_t *strip = id(out_rain_block), *line = id(out_dry_block);
+          lv_obj_add_flag(wet ? line : strip, LV_OBJ_FLAG_HIDDEN);
+          lv_obj_clear_flag(wet ? strip : line, LV_OBJ_FLAG_HIDDEN);
+
+sensor:
+  - id: out_temp_sensor
+    platform: homeassistant
+    entity_id: sensor.casa_sanchez_temperature
+    on_value:
+      - lvgl.label.update:
+          id: out_temp
+          text: !lambda |-
+            if (std::isnan(x)) return std::string("--°");
+            return std::to_string((int) lroundf(x)) + "°";
+
+  - id: out_feels_sensor
+    platform: homeassistant
+    entity_id: sensor.casa_sanchez_feels_like
+    on_value:
+      - lambda: id(out_feels_val) = x;
+      - script.execute: refresh_outside_feels
+
+  - id: out_humidity_sensor
+    platform: homeassistant
+    entity_id: sensor.casa_sanchez_humidity
+    on_value:
+      - lambda: id(out_humidity_val) = x;
+      - script.execute: refresh_outside_feels
+
+  - id: out_wind_sensor
+    platform: homeassistant
+    entity_id: sensor.casa_sanchez_wind_speed
+    on_value:
+      - lambda: id(out_wind_val) = x;
+      - script.execute: refresh_outside_feels
+
+  - id: out_gust_sensor
+    platform: homeassistant
+    entity_id: sensor.casa_sanchez_wind_gust
+    on_value:
+      - lambda: id(out_gust_val) = x;
+      - script.execute: refresh_outside_feels
+
+  - id: out_uv_sensor
+    platform: homeassistant
+    entity_id: sensor.casa_sanchez_uv_index
+    on_value:
+      - lambda: id(out_uv_val) = x;
+      - script.execute: refresh_outside_cond
+
+  - id: out_daylight_progress_sensor
+    platform: homeassistant
+    entity_id: sensor.daylight_progress
+    on_value:
+      - lambda: |-
+          int pct = std::isnan(x) ? 0 : (int) lroundf(x);
+          if (pct < 0) pct = 0;
+          if (pct > 100) pct = 100;
+          lv_bar_set_value(id(out_sun_bar), pct, LV_ANIM_OFF);
+          // park the marker on the bar itself rather than guessing the width
+          int track = lv_obj_get_width(id(out_sun_bar)) - 12;
+          if (track < 0) track = 0;
+          lv_obj_set_x(id(out_sun_dot), (track * pct) / 100);
+
+  - id: out_aqi_sensor
+    platform: homeassistant
+    entity_id: sensor.airnow_air_quality_index
+    on_value:
+      - lambda: id(out_aqi_val) = x;
+      - script.execute: refresh_outside_air
+
+  - id: out_dust_sensor
+    platform: homeassistant
+    entity_id: sensor.dust_conditions
+    on_value:
+      - lambda: id(out_dust_val_num) = x;
+      - script.execute: refresh_outside_dust
+
+globals:
+  # Two entities feed one label in three places on this page, and a homeassistant
+  # sensor gives you one value per trigger -- so each half is parked here and a
+  # script renders the pair.
+  - id: out_feels_val
+    type: float
+    initial_value: "NAN"
+  - id: out_humidity_val
+    type: float
+    initial_value: "NAN"
+  - id: out_aqi_val
+    type: float
+    initial_value: "NAN"
+  - id: out_air_desc
+    type: std::string
+  - id: out_dust_val_num
+    type: float
+    initial_value: "NAN"
+  - id: out_dust_level
+    type: std::string
+  - id: out_cond_text
+    type: std::string
+  - id: out_uv_val
+    type: float
+    initial_value: "NAN"
+  - id: out_wind_val
+    type: float
+    initial_value: "NAN"
+  - id: out_gust_val
+    type: float
+    initial_value: "NAN"
 
 packages:
   outside_access: !include { file: ../../widgets/page_access.yaml, vars: { page: outside } }
