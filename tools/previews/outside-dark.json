@@ -1,0 +1,34 @@
+{
+  "page": "layouts/480x320-home/pages/outside.yaml",
+  "out": "outside-dark.png",
+  "labels": {
+    "out_temp": "61°",
+    "out_highlow": "H 64° L 60°",
+    "out_sunrise": "6:59",
+    "out_sunset": "7:03",
+    "out_light_left": "after dark",
+    "out_cond": "Clear",
+    "out_feels": "Feels 61° · 87% · 0 mph",
+    "out_verdict": "Dark — 30 min walk",
+    "out_narrative": " ",
+    "out_air_val": "Good",
+    "out_pollen_val": "Very Low",
+    "out_dust_val": "Low",
+    "out_dry_text": "No rain in the next 12 hours"
+  },
+  "bars": {
+    "out_air_bar": 24,
+    "out_pollen_bar": 10,
+    "out_dust_bar": 8,
+    "out_sun_bar": 0
+  },
+  "x": {
+    "out_sun_dot": 0
+  },
+  "visible": [
+    "out_dry_block"
+  ],
+  "hidden": [
+    "out_rain_block"
+  ]
+}

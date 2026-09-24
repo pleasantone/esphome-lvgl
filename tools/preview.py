@@ -108,7 +108,12 @@ def main():
             sys.stderr.write(r.stderr[-2000:])
             sys.exit(1)
         if 'out' in scenario:
-            src = re.search(r'(\S+\.png)', r.stdout)
+            # the page's own snapshot, not the first one printed: a config
+            # with several pages lists them in navigation order
+            pid = re.search(r'^\s*pages:\s*\n\s*- id: (\w+)', t, re.M).group(1)
+            src = re.search(r'^' + pid + r': (\S+\.png)', r.stdout, re.M)
+            if not src:
+                sys.exit(f'preview: no snapshot of page {pid}')
             dst = ROOT / 'snapshots' / scenario['out']
             shutil.copy(src.group(1), dst)
             print('saved', dst)
