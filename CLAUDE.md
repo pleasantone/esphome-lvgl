@@ -10,18 +10,20 @@ through the `packages:` / `!include` mechanism.
 
 ## How main relates to upstream
 
-main is **upstream/main + #61 + #68 + the fork's own commits**, rebuilt and force-pushed on 2026-09-22 as
-if Ryan had merged those two (tags: `main-pre-rebuild-6168`, and `main-pre-rebase` from the 2026-09-21
-rebuild). The fork's own copies of merged work (#62 BLE proxy, #63 steppers, #64 diagnostics, #65 sleep
-clock, #67 the ILI9342 device file) were dropped in favour of upstream's.
+main is **upstream/main + the fork's own commits**. It was rebuilt and force-pushed on 2026-09-22 as
+upstream + #61 + #68, as if Ryan had merged those two (tags: `main-pre-rebuild-6168`, and
+`main-pre-rebase` from the 2026-09-21 rebuild); he then merged both, plus #70 and #71, and main merged
+upstream cleanly on 2026-09-23 with no content change. The fork's own copies of merged work (#62 BLE
+proxy, #63 steppers, #64 diagnostics, #65 sleep clock, #67 the ILI9342 device file) were dropped in
+favour of upstream's.
 
-**No shared file diverges any more**: every file upstream also has is byte-identical to upstream plus the
-open PRs, so a merge of upstream/main is clean. Everything fork-only is a separate file (the list under
+**No shared file diverges**: every file upstream also has is byte-identical to upstream (plus any open
+PR main carries ahead of its merge), so a merge of upstream/main is clean. Everything fork-only is a separate file (the list under
 "Personal vs example layouts"). Keep it that way -- a fork-only note about a shared file belongs here, not
 in that file.
 
 Sync with a plain merge of upstream/main; rebuilding again would need another force-push, which is Paul's
-call. When #61 and #68 land, `git log main..upstream/main` should show only Ryan's merge commits.
+call. After a sync, `git log main..upstream/main` is empty.
 
 ## Commands
 
@@ -739,7 +741,7 @@ more than 240px of height), and the confirm box is 228px wide. Debug serial on t
 shows `/dev/cu.usbserial-*`; pulse RTS to reset and read the boot (esphome logs over serial doesn't).
 
 Upstream #67 (merged) carries the device file, built on `ESP32-2432S028R.yaml` and `!remove`-ing its
-display, with `sunton-28-9342-example.yaml`. Upstream #68 is the diet write-up: a "Putting a low-memory
+display, with `sunton-28-9342-example.yaml`. Upstream #68 (merged) is the diet write-up: a "Putting a low-memory
 panel on a diet" README section with the measured table, and `320x240/pages/printers-on-a-diet.yaml`
 (real AMS units, commented out in the 2.8" examples). With page access on `320x240-home`, home28 is at
 49.0% static RAM (was 46.3%) and has not been flashed since; watch Heap Min Free if it is.
