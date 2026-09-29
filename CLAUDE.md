@@ -771,7 +771,11 @@ its *index*, which points at another page once the page list changes, so the lay
 priority 0, before `go_home` at −100. With those, a room differs from another only in runtime settings, so
 one image can serve several panels: `esphome: name_add_mac_suffix: true` in the top-level config makes
 each join Home Assistant as its own device (`<name>-<last 3 MAC bytes>`). That line is the whole opt-in;
-per-panel configs just don't set it.
+per-panel configs just don't set it. `home35.yaml` and `home28.yaml` set it (2026-09-28), so either
+image can go on several panels; `tools/flash.sh` then flashes every one it finds -- `<name>.local` (a
+panel still on the unsuffixed build) plus each HA ESPHome entry named `<name>-xxxxxx` -- and verifies
+each, failing if any does. The suffixed hostnames aren't what `<name>.local` resolves, so after the
+first reflash it needs the HA lookup over ssh, or `--device`.
 
 Updating such a fleet is a loop, which keeps `common.yaml`'s encrypted OTA — the suffixed names mean
 `esphome upload` can't find a panel by name:

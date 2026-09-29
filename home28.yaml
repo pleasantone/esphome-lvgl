@@ -1,6 +1,8 @@
 esphome:
   name: home28
   friendly_name: Home 2.8"
+  # one image, many panels: each joins HA as <name>-<last 3 MAC bytes>
+  name_add_mac_suffix: true
 
 substitutions:
   home_page: printers
