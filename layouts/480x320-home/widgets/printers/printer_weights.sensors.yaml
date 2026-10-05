@@ -1,0 +1,17 @@
+# Fork-only: Bambuddy weights for a stacked printer tile -- the same twelve slots
+# as the shared printer.sensors.yaml, which must be included for the same uid
+# (its tray sensors are what this extends). A slot Home Assistant has no
+# sensor.<weights_prefix>_ams_N_tray_M for never reports, and its pill keeps the
+# RFID fallback.
+#
+# required vars:
+# - uid
+# - weights_prefix   # bambuddy_<printer>, from HA's packages/bambuddy.yaml
+
+packages:
+  ams_1: !include { file: ams_row_weights.sensors.yaml, vars: { ams_id: "1" } }
+  ams_2: !include { file: ams_row_weights.sensors.yaml, vars: { ams_id: "2" } }
+  ams_3: !include { file: ams_row_weights.sensors.yaml, vars: { ams_id: "3" } }
+  ams_4: !include { file: ams_row_weights.sensors.yaml, vars: { ams_id: "4" } }
+  ams_128: !include { file: ams_row_single_weights.sensors.yaml, vars: { ams_id: "128" } }
+  ams_129: !include { file: ams_row_single_weights.sensors.yaml, vars: { ams_id: "129" } }

@@ -1,0 +1,10 @@
+# Fork-only: Bambuddy weight for the one tray pill of an AMS HT.
+# Pairs with the shared ams_row_single.sensors.yaml for the same uid / ams_id.
+#
+# required vars:
+# - uid
+# - ams_id
+# - weights_prefix
+
+packages:
+  tray_1: !include { file: tray_weight.sensors.yaml, vars: { tray: "1" } }

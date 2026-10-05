@@ -1,0 +1,9 @@
+# Fork-only: Bambuddy weights for a combined-format printer tile -- AMS 1 only,
+# like the shared printer_combined.sensors.yaml it pairs with.
+#
+# required vars:
+# - uid
+# - weights_prefix
+
+packages:
+  ams_1: !include { file: ams_row_weights.sensors.yaml, vars: { ams_id: "1" } }

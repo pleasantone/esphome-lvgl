@@ -1,0 +1,34 @@
+# Fork-only: one tray pill shows Bambuddy's spool weight in grams.
+#
+# Pairs with the shared tray sensors (widgets/printers/ams_row*.sensors.yaml),
+# which must be included for the same uid / ams_id: this file `!extend`s their
+# `_remain` text_sensor rather than replacing it, so the shared file stays
+# byte-identical to upstream. The extension's on_value is appended after the
+# shared one, so its text is the one left on the label -- the shared "NN%" is
+# overwritten in the same call.
+#
+# Both sources run the same tray_weight::text(), so whichever updates last, the
+# pill shows Bambuddy grams, else RFID % as grams, else "--". The Bambuddy
+# sensors live in Home Assistant's /config/packages/bambuddy.yaml.
+#
+# required vars:
+# - uid
+# - ams_id
+# - tray             # 1-4
+# - weights_prefix   # e.g. bambuddy_h2c -> sensor.bambuddy_h2c_ams_1_tray_1
+
+sensor:
+  - id: ${uid}_ams_${ams_id}_tray_${tray}_grams
+    platform: homeassistant
+    entity_id: sensor.${weights_prefix}_ams_${ams_id}_tray_${tray}
+    on_value:
+      - lvgl.label.update:
+          id: ${uid}_ams_${ams_id}_tray_${tray}_remaining_lbl
+          text: !lambda return tray_weight::text(x, id(${uid}_ams_${ams_id}_tray_${tray}_remain).state);
+
+text_sensor:
+  - id: !extend ${uid}_ams_${ams_id}_tray_${tray}_remain
+    on_value:
+      - lvgl.label.update:
+          id: ${uid}_ams_${ams_id}_tray_${tray}_remaining_lbl
+          text: !lambda return tray_weight::text(id(${uid}_ams_${ams_id}_tray_${tray}_grams).state, x);

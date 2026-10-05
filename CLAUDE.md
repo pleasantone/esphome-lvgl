@@ -472,6 +472,24 @@ The integration namespaces trays by unit: `sensor.<prefix>_ams_<n>_tray_<m>`, **
 tile derives the displayed end time from `ha_time.now() + remaining_time` instead of reading `end_time`'s
 hour field, which would be wrong by the local UTC offset. A tray with no RFID reports `remain: -1`.
 
+### Spool weights from Bambuddy (fork-only) — 2026-10-05
+
+On the personal layouts a tray pill shows **grams left**, not `NN%`: Bambuddy's weight when Bambuddy
+has a spool assigned to the slot, else the RFID `remain` as grams of a 1 kg spool (`74` → `740`), else
+`--`. Bare numbers, so a row never mixes units; `1000` is 36px in the 40px pill (28 of 31 on home28).
+
+The data comes from Home Assistant's `/config/packages/bambuddy.yaml`, not from the panel: one `rest:`
+poll of `/api/v1/inventory/assignments` every 180s gives `sensor.bambuddy_{x1c,h2c}_ams_N_tray_M`,
+`unavailable` for an unassigned slot (NaN on the panel). The API key is in HA's secrets, never on a
+panel. Bambuddy numbers units and trays from 0; the HT is 128 in both.
+
+The panel half is `layouts/480x320-home/widgets/printers/` (`tray_weight.h`, `tray_weight.sensors.yaml`
+and wrappers named after the shared files they pair with). It does not touch the shared tray sensors:
+it `!extend`s each `${uid}_ams_N_tray_M_remain` text_sensor, and ESPHome merges the extension's
+`on_value` into the same `then:` list *after* the shared `NN%` update, so its text is the one left on
+the label. Both the weight sensor and the extended RFID sensor call the same `tray_weight::text()`, so
+the order the two arrive in does not matter. Checked in SDL by publishing both sources at boot.
+
 ## The Outside page (fork-only) — 2026-09-23
 
 `layouts/480x320-home/pages/outside.yaml` is a glance page: time, the walk verdict, daylight, temperature,

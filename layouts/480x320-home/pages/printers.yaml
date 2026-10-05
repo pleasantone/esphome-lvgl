@@ -54,3 +54,11 @@ packages:
     uid: printer_2,
     entity_id_prefix: h2c_h2c_31b8ap630100072
   }}
+
+  # Tray pills show Bambuddy's spool weight in grams (fork-only; HA's
+  # packages/bambuddy.yaml). Each extends the tray sensors included above, so it
+  # pairs with the matching printer${tile_variant}.sensors.yaml.
+  printer_1_weights: !include { file: ../widgets/printers/printer_combined_weights.sensors.yaml, vars: {
+    uid: printer_1, weights_prefix: bambuddy_x1c } }
+  printer_2_weights: !include { file: ../widgets/printers/printer_weights.sensors.yaml, vars: {
+    uid: printer_2, weights_prefix: bambuddy_h2c } }

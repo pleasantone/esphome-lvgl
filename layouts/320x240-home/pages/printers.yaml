@@ -66,3 +66,14 @@ packages:
     uid: printer_2, entity_id_prefix: h2c_h2c_31b8ap630100072, ams_id: "2", variant: "" } }
   printer_2_ams_128: !include { file: ../../widgets/printers/ams_unit.sensors.yaml, vars: {
     uid: printer_2, entity_id_prefix: h2c_h2c_31b8ap630100072, ams_id: "128", variant: "_single" } }
+
+  # Tray pills show Bambuddy's spool weight in grams (fork-only; HA's
+  # packages/bambuddy.yaml), one package per unit enumerated above.
+  printer_1_weights: !include { file: ../../480x320-home/widgets/printers/printer_combined_weights.sensors.yaml, vars: {
+    uid: printer_1, weights_prefix: bambuddy_x1c } }
+  printer_2_weights_1: !include { file: ../../480x320-home/widgets/printers/ams_row_weights.sensors.yaml, vars: {
+    uid: printer_2, weights_prefix: bambuddy_h2c, ams_id: "1" } }
+  printer_2_weights_2: !include { file: ../../480x320-home/widgets/printers/ams_row_weights.sensors.yaml, vars: {
+    uid: printer_2, weights_prefix: bambuddy_h2c, ams_id: "2" } }
+  printer_2_weights_128: !include { file: ../../480x320-home/widgets/printers/ams_row_single_weights.sensors.yaml, vars: {
+    uid: printer_2, weights_prefix: bambuddy_h2c, ams_id: "128" } }
