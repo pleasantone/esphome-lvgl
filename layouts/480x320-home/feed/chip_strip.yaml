@@ -1,0 +1,169 @@
+# Fork-only: the chip strip under the header (2026-10-13). My Home's chip row,
+# from sensor.office_panel_status's chips_all (see feed.h), red and amber first.
+# Lives on top_layer like the header; chips.sensors.yaml hides it whenever the
+# titlebar is hidden (Outside, the sleep clock) and on the alert page.
+#
+# Geometry contract with vars/page.yaml: header 44 + strip 30 + 2 = pad_top 76.
+
+# widgets:
+  obj:
+    id: chip_strip
+    x: 0
+    y: 44
+    width: 100%
+    height: 30
+    radius: 0
+    border_width: 0
+    bg_color: 0x42495A
+    pad_top: 3
+    pad_bottom: 3
+    pad_left: 6
+    pad_right: 6
+    scroll_dir: HOR
+    scrollbar_mode: "OFF"
+    layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 6 }
+    widgets:
+      - obj:
+          id: chip_1
+          hidden: true
+          clickable: false
+          scrollable: false
+          width: SIZE_CONTENT
+          height: 24
+          radius: 12
+          border_width: 0
+          bg_color: 0x5A6173
+          pad_top: 0
+          pad_bottom: 0
+          pad_left: 7
+          pad_right: 10
+          layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 4 }
+          widgets:
+            - label: { id: chip_1_ic, text: "", text_font: mdi_sm }
+            - label: { id: chip_1_tx, text: "", text_font: roboto_sm }
+      - obj:
+          id: chip_2
+          hidden: true
+          clickable: false
+          scrollable: false
+          width: SIZE_CONTENT
+          height: 24
+          radius: 12
+          border_width: 0
+          bg_color: 0x5A6173
+          pad_top: 0
+          pad_bottom: 0
+          pad_left: 7
+          pad_right: 10
+          layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 4 }
+          widgets:
+            - label: { id: chip_2_ic, text: "", text_font: mdi_sm }
+            - label: { id: chip_2_tx, text: "", text_font: roboto_sm }
+      - obj:
+          id: chip_3
+          hidden: true
+          clickable: false
+          scrollable: false
+          width: SIZE_CONTENT
+          height: 24
+          radius: 12
+          border_width: 0
+          bg_color: 0x5A6173
+          pad_top: 0
+          pad_bottom: 0
+          pad_left: 7
+          pad_right: 10
+          layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 4 }
+          widgets:
+            - label: { id: chip_3_ic, text: "", text_font: mdi_sm }
+            - label: { id: chip_3_tx, text: "", text_font: roboto_sm }
+      - obj:
+          id: chip_4
+          hidden: true
+          clickable: false
+          scrollable: false
+          width: SIZE_CONTENT
+          height: 24
+          radius: 12
+          border_width: 0
+          bg_color: 0x5A6173
+          pad_top: 0
+          pad_bottom: 0
+          pad_left: 7
+          pad_right: 10
+          layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 4 }
+          widgets:
+            - label: { id: chip_4_ic, text: "", text_font: mdi_sm }
+            - label: { id: chip_4_tx, text: "", text_font: roboto_sm }
+      - obj:
+          id: chip_5
+          hidden: true
+          clickable: false
+          scrollable: false
+          width: SIZE_CONTENT
+          height: 24
+          radius: 12
+          border_width: 0
+          bg_color: 0x5A6173
+          pad_top: 0
+          pad_bottom: 0
+          pad_left: 7
+          pad_right: 10
+          layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 4 }
+          widgets:
+            - label: { id: chip_5_ic, text: "", text_font: mdi_sm }
+            - label: { id: chip_5_tx, text: "", text_font: roboto_sm }
+      - obj:
+          id: chip_6
+          hidden: true
+          clickable: false
+          scrollable: false
+          width: SIZE_CONTENT
+          height: 24
+          radius: 12
+          border_width: 0
+          bg_color: 0x5A6173
+          pad_top: 0
+          pad_bottom: 0
+          pad_left: 7
+          pad_right: 10
+          layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 4 }
+          widgets:
+            - label: { id: chip_6_ic, text: "", text_font: mdi_sm }
+            - label: { id: chip_6_tx, text: "", text_font: roboto_sm }
+      - obj:
+          id: chip_7
+          hidden: true
+          clickable: false
+          scrollable: false
+          width: SIZE_CONTENT
+          height: 24
+          radius: 12
+          border_width: 0
+          bg_color: 0x5A6173
+          pad_top: 0
+          pad_bottom: 0
+          pad_left: 7
+          pad_right: 10
+          layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 4 }
+          widgets:
+            - label: { id: chip_7_ic, text: "", text_font: mdi_sm }
+            - label: { id: chip_7_tx, text: "", text_font: roboto_sm }
+      - obj:
+          id: chip_8
+          hidden: true
+          clickable: false
+          scrollable: false
+          width: SIZE_CONTENT
+          height: 24
+          radius: 12
+          border_width: 0
+          bg_color: 0x5A6173
+          pad_top: 0
+          pad_bottom: 0
+          pad_left: 7
+          pad_right: 10
+          layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 4 }
+          widgets:
+            - label: { id: chip_8_ic, text: "", text_font: mdi_sm }
+            - label: { id: chip_8_tx, text: "", text_font: roboto_sm }

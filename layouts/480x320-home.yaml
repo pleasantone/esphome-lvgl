@@ -2,6 +2,7 @@ esphome:
   includes:
     - widgets/printers/tray_color.h # tray::bg / tray::ink, shared by every tray pill
     - 480x320-home/widgets/printers/tray_weight.h # tray_weight::text, the Bambuddy grams on each pill (fork-only)
+    - 480x320-home/feed/feed.h # chip strip, printer cards, alert takeover from HA's panel feeds (fork-only)
   # Go home once everything is set up, rather than from splash's on_load: a
   # page.show inside the first page's own load event is dropped, and splash is
   # only the first page while no package adds one ahead of it.
@@ -29,7 +30,7 @@ font: !include
 
 .sizing:
   - &nav_widget_vars
-    height: 50
+    height: 44 # 50 until 2026-10-13; the 12px went to the chip strip
     padding: 8
 
 globals:
@@ -96,6 +97,7 @@ lvgl:
     widgets:
       - <<: !include { file: widgets/header/widget.yaml, vars: { <<: *nav_widget_vars } }
       - <<: !include { file: widgets/footer/widget.yaml, vars: { <<: *nav_widget_vars } }
+      - <<: !include { file: 480x320-home/feed/chip_strip.yaml } # under the boot screen
       - <<: !include { file: widgets/boot_screen/widget.yaml }
   msgboxes:
     # Shared confirm dialog. The entity to act on is stashed in confirm_entity
@@ -153,13 +155,13 @@ lvgl:
 
     - id: detail_light
       <<: !include { file: widgets/detail/light_page.yaml, vars: {
-        page_styles_pad_top: 50, page_styles_pad_bottom: 50,
+        page_styles_pad_top: 76, page_styles_pad_bottom: 44,
         container_pad_left: 6, container_pad_right: 6,
         pad_row: 8, slider_height: 40, back_height: 60 }}
 
     - id: detail_rgb
       <<: !include { file: widgets/detail/rgb_page.yaml, vars: {
-        page_pad_top: 50, page_pad_bottom: 50,
+        page_pad_top: 76, page_pad_bottom: 44,
         container_pad_left: 6, container_pad_right: 6,
         pad_row: 8, slider_height: 40, arc_size: 130,
         roller_height: 90, back_height: 50 }}
@@ -173,6 +175,9 @@ packages:
 
   # header
   header_sensors: !include { file: widgets/header/sensors.yaml }
+
+  # the chip strip under it (fork-only)
+  chips_sensors: !include { file: 480x320-home/feed/chips.sensors.yaml }
 
   # boot screen
   boot_screen_sensors: !include { file: widgets/boot_screen/sensors.yaml }

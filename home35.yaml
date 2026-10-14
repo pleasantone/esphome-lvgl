@@ -25,6 +25,8 @@ packages:
   idle: !include features/idle/idle.yaml
   ceiling: !include features/idle/sun.yaml
   sleep_clock: !include features/sleep_clock/sleep_clock.yaml
+  # the urgent takeover: after idle and sleep_clock, whose hooks it uses
+  alert: !include layouts/480x320-home/pages/alert.yaml
   memory: !include features/diagnostics/memory.yaml
   psram: !include features/diagnostics/psram.yaml
   ble_proxy: !include features/ble_proxy/ble_proxy.yaml

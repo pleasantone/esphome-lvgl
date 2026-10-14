@@ -1,4 +1,5 @@
-# 480x320-home: a page's padding.
+# 480x320-home: a page's padding. Header 44 + chip strip 30 + 2 on top
+# (feed/chip_strip.yaml), footer 44 below.
 <<: !include ../../styles/page_styles.yaml
-pad_top: 50
-pad_bottom: 50
+pad_top: 76
+pad_bottom: 44

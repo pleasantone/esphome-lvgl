@@ -1,0 +1,4 @@
+# Fork-only: sdl-home with the "alert" feed scenario, for tools/snapshot.py.
+packages:
+  base: !include sdl-home.yaml
+  mock: !include tools/previews/feed-alert.yaml

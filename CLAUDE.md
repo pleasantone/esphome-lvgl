@@ -673,6 +673,33 @@ wins, so to catch a flip call `flip::set()` on a card directly. A second LVGL po
 `on_boot` lambda (`lv_indev_create()` + a scripted `read_cb`) drives touches deterministically; its
 first gesture after boot is dropped, so lead with a throwaway tap.
 
+## HA feeds: chip strip, printer cards, alert takeover (fork-only) — 2026-10-13
+
+`layouts/480x320-home/feed/` draws three things from the office desk panel's Home Assistant feed
+sensors (`~/homeassistant/office-panel`: `office_panel.jinja` + `packages/office_panel.yaml`) instead
+of subscribing to entities and re-deriving them. **Changing that feed's format breaks this panel**; the
+office-panel README lists home35 as a second consumer. `feed.h` documents the strings.
+
+- **Chip strip** (`chip_strip.yaml` on `top_layer`, `chips.sensors.yaml`): My Home's chip row from
+  `sensor.office_panel_status` `chips_all`, ordered red, amber, info (the tail scrolls off 320px). It
+  follows the titlebar's visibility (Outside and the sleep clock hide it) and stays off the alert page.
+  Header and footer went 50 → 44, tiles 86 → 82, page `pad_top` 76 / `pad_bottom` 44 to fit it.
+- **Printers page** (`printer_card.yaml`, `ams_row.yaml`, `printer.sensors.yaml`): one subscription per
+  printer (`sensor.office_panel_printers` `<p>_page_all`) instead of ~100 entities. Static RAM fell
+  ~13KB and free heap rose ~17KB. home28 keeps the old tiles (its own `printers.yaml`).
+- **Alert takeover** (`pages/alert.yaml`, home35 + sdl-home only, after idle and sleep_clock): a red chip
+  wakes the panel and shows the alert page; life safety (smoke/flood/alarm icons) at the full ceiling,
+  garage/weather at the sleep clock's level at night. OK acknowledges the set by raw text (tokens
+  unexpanded, so a counting garage stays one alert). It wraps `sleep_handler` to decline the idle sleep
+  while unacknowledged, and holds the page via `idle_hold_page`. Printer errors don't take over here.
+- **Live tokens** `§<kind><epoch>§` are expanded and re-ticked by `feed::text()/tick()` (1s interval
+  against `ha_time`), ported from office-panel/panel.h.
+- **Previews:** `tools/snapshot.py sdl-feed-{evening,off,alert}.yaml --all` publishes sample feed values
+  (`tools/previews/feed-*.yaml`, which pin the clock with `feed::frozen()`) through the real parsing.
+- Printer power on Printer Control goes through `script.bambu_printer_power` (`widgets/printers/
+  power_button.yaml`; the shared `confirm_box` sees `printer:<slug>`); this panel never forces.
+- In flow-style YAML (`{ id: ${uid}_x }`) quote a templated id, or the `{` of `${` ends the map.
+
 ## Checks that pay for themselves
 
 The tools in `tools/` are the checks; run them rather than re-deriving them. `lint_configs.py` covers the

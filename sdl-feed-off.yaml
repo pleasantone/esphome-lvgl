@@ -1,0 +1,4 @@
+# Fork-only: sdl-home with the "off" feed scenario, for tools/snapshot.py.
+packages:
+  base: !include sdl-home.yaml
+  mock: !include tools/previews/feed-off.yaml

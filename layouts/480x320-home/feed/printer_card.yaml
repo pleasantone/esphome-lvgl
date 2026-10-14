@@ -1,0 +1,63 @@
+# Fork-only: one printer as a card (2026-10-13), drawn from the office panel's
+# printers feed by feed::set_card / set_row (printer.sensors.yaml). Name and a
+# status pill, the job, a progress bar, one line of time left / finished /
+# auto-off, a red alert line, and a row per AMS unit. Hidden parts collapse.
+# A tap opens Printer Control.
+# required vars: uid, name
+
+# obj:
+  id: ${uid}_card
+  width: 100%
+  height: SIZE_CONTENT
+  bg_color: 0x5A6173
+  border_width: 0
+  radius: 16
+  pad_all: 8
+  scrollable: false
+  layout: { type: FLEX, flex_flow: COLUMN, pad_row: 4 }
+  on_click:
+    - lvgl.page.show: printer_control
+  widgets:
+    - obj:
+        clickable: false
+        scrollable: false
+        width: 100%
+        height: 26
+        bg_opa: TRANSP
+        border_width: 0
+        pad_all: 0
+        widgets:
+          - label: { align: LEFT_MID, text: "${name}", text_font: roboto_md }
+          - obj:
+              id: ${uid}_pill
+              clickable: false
+              scrollable: false
+              align: RIGHT_MID
+              width: SIZE_CONTENT
+              height: 24
+              radius: 12
+              border_width: 0
+              bg_color: 0x4A5060
+              pad_top: 0
+              pad_bottom: 0
+              pad_left: 10
+              pad_right: 10
+              widgets:
+                - label: { id: "${uid}_pill_lbl", align: CENTER, text: "--", text_font: roboto_sm }
+    - label: { id: "${uid}_task", width: 100%, long_mode: WRAP, text: "", text_font: roboto_sm, text_color: 0xC9CED8 }
+    - bar:
+        id: ${uid}_bar
+        hidden: true
+        clickable: false
+        width: 100%
+        height: 6
+        min_value: 0
+        max_value: 100
+        bg_color: 0x3A4050
+        indicator:
+          bg_color: 0xFFAF00
+    - label: { id: "${uid}_time", hidden: true, width: 100%, long_mode: DOT, text: "", text_font: roboto_sm }
+    - label: { id: "${uid}_alert", hidden: true, width: 100%, long_mode: DOT, text: "", text_font: roboto_sm, text_color: 0xFF8A80 }
+    - obj: { <<: !include { file: ams_row.yaml, vars: { row: 1 } } }
+    - obj: { <<: !include { file: ams_row.yaml, vars: { row: 2 } } }
+    - obj: { <<: !include { file: ams_row.yaml, vars: { row: 3 } } }

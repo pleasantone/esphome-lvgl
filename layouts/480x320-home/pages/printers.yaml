@@ -1,6 +1,8 @@
-# Printers: the page and the sensors its tiles need.
-# Include it from the top-level config after `layout:`; pages appear in the
-# order they are listed.
+# Printers: both printers as cards, from the office panel's printers feed
+# (fork-only, 2026-10-13; was tile_combined + tile with ~100 subscriptions).
+# Home Assistant shapes the data (~/homeassistant/office-panel/office_panel.jinja
+# printer_page); feed.h draws it. Tap a card for Printer Control.
+# Include it from the top-level config after `layout:`.
 
 lvgl:
   pages:
@@ -14,51 +16,14 @@ lvgl:
         - obj:
             <<: !include ../vars/container.yaml
             layout:
-              <<: !include ../vars/printer_layout.yaml
+              type: FLEX
+              flex_flow: COLUMN
+              pad_row: 8
             widgets:
-              # Each tile's body comes from widgets/printers/tile${tile_variant}.yaml,
-              # chosen per printer. "" is the stacked format: a name line and a
-              # full row per AMS unit, all twelve slots revealing themselves.
-              # "_combined" is upstream's original shape, with the name and one
-              # unit's pills on a single line -- a line cheaper, but static and
-              # single-AMS. Pick the matching printer${tile_variant}.sensors.yaml
-              # below; the pair is enforced by the ids each half names.
-              #
-              # The sizing anchors are passed as vars because anchors do not
-              # cross a file boundary; the includes inside inherit them there.
-              - obj: # 1 - X1C -- one AMS, always present, so it takes the line back
-                  <<: !include ../vars/printer_tile.yaml
-                  layout:
-                    <<: !include ../vars/printer_tile_layout.yaml
-                  widgets: !include { file: ../../widgets/printers/tile_combined.yaml, vars: {
-                    uid: printer_1, name: 1 - X1C,
-                    <<: [!include ../vars/ams_row.yaml, !include ../vars/printer_bar.yaml] } }
-
-              - obj: # 2 - H2C -- three units today, so it keeps the stacked rows
-                  <<: !include ../vars/printer_tile.yaml
-                  layout:
-                    <<: !include ../vars/printer_tile_layout.yaml
-                  widgets: !include { file: ../../widgets/printers/tile.yaml, vars: {
-                    uid: printer_2, name: 2 - H2C,
-                    <<: [!include ../vars/ams_row.yaml, !include ../vars/printer_bar.yaml] } }
+              - obj: { <<: !include { file: ../feed/printer_card.yaml, vars: { uid: p_x1c, name: X1C } } }
+              - obj: { <<: !include { file: ../feed/printer_card.yaml, vars: { uid: p_h2c, name: H2C } } }
 
 packages:
   printers_access: !include { file: ../../widgets/page_access.yaml, vars: { page: printers } }
-
-  printer_1_sensors: !include { file: ../../widgets/printers/printer_combined.sensors.yaml, vars: {
-    uid: printer_1,
-    entity_id_prefix: x1c_x1c_00m09d460801484
-  }}
-
-  printer_2_sensors: !include { file: ../../widgets/printers/printer.sensors.yaml, vars: {
-    uid: printer_2,
-    entity_id_prefix: h2c_h2c_31b8ap630100072
-  }}
-
-  # Tray pills show Bambuddy's spool weight in grams (fork-only; HA's
-  # packages/bambuddy.yaml). Each extends the tray sensors included above, so it
-  # pairs with the matching printer${tile_variant}.sensors.yaml.
-  printer_1_weights: !include { file: ../widgets/printers/printer_combined_weights.sensors.yaml, vars: {
-    uid: printer_1, weights_prefix: bambuddy_x1c } }
-  printer_2_weights: !include { file: ../widgets/printers/printer_weights.sensors.yaml, vars: {
-    uid: printer_2, weights_prefix: bambuddy_h2c } }
+  p_x1c_feed: !include { file: ../feed/printer.sensors.yaml, vars: { uid: p_x1c, printer: x1c } }
+  p_h2c_feed: !include { file: ../feed/printer.sensors.yaml, vars: { uid: p_h2c, printer: h2c } }

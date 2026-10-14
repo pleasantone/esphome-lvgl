@@ -1,0 +1,36 @@
+# Fork-only: feeds the chip strip (chip_strip.yaml) and ticks the live time
+# tokens every feed label holds (feed.h). One subscription for all eight chips.
+
+text_sensor:
+  - id: chips_feed
+    platform: homeassistant
+    internal: true
+    entity_id: sensor.office_panel_status
+    attribute: chips_all
+    on_value:
+      - lambda: |-
+          feed::chips() = feed::parse_chips(x);
+          lv_obj_t *boxes[] = {id(chip_1), id(chip_2), id(chip_3), id(chip_4), id(chip_5), id(chip_6), id(chip_7), id(chip_8)};
+          lv_obj_t *icons[] = {id(chip_1_ic), id(chip_2_ic), id(chip_3_ic), id(chip_4_ic), id(chip_5_ic), id(chip_6_ic), id(chip_7_ic), id(chip_8_ic)};
+          lv_obj_t *texts[] = {id(chip_1_tx), id(chip_2_tx), id(chip_3_tx), id(chip_4_tx), id(chip_5_tx), id(chip_6_tx), id(chip_7_tx), id(chip_8_tx)};
+          feed::set_chips(feed::chips(), boxes, icons, texts, 8);
+          lv_obj_scroll_to_x(id(chip_strip), 0, LV_ANIM_OFF);
+      - script.execute: chips_changed
+
+script:
+  # pages/alert.yaml appends the takeover here
+  - id: chips_changed
+    then: []
+
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          auto now = id(ha_time).now();
+          if (now.is_valid() && feed::set_now(now.timestamp)) feed::tick();
+  # the strip goes wherever the titlebar goes (Outside and the sleep clock hide
+  # it), and stays off the alert page, which says it bigger
+  - interval: 200ms
+    then:
+      - lambda: |-
+          feed::show(id(chip_strip), !lv_obj_has_flag(id(titlebar), LV_OBJ_FLAG_HIDDEN) && !feed::alert_showing());
