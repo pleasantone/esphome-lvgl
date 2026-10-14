@@ -192,6 +192,23 @@ inline std::vector<Chip> parse_chips(const std::string &all) {
   std::stable_sort(out.begin(), out.end(), [&](const Chip &a, const Chip &b) { return rank(a) < rank(b); });
   return out;
 }
+// The strip never scrolls (2026-10-14): hidden chips were unreadable. Routine (info) chips shrink to an
+// icon plus a short value; amber and red keep their full words. Whatever still doesn't fit collapses
+// into a "+N" chip, and tapping the strip opens the full list (pages/chips.yaml).
+inline std::string short_text(const Chip &c) {
+  const std::string &t = c.text;
+  if (c.level != "info") return t;
+  auto last_word = [&t]() {
+    size_t sp = t.rfind(' ');
+    std::string w = sp == std::string::npos ? t : t.substr(sp + 1);
+    if (!w.empty() && w[0] >= 'a' && w[0] <= 'z') w[0] -= 32;
+    return w;
+  };
+  if (c.icon == "shield") return t == "Alarm off" ? std::string() : last_word();  // "Armed night" -> "Night"
+  if (c.icon == "trash") return last_word();                                       // "Trash tomorrow" -> "Tomorrow"
+  if (!t.empty() && t[0] >= '0' && t[0] <= '9') return t.substr(0, t.find(' '));    // "62° Clear" -> "62°", "2 lights" -> "2"
+  return "";                                                                        // the icon says it
+}
 // boxes[i] holds icons[i] and texts[i]; unused slots hide
 inline void set_chips(const std::vector<Chip> &chips, lv_obj_t **boxes, lv_obj_t **icons, lv_obj_t **texts, int n) {
   for (int i = 0; i < n; i++) {
@@ -205,9 +222,62 @@ inline void set_chips(const std::vector<Chip> &chips, lv_obj_t **boxes, lv_obj_t
     fg(icons[i], ink);
     fg(texts[i], ink);
     text(icons[i], glyph(c.icon));
+    std::string t = short_text(c);
+    text(texts[i], t);
+    show(texts[i], !t.empty());
+    show(boxes[i], true);
+  }
+}
+// Hide trailing chips that don't fit, and say how many with the "+N" chip, coloured by the most serious
+// chip it hides (an amber "+2" still says "something needs a look").
+inline void fit_chips(lv_obj_t *strip, lv_obj_t **boxes, int count, lv_obj_t *more, lv_obj_t *more_tx,
+                      const std::vector<Chip> &chips) {
+  const int GAP = 6;  // pad_column in chip_strip.yaml
+  show(more, false);
+  lv_obj_update_layout(strip);
+  int avail = lv_obj_get_content_width(strip), total = 0;
+  std::vector<int> w(count);
+  for (int i = 0; i < count; i++) total += (w[i] = lv_obj_get_width(boxes[i])) + (i ? GAP : 0);
+  if (total <= avail) return;
+  text(more_tx, "+" + std::to_string(count));  // widest case, to measure
+  show(more, true);
+  lv_obj_update_layout(strip);
+  int wm = lv_obj_get_width(more), used = 0, k = 0;
+  while (k < count && used + w[k] + GAP + wm <= avail) used += w[k++] + GAP;
+  int worst = 2;  // 0 act, 1 warn, 2 info
+  for (int i = k; i < count; i++) {
+    show(boxes[i], false);
+    const std::string &l = chips[i].level;
+    worst = std::min(worst, l == "act" ? 0 : l == "warn" ? 1 : 2);
+  }
+  bg(more, worst == 0 ? ACT_BG : worst == 1 ? WARN_BG : INFO_BG);
+  fg(more_tx, worst == 1 ? WARN_TEXT : TEXT);
+  text(more_tx, "+" + std::to_string(count - k));
+}
+// the chip list page: every chip in full words, same colours
+inline void set_list(const std::vector<Chip> &chips, lv_obj_t **boxes, lv_obj_t **icons, lv_obj_t **texts, int n) {
+  for (int i = 0; i < n; i++) {
+    if (i >= (int) chips.size()) {
+      show(boxes[i], false);
+      continue;
+    }
+    const Chip &c = chips[i];
+    bg(boxes[i], c.level == "act" ? ACT_BG : c.level == "warn" ? WARN_BG : INFO_BG);
+    uint32_t ink = c.level == "act" ? TEXT : c.level == "warn" ? WARN_TEXT : TEXT;
+    fg(icons[i], ink);
+    fg(texts[i], ink);
+    text(icons[i], glyph(c.icon));
     text(texts[i], c.text);
     show(boxes[i], true);
   }
+}
+inline bool &fit_dirty() {  // chips changed: refit on the strip's next tick while it's visible
+  static bool b = false;
+  return b;
+}
+inline bool &list_showing() {  // set by the chip list page's on_load / on_unload
+  static bool b = false;
+  return b;
 }
 
 // ── urgent takeover ───────────────────────────────────────────────────────────────────────────

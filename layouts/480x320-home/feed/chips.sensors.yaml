@@ -14,12 +14,16 @@ text_sensor:
           lv_obj_t *icons[] = {id(chip_1_ic), id(chip_2_ic), id(chip_3_ic), id(chip_4_ic), id(chip_5_ic), id(chip_6_ic), id(chip_7_ic), id(chip_8_ic)};
           lv_obj_t *texts[] = {id(chip_1_tx), id(chip_2_tx), id(chip_3_tx), id(chip_4_tx), id(chip_5_tx), id(chip_6_tx), id(chip_7_tx), id(chip_8_tx)};
           feed::set_chips(feed::chips(), boxes, icons, texts, 8);
-          lv_obj_scroll_to_x(id(chip_strip), 0, LV_ANIM_OFF);
+          // measured on the strip's next visible tick: a hidden or not-yet-laid-out strip has no width
+          feed::fit_dirty() = true;
       - script.execute: chips_changed
 
 script:
-  # pages/alert.yaml appends the takeover here
+  # pages/alert.yaml appends the takeover here, pages/chips.yaml the list refresh
   - id: chips_changed
+    then: []
+  # a tap on the strip; pages/chips.yaml shows the full list
+  - id: open_chip_list
     then: []
 
 interval:
@@ -33,4 +37,12 @@ interval:
   - interval: 200ms
     then:
       - lambda: |-
-          feed::show(id(chip_strip), !lv_obj_has_flag(id(titlebar), LV_OBJ_FLAG_HIDDEN) && !feed::alert_showing());
+          bool vis = !lv_obj_has_flag(id(titlebar), LV_OBJ_FLAG_HIDDEN) && !feed::alert_showing() && !feed::list_showing();
+          feed::show(id(chip_strip), vis);
+          if (vis && feed::fit_dirty() && lv_obj_get_width(id(chip_strip)) > 0) {
+            feed::fit_dirty() = false;
+            lv_obj_t *boxes[] = {id(chip_1), id(chip_2), id(chip_3), id(chip_4), id(chip_5), id(chip_6), id(chip_7), id(chip_8)};
+            int n = std::min((int) feed::chips().size(), 8);
+            for (int i = 0; i < n; i++) feed::show(boxes[i], true);  // a previous fit may have hidden some
+            feed::fit_chips(id(chip_strip), boxes, n, id(chip_more), id(chip_more_tx), feed::chips());
+          }

@@ -1,7 +1,9 @@
 # Fork-only: the chip strip under the header (2026-10-13). My Home's chip row,
 # from sensor.office_panel_status's chips_all (see feed.h), red and amber first.
 # Lives on top_layer like the header; chips.sensors.yaml hides it whenever the
-# titlebar is hidden (Outside, the sleep clock) and on the alert page.
+# titlebar is hidden (Outside, the sleep clock) and on the alert and chip list pages.
+# It never scrolls (2026-10-14): routine chips are compact, the overflow is a
+# "+N" chip, and a tap opens the full list (pages/chips.yaml).
 #
 # Geometry contract with vars/page.yaml: header 44 + strip 30 + 2 = pad_top 76.
 
@@ -19,8 +21,9 @@
     pad_bottom: 3
     pad_left: 6
     pad_right: 6
-    scroll_dir: HOR
-    scrollbar_mode: "OFF"
+    scrollable: false
+    on_click:
+      - script.execute: open_chip_list
     layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 6 }
     widgets:
       - obj:
@@ -167,3 +170,19 @@
           widgets:
             - label: { id: chip_8_ic, text: "", text_font: mdi_sm }
             - label: { id: chip_8_tx, text: "", text_font: roboto_sm }
+      - obj:
+          id: chip_more
+          hidden: true
+          clickable: false
+          scrollable: false
+          width: SIZE_CONTENT
+          height: 24
+          radius: 12
+          border_width: 0
+          bg_color: 0x5A6173
+          pad_top: 0
+          pad_bottom: 0
+          pad_left: 9
+          pad_right: 9
+          widgets:
+            - label: { id: chip_more_tx, align: CENTER, text: "+", text_font: roboto_sm, text_color: 0xFFFFFF }

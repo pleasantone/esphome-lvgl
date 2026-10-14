@@ -684,6 +684,11 @@ office-panel README lists home35 as a second consumer. `feed.h` documents the st
   `sensor.office_panel_status` `chips_all`, ordered red, amber, info (the tail scrolls off 320px). It
   follows the titlebar's visibility (Outside and the sleep clock hide it) and stays off the alert page.
   Header and footer went 50 → 44, tiles 86 → 82, page `pad_top` 76 / `pad_bottom` 44 to fit it.
+- **The strip never scrolls (2026-10-14):** routine (info) chips show an icon plus a short value (`feed::short_text`:
+  "62°", "2", "Night", or icon only); amber/red keep full words. `fit_chips` hides what doesn't fit behind a "+N" chip
+  coloured by the worst hidden level, measured on the strip's 200 ms tick (`fit_dirty`) because a hidden or not-yet-laid-
+  out strip has no width. A tap on the strip opens `pages/chips.yaml` (every chip in full words, Done returns).
+  Preview: `sdl-feed-busy.yaml`.
 - **Printers page** (`printer_card.yaml`, `ams_row.yaml`, `printer.sensors.yaml`): one subscription per
   printer (`sensor.office_panel_printers` `<p>_page_all`) instead of ~100 entities. Static RAM fell
   ~13KB and free heap rose ~17KB. home28 keeps the old tiles (its own `printers.yaml`).

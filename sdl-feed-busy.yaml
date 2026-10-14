@@ -1,0 +1,4 @@
+# Fork-only: sdl-home with the "busy" feed scenario (8 chips), for tools/snapshot.py.
+packages:
+  base: !include sdl-home.yaml
+  mock: !include tools/previews/feed-busy.yaml
