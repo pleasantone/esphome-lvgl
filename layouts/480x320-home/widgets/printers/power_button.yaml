@@ -1,0 +1,46 @@
+# A printer's power tile (fork-only). Same look as confirm_off.yaml, but both
+# directions go through Home Assistant's script.bambu_printer_power, the one
+# guarded path the Printing dashboard and the office panel use: it refuses to
+# cut a printer that is printing or drying, and tells the phone why.
+#
+# Turning on is immediate. Turning off asks first; the shared confirm_box sees
+# "printer:<slug>" in confirm_entity and calls the script instead of turn_off.
+# This panel never forces: a bedroom panel is the last place to override the
+# guard half-awake. Pair with toggle_buttons/sensors.yaml on the plug.
+#
+# required vars:
+# - uid
+# - printer # the script's slug: x1c, h2c
+# - width
+# - height
+# - text
+# - icon_on
+# - icon_off
+# - confirm_text
+
+# button:
+  <<: !include
+    file: ../../../widgets/buttons/icon_text_buttons/stateful.yaml
+    vars:
+      uid: ${uid}
+      width: ${width}
+      height: ${height}
+      icon_on: ${icon_on}
+      icon_off: ${icon_off}
+      text: ${text}
+  on_short_click:
+    - if:
+        condition:
+          - binary_sensor.is_on: ${uid}_widget_sensor
+        then:
+          - lambda: id(confirm_entity) = "printer:${printer}";
+          - lvgl.label.update:
+              id: confirm_body
+              text: ${confirm_text}
+          - lvgl.widget.show: confirm_box
+        else:
+          - homeassistant.action:
+              action: script.bambu_printer_power
+              data:
+                printer: ${printer}
+                action: "on"

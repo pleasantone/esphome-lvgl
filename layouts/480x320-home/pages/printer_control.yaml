@@ -18,28 +18,26 @@ lvgl:
             widgets:
               - button: # x1c plug
                   <<: !include
-                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/confirm_off.yaml
+                    file: ../../480x320-home/widgets/printers/power_button.yaml
                     vars:
                       uid: x1c_plug
-                      entity_id: switch.x1c_plug
-                      domain: switch
-                      text: X1C Plug
+                      printer: x1c
+                      text: X1C Power
                       icon_on: "\U000F06A5"
                       icon_off: "\U000F06A6"
-                      confirm_text: Cut power to the X1C? A print in progress will be lost.
+                      confirm_text: "Turn off the X1C? If it's printing or drying, Home Assistant keeps it on."
                       <<: !include ../vars/button.yaml
 
               - button: # h2c plug
                   <<: !include
-                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/confirm_off.yaml
+                    file: ../../480x320-home/widgets/printers/power_button.yaml
                     vars:
                       uid: h2c_plug
-                      entity_id: switch.h2c_plug
-                      domain: switch
-                      text: H2C Plug
+                      printer: h2c
+                      text: H2C Power
                       icon_on: "\U000F06A5"
                       icon_off: "\U000F06A6"
-                      confirm_text: Cut power to the H2C? A print in progress will be lost.
+                      confirm_text: "Turn off the H2C? If it's printing or drying, Home Assistant keeps it on."
                       <<: !include ../vars/button.yaml
 
               - button: # x1c chamber
@@ -75,18 +73,6 @@ lvgl:
                       text: Riser
                       icon_on: "\U000F1051"
                       icon_off: "\U000F1A4B"
-                      <<: !include ../vars/button.yaml
-
-              - button: # exhaust
-                  <<: !include
-                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
-                    vars:
-                      uid: window_exhaust
-                      entity_id: fan.window_exhaust
-                      domain: fan
-                      text: Exhaust
-                      icon_on: "\U000F0210"
-                      icon_off: "\U000F081D"
                       <<: !include ../vars/button.yaml
 
               - button: # bento box
@@ -138,10 +124,6 @@ packages:
     available_entity_id: binary_sensor.h2c_h2c_31b8ap630100072_online
   }}
 
-  window_exhaust_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
-    uid: window_exhaust,
-    entity_id: fan.window_exhaust
-  }}
 
   bento_box_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
     uid: bento_box,

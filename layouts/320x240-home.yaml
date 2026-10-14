@@ -135,10 +135,22 @@ lvgl:
           radius: 64
           bg_color: 0xD32F2F # white on this is 4.98:1; the brighter red was 3.55
           on_click:
-            - homeassistant.action:
-                action: homeassistant.turn_off
-                data:
-                  entity_id: !lambda return id(confirm_entity);
+            # a printer tile stashes "printer:<slug>": its power goes through
+            # the guarded script, which refuses while printing or drying
+            - if:
+                condition:
+                  - lambda: return id(confirm_entity).rfind("printer:", 0) == 0;
+                then:
+                  - homeassistant.action:
+                      action: script.bambu_printer_power
+                      data:
+                        printer: !lambda return id(confirm_entity).substr(8);
+                        action: "off"
+                else:
+                  - homeassistant.action:
+                      action: homeassistant.turn_off
+                      data:
+                        entity_id: !lambda return id(confirm_entity);
             - lvgl.widget.hide: confirm_box
   pages:
     - id: splash # blank until on_boot goes home; top_layer's boot screen covers it
