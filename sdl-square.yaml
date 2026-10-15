@@ -39,7 +39,7 @@ packages:
   layout: !include layouts/480x320-bedside.yaml
   # pages, in the rail's up/down order
   bedside: !include layouts/480x320-bedside/pages/bedside.yaml
-  printers: !include layouts/480x320-bedside/pages/printers.yaml
+  printers: !include layouts/480x320-bedside/pages/printers_lanes.yaml # the square's own
   printer_control: !include layouts/480x320-bedside/pages/printer_control.yaml
   lighting_second: !include layouts/480x320-bedside/pages/lighting_second.yaml
   lighting_main: !include layouts/480x320-bedside/pages/lighting_main.yaml

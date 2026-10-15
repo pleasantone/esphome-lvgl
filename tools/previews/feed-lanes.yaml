@@ -1,0 +1,18 @@
+# Fork-only preview scenario "busy" for the HA-fed parts (chip strip, printer
+# cards, alert takeover): publishes sample feed values at boot, through the
+# real parsing in feed.h. Used by sdl-feed-busy.yaml; never on a panel.
+esphome:
+  on_boot:
+    - priority: -150
+      then:
+        - lambda: |-
+            feed::frozen() = true;
+            feed::now_ref() = 1791960000;
+            auto J = [](std::vector<std::string> v) {
+              std::string s = "v";
+              for (auto &x : v) { s += '\x1f'; s += x; }
+              return s;
+            };
+            id(chips_feed).publish_state(J({"night|info|56° Clear", "shield|info|Armed night", "garage|act|Garage open §m1791957480§ min", "battery|warn|Front door lock 15%", "humidity|warn|Bonus Room 54%", "lights|info|3 lights", "package|info|1 package delivered", "trash|info|Trash tomorrow"}));
+            id(p_x1c_feed).publish_state(J({"active|Printing|Bag Pack Clip rounded", "42|§r1791963900§ left|Done 11:45 PM|Layer 88 of 210 · 31 g", "221°|65°|42°", "auto-off 10 min after this print", "AMS 1 slot 2 filament may be tangled", "AMS 1|14% · 24°|;#000000|PLA Basic|612 g|;#BCBCBC|PLA Basic|240 g|a;#FFFFFF|PLA Basic|530 g|;#000000|Empty||e", "", ""}));
+            id(p_h2c_feed).publish_state(J({"done|Finished|Guition Esp32 P4 Desk Stand", "100||Finished 10:12 AM|", "48° / 39°|58°|31°", "auto-off §u1791969000§", "", "AMS 1|16% · 23°|;#C12E1F|PLA Basic|579 g|;#000000|PLA Matte|524 g|;#006AB8|PLA+ 2.0|886 g|;#000000|PETG-HS Matte|820 g|", "AMS 2|Drying · 2 h 10 m|warn;#808080|PETG Marble|329 g|;#4EE349|PLA+ 2.0|823 g|;#FFFFFF|PLA Meta|853 g|;#000000|PETG-CF Basic|721 g|", "HT|21% · 20°|;#000000|Empty||e"}));

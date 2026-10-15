@@ -1,0 +1,30 @@
+# Printers, square (fork-only, 4848S040 mockup 2026-10-15): both printers as
+# full-width lanes, stacked -- a progress ring and the numbers that matter at a
+# glance, then the filament. A printer that is off shrinks to one line. Tap a
+# lane for Printer Control. Drawn by feed/printer_lane.h from the office
+# panel's printers feed. Replaces printers.yaml; needs 404 x ~420px.
+
+esphome:
+  includes:
+    - ../feed/printer_lane.h
+
+lvgl:
+  pages:
+    - id: printers
+      <<: !include ../vars/page.yaml
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Printers
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout: { type: FLEX, flex_flow: COLUMN, pad_row: 6 }
+            widgets:
+              - obj: { <<: !include { file: ../feed/printer_lane.yaml, vars: { uid: p_x1c, name: X1C } } }
+              - obj: { <<: !include { file: ../feed/printer_lane.yaml, vars: { uid: p_h2c, name: H2C } } }
+
+packages:
+  printers_access: !include { file: ../../widgets/page_access.yaml, vars: { page: printers } }
+  p_x1c_feed: !include { file: ../feed/printer_lane.sensors.yaml, vars: { uid: p_x1c, printer: x1c } }
+  p_h2c_feed: !include { file: ../feed/printer_lane.sensors.yaml, vars: { uid: p_h2c, printer: h2c } }

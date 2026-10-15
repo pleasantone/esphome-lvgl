@@ -1,0 +1,18 @@
+# Fork-only: one subscription per printer lane -- the same feed attribute as the
+# cards, drawn by printer_lane.h.
+# required vars: uid, printer (x1c / h2c)
+
+text_sensor:
+  - id: ${uid}_feed
+    platform: homeassistant
+    internal: true
+    entity_id: sensor.office_panel_printers
+    attribute: ${printer}_page_all
+    on_value:
+      - lambda: |-
+          feed::set_lane({id(${uid}_ring_box), id(${uid}_ring), id(${uid}_pct), id(${uid}_sub), id(${uid}_icon),
+                          id(${uid}_pill), id(${uid}_pill_lbl), id(${uid}_task),
+                          id(${uid}_time_row), id(${uid}_left), id(${uid}_done),
+                          id(${uid}_temps), id(${uid}_t_noz), id(${uid}_t_bed), id(${uid}_t_ch),
+                          id(${uid}_alert),
+                          {{id(${uid}_r1), id(${uid}_r1_lbl), id(${uid}_r1_meta), {id(${uid}_r1_s1), id(${uid}_r1_s2), id(${uid}_r1_s3), id(${uid}_r1_s4)}, {id(${uid}_r1_a1), id(${uid}_r1_a2), id(${uid}_r1_a3), id(${uid}_r1_a4)}}, {id(${uid}_r2), id(${uid}_r2_lbl), id(${uid}_r2_meta), {id(${uid}_r2_s1), id(${uid}_r2_s2), id(${uid}_r2_s3), id(${uid}_r2_s4)}, {id(${uid}_r2_a1), id(${uid}_r2_a2), id(${uid}_r2_a3), id(${uid}_r2_a4)}}, {id(${uid}_r3), id(${uid}_r3_lbl), id(${uid}_r3_meta), {id(${uid}_r3_s1), id(${uid}_r3_s2), id(${uid}_r3_s3), id(${uid}_r3_s4)}, {id(${uid}_r3_a1), id(${uid}_r3_a2), id(${uid}_r3_a3), id(${uid}_r3_a4)}}}}, feed::fields(x));

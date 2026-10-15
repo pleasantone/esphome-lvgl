@@ -1,0 +1,137 @@
+# Fork-only: one printer as a full-width lane on the square Printers page
+# (4848S040 mockup, 2026-10-15); printer_lane.h draws it. Ring | info on top,
+# the alert, then a row per AMS unit. Height follows the content: a printer
+# that is off is just its name row. A tap opens Printer Control.
+# required vars: uid, name
+
+# obj:
+  id: ${uid}_card
+  width: 100%
+  height: SIZE_CONTENT
+  bg_color: 0x5A6173
+  border_width: 0
+  radius: 18
+  pad_all: 8
+  pad_left: 10
+  pad_right: 10
+  scrollable: false
+  layout: { type: FLEX, flex_flow: COLUMN, pad_row: 4 }
+  on_click:
+    - lvgl.page.show: printer_control
+  widgets:
+    - obj: # ring | info
+        clickable: false
+        scrollable: false
+        width: 100%
+        height: SIZE_CONTENT
+        bg_opa: TRANSP
+        border_width: 0
+        pad_all: 0
+        layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 12 }
+        widgets:
+          - obj:
+              id: ${uid}_ring_box
+              clickable: false
+              scrollable: false
+              width: 104
+              height: 104
+              bg_opa: TRANSP
+              border_width: 0
+              pad_all: 0
+              widgets:
+                - arc:
+                    id: ${uid}_ring
+                    clickable: false
+                    align: CENTER
+                    width: 104
+                    height: 104
+                    min_value: 0
+                    max_value: 100
+                    value: 0
+                    start_angle: 135 # a 270-degree track, open at the bottom
+                    end_angle: 45
+                    arc_width: 10
+                    arc_color: 0x3A4050
+                    arc_rounded: true
+                    indicator:
+                      arc_width: 10
+                      arc_color: 0xFFAF00
+                      arc_rounded: true
+                    knob:
+                      bg_opa: TRANSP
+                      pad_all: 0
+                - label: { id: "${uid}_pct", align: CENTER, y: -6, text: "", text_font: roboto_xl }
+                - label: { id: "${uid}_sub", align: CENTER, y: 20, text: "", text_font: roboto_sm, text_color: 0x9AA0AE }
+                - label: { id: "${uid}_icon", align: CENTER, hidden: true, text: "", text_font: mdi_xl }
+          - obj: # info
+              clickable: false
+              scrollable: false
+              flex_grow: 1
+              height: SIZE_CONTENT
+              bg_opa: TRANSP
+              border_width: 0
+              pad_all: 0
+              layout: { type: FLEX, flex_flow: COLUMN, pad_row: 2 }
+              widgets:
+                - obj: # name + pill
+                    clickable: false
+                    scrollable: false
+                    width: 100%
+                    height: 28
+                    bg_opa: TRANSP
+                    border_width: 0
+                    pad_all: 0
+                    widgets:
+                      - label: { align: LEFT_MID, text: "${name}", text_font: roboto_lg }
+                      - obj:
+                          id: ${uid}_pill
+                          clickable: false
+                          scrollable: false
+                          align: RIGHT_MID
+                          width: SIZE_CONTENT
+                          height: 26
+                          radius: 13
+                          border_width: 0
+                          bg_color: 0x4A5060
+                          pad_top: 0
+                          pad_bottom: 0
+                          pad_left: 12
+                          pad_right: 12
+                          widgets:
+                            - label: { id: "${uid}_pill_lbl", align: CENTER, text: "--", text_font: roboto_sm }
+                - label: { id: "${uid}_task", width: 100%, height: 22, long_mode: DOT, text: "", text_font: roboto_md, text_color: 0xC9CED8 }
+                - obj: # time left | finish
+                    id: ${uid}_time_row
+                    hidden: true
+                    clickable: false
+                    scrollable: false
+                    width: 100%
+                    height: 24
+                    bg_opa: TRANSP
+                    border_width: 0
+                    pad_all: 0
+                    widgets:
+                      - label: { id: "${uid}_left", align: LEFT_MID, text: "", text_font: roboto_md }
+                      - label: { id: "${uid}_done", align: RIGHT_MID, text: "", text_font: roboto_sm, text_color: 0x9AA0AE }
+                - obj: # nozzle, bed, chamber
+                    id: ${uid}_temps
+                    hidden: true
+                    clickable: false
+                    scrollable: false
+                    width: 100%
+                    height: 22
+                    bg_opa: TRANSP
+                    border_width: 0
+                    pad_all: 0
+                    layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 4 }
+                    widgets:
+                      - label: { text: "\U000F0E5B", text_font: mdi_sm, text_color: 0x9AA0AE } # printer-3d-nozzle
+                      - label: { id: "${uid}_t_noz", text: "", text_font: roboto_sm, text_color: 0xC9CED8 }
+                      - label: { text: "\U000F0438", text_font: mdi_sm, text_color: 0x9AA0AE, pad_left: 8 } # radiator: the bed
+                      - label: { id: "${uid}_t_bed", text: "", text_font: roboto_sm, text_color: 0xC9CED8 }
+                      - label: { text: "\U000F050F", text_font: mdi_sm, text_color: 0x9AA0AE, pad_left: 8 } # thermometer: the chamber
+                      - label: { id: "${uid}_t_ch", text: "", text_font: roboto_sm, text_color: 0xC9CED8 }
+    - label: { id: "${uid}_alert", hidden: true, width: 100%, long_mode: WRAP, text: "", text_font: roboto_sm, text_color: 0xFF8A80 }
+    - obj: { <<: !include { file: lane_ams_row.yaml, vars: { row: 1 } } }
+    - obj: { <<: !include { file: lane_ams_row.yaml, vars: { row: 2 } } }
+    - obj: { <<: !include { file: lane_ams_row.yaml, vars: { row: 3 } } }

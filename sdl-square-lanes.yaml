@@ -1,0 +1,4 @@
+# Fork-only: sdl-square with the "lanes" feed scenario, for tools/snapshot.py.
+packages:
+  base: !include sdl-square.yaml
+  mock: !include tools/previews/feed-lanes.yaml
