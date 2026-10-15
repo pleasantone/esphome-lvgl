@@ -1,10 +1,12 @@
 # Fork-only: home35's board (Guition JC3248W535) turned on its side, running
-# the landscape bedside layout (design exercise, 2026-10-14). Not flashed yet:
-# compiled to measure what landscape costs; sdl-bedside*.yaml are its previews.
+# the landscape bedside layout (design exercise, 2026-10-14). It runs on the
+# bedroom panel in place of home35.yaml, under home35's name, so Home Assistant
+# keeps the same device and entities -- going back is flashing home35.yaml.
+# sdl-bedside*.yaml are its previews.
 
 esphome:
-  name: bedside35
-  friendly_name: Bedside 3.5"
+  name: home35
+  friendly_name: Home 3.5"
   name_add_mac_suffix: true
 
 substitutions:
@@ -19,8 +21,17 @@ packages:
   common: !include common.yaml
   device: !include devices/JC3248W535.yaml
   layout: !include layouts/480x320-bedside.yaml
+  # pages, in the rail's up/down order
   bedside: !include layouts/480x320-bedside/pages/bedside.yaml
   printers: !include layouts/480x320-bedside/pages/printers.yaml
+  printer_control: !include layouts/480x320-bedside/pages/printer_control.yaml
+  lighting_second: !include layouts/480x320-bedside/pages/lighting_second.yaml
+  lighting_main: !include layouts/480x320-bedside/pages/lighting_main.yaml
+  lighting_ground: !include layouts/480x320-bedside/pages/lighting_ground.yaml
+  lighting_outside: !include layouts/480x320-bedside/pages/lighting_outside.yaml
+  living_room: !include layouts/480x320-bedside/pages/living_room.yaml
+  climate: !include layouts/480x320-bedside/pages/climate.yaml
+  outside: !include layouts/480x320-bedside/pages/outside.yaml
   idle: !include features/idle/idle.yaml
   ceiling: !include features/idle/sun.yaml
   sleep_clock: !include features/sleep_clock/sleep_clock.yaml
@@ -33,3 +44,8 @@ packages:
 # landscape: LVGL rotates in software; the panel itself is portrait-only
 lvgl:
   rotation: 90
+
+# passive: listen for advertisements without sending scan requests (as home35)
+esp32_ble_tracker:
+  scan_parameters:
+    active: false

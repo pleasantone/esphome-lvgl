@@ -153,6 +153,22 @@ lvgl:
     - id: splash # blank until on_boot goes home; top_layer's boot screen covers it
       skip: true
 
+    # the shared light detail pages a long press opens, kept clear of the rail
+    - id: detail_light
+      <<: !include { file: widgets/detail/light_page.yaml, vars: {
+        page_styles_pad_top: 52, page_styles_pad_bottom: 12,
+        container_pad_left: 12, container_pad_right: 12,
+        pad_row: 16, slider_height: 48, back_height: 64 }}
+      pad_right: 64
+      bg_color: 0x42495A
+
+    - id: detail_rgb
+      <<: !include { file: 480x320-bedside/widgets/rgb_page.yaml, vars: {
+        page_pad_top: 40, page_pad_bottom: 6, page_pad_right: 64, page_bg: 0x42495A,
+        container_pad_left: 6, container_pad_right: 6,
+        pad_row: 8, slider_height: 36, arc_size: 120,
+        roller_height: 120, roller_width: 148, back_height: 52 }}
+
   # every other page is a package in layouts/480x320-bedside/pages/, listed by the
   # top-level config after layout: -- see the README
 

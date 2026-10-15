@@ -21,8 +21,17 @@ substitutions:
 packages:
   device: !include devices/SDL.yaml
   layout: !include layouts/480x320-bedside.yaml
+  # pages, in the rail's up/down order
   bedside: !include layouts/480x320-bedside/pages/bedside.yaml
   printers: !include layouts/480x320-bedside/pages/printers.yaml
+  printer_control: !include layouts/480x320-bedside/pages/printer_control.yaml
+  lighting_second: !include layouts/480x320-bedside/pages/lighting_second.yaml
+  lighting_main: !include layouts/480x320-bedside/pages/lighting_main.yaml
+  lighting_ground: !include layouts/480x320-bedside/pages/lighting_ground.yaml
+  lighting_outside: !include layouts/480x320-bedside/pages/lighting_outside.yaml
+  living_room: !include layouts/480x320-bedside/pages/living_room.yaml
+  climate: !include layouts/480x320-bedside/pages/climate.yaml
+  outside: !include layouts/480x320-bedside/pages/outside.yaml
   idle: !include features/idle/idle.yaml
   ceiling: !include features/idle/sun.yaml
   sleep_clock: !include features/sleep_clock/sleep_clock.yaml

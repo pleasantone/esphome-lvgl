@@ -1,6 +1,15 @@
 # Fork-only: the one icon the landscape bedside layout adds -- the rail's
-# "previous page" chevron. The rail's icons are mdi_lg only.
+# "previous page" chevron. Only the rail (mdi_lg) draws it, but it goes in
+# every size like glyphs-home: tools/check_glyphs.py counts a glyph as present
+# only when every MDI font has it, and five copies of one icon cost nothing.
 font:
+  - id: !extend mdi_sm
+    glyphs: ["\U000F0143"] # chevron-up
+  - id: !extend mdi_md
+    glyphs: ["\U000F0143"] # chevron-up
   - id: !extend mdi_lg
-    glyphs:
-      - "\U000F0143" # chevron-up
+    glyphs: ["\U000F0143"] # chevron-up
+  - id: !extend mdi_xl
+    glyphs: ["\U000F0143"] # chevron-up
+  - id: !extend mdi_xxl
+    glyphs: ["\U000F0143"] # chevron-up

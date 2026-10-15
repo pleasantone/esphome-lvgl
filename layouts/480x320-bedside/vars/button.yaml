@@ -1,0 +1,5 @@
+# 480x320-bedside: a third-width button. Three columns of 129px in the 404
+# beside the rail, three rows of 84 in the 274 under the titlebar: a page of
+# the portrait layout's seven tiles fits without scrolling.
+width: 32%
+height: 84

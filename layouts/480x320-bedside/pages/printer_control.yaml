@@ -1,0 +1,144 @@
+# Fork-only: 480x320-home/pages/printer_control.yaml on the landscape bedside layout --
+# the same tiles, sized by this layout's vars (three to a row). Labels
+# shortened to fit a third of the width: X1C/H2C Light (the chamber lights).
+# Printer Control: the page and the sensors its tiles need.
+# Include it from the top-level config after `layout:`; pages appear in the
+# order they are listed.
+
+lvgl:
+  pages:
+    - id: printer_control
+      <<: !include ../vars/page.yaml
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Printer Control
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout:
+              <<: !include ../vars/button_layout.yaml
+            widgets:
+              - button: # x1c plug
+                  <<: !include
+                    file: ../../480x320-home/widgets/printers/power_button.yaml
+                    vars:
+                      uid: x1c_plug
+                      printer: x1c
+                      text: X1C Power
+                      icon_on: "\U000F06A5"
+                      icon_off: "\U000F06A6"
+                      confirm_text: "Turn off the X1C? If it's printing or drying, Home Assistant keeps it on."
+                      <<: !include ../vars/button.yaml
+
+              - button: # h2c plug
+                  <<: !include
+                    file: ../../480x320-home/widgets/printers/power_button.yaml
+                    vars:
+                      uid: h2c_plug
+                      printer: h2c
+                      text: H2C Power
+                      icon_on: "\U000F06A5"
+                      icon_off: "\U000F06A6"
+                      confirm_text: "Turn off the H2C? If it's printing or drying, Home Assistant keeps it on."
+                      <<: !include ../vars/button.yaml
+
+              - button: # x1c chamber
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: x1c_chamber_light
+                      entity_id: light.x1c_x1c_00m09d460801484_chamber_light
+                      domain: light
+                      text: X1C Light
+                      icon_on: "\U000F06E8"
+                      icon_off: "\U000F0336"
+                      <<: !include ../vars/button.yaml
+
+              - button: # h2c chamber
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: h2c_chamber_light
+                      entity_id: light.h2c_h2c_31b8ap630100072_chamber_light
+                      domain: light
+                      text: H2C Light
+                      icon_on: "\U000F06E8"
+                      icon_off: "\U000F0336"
+                      <<: !include ../vars/button.yaml
+
+              - button: # riser lights
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/light_buttons/rgb.yaml
+                    vars:
+                      uid: riser_lights
+                      entity_id: light.riser_lights
+                      text: Riser
+                      icon_on: "\U000F1051"
+                      icon_off: "\U000F1A4B"
+                      <<: !include ../vars/button.yaml
+
+              - button: # bento box
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: bento_box
+                      entity_id: fan.bento_box
+                      domain: fan
+                      text: Bento Box
+                      icon_on: "\U000F0D44"
+                      icon_off: "\U000F1B57"
+                      <<: !include ../vars/button.yaml
+
+              - button: # heater
+                  <<: !include
+                    file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/widget.yaml
+                    vars:
+                      uid: chamber_heater
+                      entity_id: switch.chamber_heater
+                      domain: switch
+                      text: Heater
+                      icon_on: "\U000F0438"
+                      icon_off: "\U000F0AD8"
+                      <<: !include ../vars/button.yaml
+
+packages:
+  printer_control_access: !include { file: ../../widgets/page_access.yaml, vars: { page: printer_control } }
+
+  x1c_plug_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: x1c_plug,
+    entity_id: switch.x1c_plug
+  }}
+
+  h2c_plug_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: h2c_plug,
+    entity_id: switch.h2c_plug
+  }}
+
+  x1c_chamber_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/gated_sensors.yaml, vars: {
+    uid: x1c_chamber_light,
+    entity_id: light.x1c_x1c_00m09d460801484_chamber_light,
+    available_entity_id: binary_sensor.x1c_x1c_00m09d460801484_online
+  }}
+
+  h2c_chamber_light_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/gated_sensors.yaml, vars: {
+    uid: h2c_chamber_light,
+    entity_id: light.h2c_h2c_31b8ap630100072_chamber_light,
+    available_entity_id: binary_sensor.h2c_h2c_31b8ap630100072_online
+  }}
+
+
+  bento_box_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: bento_box,
+    entity_id: fan.bento_box
+  }}
+
+  chamber_heater_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/toggle_buttons/sensors.yaml, vars: {
+    uid: chamber_heater,
+    entity_id: switch.chamber_heater
+  }}
+
+  riser_lights_widget_sensors: !include { file: ../../widgets/buttons/icon_text_buttons/light_buttons/rgb_sensors.yaml, vars: {
+    uid: riser_lights,
+    entity_id: light.riser_lights
+  }}
