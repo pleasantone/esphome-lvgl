@@ -1,0 +1,73 @@
+# Fork-only: one AMS unit's row on a landscape printer card -- the unit, then
+# four swatches in the filament's colour with the grams left. Narrower than
+# 480x320-home's (half-width cards): no humidity column; the unit label turns
+# amber instead when it is drying or damp (printer.sensors.yaml copies the
+# hidden meta's colour). Hidden until feed::set_row gets a value.
+# required vars: uid, row
+
+# obj:
+  id: ${uid}_r${row}
+  hidden: true
+  clickable: false
+  scrollable: false
+  width: 100%
+  height: 28
+  bg_opa: TRANSP
+  border_width: 0
+  pad_all: 0
+  layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 4 }
+  widgets:
+    - label: { id: "${uid}_r${row}_lbl", width: 24, text: "", text_font: roboto_sm, text_color: 0xC9CED8 }
+    - obj:
+        id: ${uid}_r${row}_s1
+        clickable: false
+        scrollable: false
+        width: 35
+        height: 26
+        radius: 8
+        border_width: 1
+        border_color: 0x2A2F3A
+        bg_color: 0x000000
+        pad_all: 0
+        widgets:
+          - label: { id: "${uid}_r${row}_a1", align: CENTER, text: "", text_font: roboto_sm }
+    - obj:
+        id: ${uid}_r${row}_s2
+        clickable: false
+        scrollable: false
+        width: 35
+        height: 26
+        radius: 8
+        border_width: 1
+        border_color: 0x2A2F3A
+        bg_color: 0x000000
+        pad_all: 0
+        widgets:
+          - label: { id: "${uid}_r${row}_a2", align: CENTER, text: "", text_font: roboto_sm }
+    - obj:
+        id: ${uid}_r${row}_s3
+        clickable: false
+        scrollable: false
+        width: 35
+        height: 26
+        radius: 8
+        border_width: 1
+        border_color: 0x2A2F3A
+        bg_color: 0x000000
+        pad_all: 0
+        widgets:
+          - label: { id: "${uid}_r${row}_a3", align: CENTER, text: "", text_font: roboto_sm }
+    - obj:
+        id: ${uid}_r${row}_s4
+        clickable: false
+        scrollable: false
+        width: 35
+        height: 26
+        radius: 8
+        border_width: 1
+        border_color: 0x2A2F3A
+        bg_color: 0x000000
+        pad_all: 0
+        widgets:
+          - label: { id: "${uid}_r${row}_a4", align: CENTER, text: "", text_font: roboto_sm }
+    - label: { id: "${uid}_r${row}_meta", hidden: true, text: "", text_font: roboto_sm }

@@ -1,0 +1,276 @@
+# Bedside (fork-only, landscape exercise 2026-10-14): the resting page. A
+# split-flap clock across the top -- the sleep clock's cards (features/
+# sleep_clock/card.yaml, flip_clock.h), awake and full size -- the date under
+# it, and My Home's chips as a 2x3 grid in full words, red and amber first.
+# More than six: the sixth slot says "+N more" in the colour of the worst one
+# it hides. A tap on the grid opens the full list. No titlebar: the clock is
+# the title. Night still goes to the dim sleep clock (features/sleep_clock).
+
+substitutions:
+  bedside_card_width: "80"
+  bedside_card_height: "118"
+  bedside_card_gap: "6"
+  bedside_pair_gap: "20"
+
+lvgl:
+  pages:
+    - id: bedside
+      <<: !include ../vars/page.yaml
+      pad_top: 8
+      bg_color: 0x16181D
+      scrollable: false
+      on_load:
+        - script.execute: { id: bedside_clock_refresh, animate: false }
+        # after any screen this one replaced has had its unload: the sleep
+        # clock's shows the titlebar again, and LVGL sends it after our load
+        - delay: 20ms
+        - lvgl.widget.hide: titlebar
+      on_unload:
+        - lvgl.widget.show: titlebar
+      widgets:
+        - obj:
+            width: 100%
+            height: 100%
+            bg_opa: TRANSP
+            border_width: 0
+            pad_all: 0
+            clickable: false
+            scrollable: false
+            layout: { type: FLEX, flex_flow: COLUMN, flex_align_cross: CENTER, pad_row: 6 }
+            widgets:
+              - obj: # the four cards
+                  width: SIZE_CONTENT
+                  height: SIZE_CONTENT
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  clickable: false
+                  scrollable: false
+                  layout: { type: FLEX, flex_flow: ROW, pad_column: "${bedside_pair_gap}" }
+                  widgets:
+                    - obj: # hours
+                        <<: &bedside_pair
+                          width: SIZE_CONTENT
+                          height: SIZE_CONTENT
+                          bg_opa: TRANSP
+                          border_width: 0
+                          pad_all: 1 # room for the cards' outline
+                          clickable: false
+                          scrollable: false
+                          layout: { type: FLEX, flex_flow: ROW, pad_column: "${bedside_card_gap}" }
+                        widgets:
+                          - obj: !include { file: ../../../features/sleep_clock/card.yaml, vars: { uid: bs_h1, card_width: "${bedside_card_width}", card_height: "${bedside_card_height}" } }
+                          - obj: !include { file: ../../../features/sleep_clock/card.yaml, vars: { uid: bs_h2, card_width: "${bedside_card_width}", card_height: "${bedside_card_height}" } }
+                    - obj: # minutes
+                        <<: *bedside_pair
+                        widgets:
+                          - obj: !include { file: ../../../features/sleep_clock/card.yaml, vars: { uid: bs_m1, card_width: "${bedside_card_width}", card_height: "${bedside_card_height}" } }
+                          - obj: !include { file: ../../../features/sleep_clock/card.yaml, vars: { uid: bs_m2, card_width: "${bedside_card_width}", card_height: "${bedside_card_height}" } }
+              - obj: # AM/PM and the date on one line
+                  width: SIZE_CONTENT
+                  height: SIZE_CONTENT
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_all: 0
+                  clickable: false
+                  scrollable: false
+                  layout: { type: FLEX, flex_flow: ROW, pad_column: 10 }
+                  widgets:
+                    - label: { id: bs_ampm, text: "", text_font: roboto_md, text_color: 0x9AA0AE }
+                    - label: { id: bs_date, text: "", text_font: roboto_md, text_color: 0x9AA0AE }
+              - obj: # the chips
+                  id: bs_chips
+                  width: 100%
+                  flex_grow: 1
+                  bg_opa: TRANSP
+                  border_width: 0
+                  pad_top: 4
+                  pad_bottom: 0
+                  pad_left: 6
+                  pad_right: 6
+                  scrollable: false
+                  layout: { type: FLEX, flex_flow: ROW_WRAP, flex_align_main: SPACE_BETWEEN, pad_row: 6, pad_column: 6 }
+                  on_click:
+                    - script.execute: open_chip_list
+                  widgets:
+                    - label:
+                        id: bs_quiet
+                        width: 100%
+                        text_align: CENTER
+                        text: "All quiet"
+                        text_font: roboto_md
+                        text_color: 0x6A7080
+                    - obj:
+                        id: bs_chip_1
+                        hidden: true
+                        clickable: false
+                        scrollable: false
+                        width: 198
+                        height: 44
+                        radius: 12
+                        border_width: 0
+                        bg_color: 0x5A6173
+                        pad_top: 2
+                        pad_bottom: 2
+                        pad_left: 8
+                        pad_right: 8
+                        layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 6 }
+                        widgets:
+                          - label: { id: bs_chip_1_ic, text: "", text_font: mdi_sm }
+                          - label: { id: bs_chip_1_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+                    - obj:
+                        id: bs_chip_2
+                        hidden: true
+                        clickable: false
+                        scrollable: false
+                        width: 198
+                        height: 44
+                        radius: 12
+                        border_width: 0
+                        bg_color: 0x5A6173
+                        pad_top: 2
+                        pad_bottom: 2
+                        pad_left: 8
+                        pad_right: 8
+                        layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 6 }
+                        widgets:
+                          - label: { id: bs_chip_2_ic, text: "", text_font: mdi_sm }
+                          - label: { id: bs_chip_2_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+                    - obj:
+                        id: bs_chip_3
+                        hidden: true
+                        clickable: false
+                        scrollable: false
+                        width: 198
+                        height: 44
+                        radius: 12
+                        border_width: 0
+                        bg_color: 0x5A6173
+                        pad_top: 2
+                        pad_bottom: 2
+                        pad_left: 8
+                        pad_right: 8
+                        layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 6 }
+                        widgets:
+                          - label: { id: bs_chip_3_ic, text: "", text_font: mdi_sm }
+                          - label: { id: bs_chip_3_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+                    - obj:
+                        id: bs_chip_4
+                        hidden: true
+                        clickable: false
+                        scrollable: false
+                        width: 198
+                        height: 44
+                        radius: 12
+                        border_width: 0
+                        bg_color: 0x5A6173
+                        pad_top: 2
+                        pad_bottom: 2
+                        pad_left: 8
+                        pad_right: 8
+                        layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 6 }
+                        widgets:
+                          - label: { id: bs_chip_4_ic, text: "", text_font: mdi_sm }
+                          - label: { id: bs_chip_4_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+                    - obj:
+                        id: bs_chip_5
+                        hidden: true
+                        clickable: false
+                        scrollable: false
+                        width: 198
+                        height: 44
+                        radius: 12
+                        border_width: 0
+                        bg_color: 0x5A6173
+                        pad_top: 2
+                        pad_bottom: 2
+                        pad_left: 8
+                        pad_right: 8
+                        layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 6 }
+                        widgets:
+                          - label: { id: bs_chip_5_ic, text: "", text_font: mdi_sm }
+                          - label: { id: bs_chip_5_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+                    - obj:
+                        id: bs_chip_6
+                        hidden: true
+                        clickable: false
+                        scrollable: false
+                        width: 198
+                        height: 44
+                        radius: 12
+                        border_width: 0
+                        bg_color: 0x5A6173
+                        pad_top: 2
+                        pad_bottom: 2
+                        pad_left: 8
+                        pad_right: 8
+                        layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 6 }
+                        widgets:
+                          - label: { id: bs_chip_6_ic, text: "", text_font: mdi_sm }
+                          - label: { id: bs_chip_6_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+
+script:
+  - id: bedside_clock_refresh
+    parameters:
+      animate: bool
+    then:
+      - lambda: |-
+          auto now = id(ha_time).now();
+          lv_obj_t *cards[] = {id(bs_h1), id(bs_h2), id(bs_m1), id(bs_m2)};
+          if (!now.is_valid()) {
+            for (auto *c : cards) flip::set(c, "", false);
+            lv_label_set_text(id(bs_ampm), "");
+            lv_label_set_text(id(bs_date), "");
+            return;
+          }
+          bool h24 = id(clock_24h).state;
+          int hour = h24 ? now.hour : (now.hour + 11) % 12 + 1;
+          char hh[3], mm[3];
+          snprintf(hh, sizeof(hh), "%02d", hour);
+          snprintf(mm, sizeof(mm), "%02d", now.minute);
+          std::string h1 = (!h24 && hh[0] == '0') ? "" : std::string(1, hh[0]);
+          flip::set(id(bs_h1), h1.c_str(), animate);
+          flip::set(id(bs_h2), std::string(1, hh[1]).c_str(), animate);
+          flip::set(id(bs_m1), std::string(1, mm[0]).c_str(), animate);
+          flip::set(id(bs_m2), std::string(1, mm[1]).c_str(), animate);
+          feed::set_raw(id(bs_ampm), h24 ? "" : (now.hour < 12 ? "AM" : "PM"));
+          feed::show(id(bs_ampm), !h24);
+          feed::set_raw(id(bs_date), now.strftime("%A, %B ") + std::to_string(now.day_of_month));
+
+  - id: !extend chips_changed
+    then:
+      - lambda: |-
+          lv_obj_t *b[] = {id(bs_chip_1), id(bs_chip_2), id(bs_chip_3), id(bs_chip_4), id(bs_chip_5), id(bs_chip_6)};
+          lv_obj_t *ic[] = {id(bs_chip_1_ic), id(bs_chip_2_ic), id(bs_chip_3_ic), id(bs_chip_4_ic), id(bs_chip_5_ic), id(bs_chip_6_ic)};
+          lv_obj_t *tx[] = {id(bs_chip_1_tx), id(bs_chip_2_tx), id(bs_chip_3_tx), id(bs_chip_4_tx), id(bs_chip_5_tx), id(bs_chip_6_tx)};
+          auto &c = feed::chips();
+          int n = c.size();
+          if (n <= 6) {
+            feed::set_list(c, b, ic, tx, 6);
+          } else {
+            std::vector<feed::Chip> head(c.begin(), c.begin() + 5);
+            feed::set_list(head, b, ic, tx, 6);
+            int worst = 2;  // the "+N" slot takes the colour of the worst chip it hides
+            for (int i = 5; i < n; i++)
+              worst = std::min(worst, c[i].level == "act" ? 0 : c[i].level == "warn" ? 1 : 2);
+            feed::bg(b[5], worst == 0 ? feed::ACT_BG : worst == 1 ? feed::WARN_BG : feed::INFO_BG);
+            uint32_t ink = worst == 1 ? feed::WARN_TEXT : feed::TEXT;
+            feed::fg(ic[5], ink);
+            feed::fg(tx[5], ink);
+            feed::text(ic[5], "\U000F0026");
+            feed::text(tx[5], "+" + std::to_string(n - 5) + " more");
+            feed::show(b[5], true);
+          }
+          feed::show(id(bs_quiet), n == 0);
+
+interval:
+  - interval: 1s
+    then:
+      - if:
+          condition:
+            - lambda: return id(bedside)->is_showing();
+          then:
+            - script.execute: { id: bedside_clock_refresh, animate: true }
+
+packages:
+  bedside_access: !include { file: ../../widgets/page_access.yaml, vars: { page: bedside } }

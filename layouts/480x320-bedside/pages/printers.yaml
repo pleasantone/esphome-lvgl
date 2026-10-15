@@ -1,0 +1,24 @@
+# Printers, landscape (fork-only exercise): both printers side by side as
+# half-width cards, from the office panel's printers feed. No Printer Control
+# here yet, so the cards don't open anything.
+
+lvgl:
+  pages:
+    - id: printers
+      <<: !include ../vars/page.yaml
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Printers
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout: { type: FLEX, flex_flow: ROW, flex_align_main: SPACE_BETWEEN, pad_column: 6 }
+            widgets:
+              - obj: { <<: !include { file: ../feed/printer_card.yaml, vars: { uid: p_x1c, name: X1C } } }
+              - obj: { <<: !include { file: ../feed/printer_card.yaml, vars: { uid: p_h2c, name: H2C } } }
+
+packages:
+  printers_access: !include { file: ../../widgets/page_access.yaml, vars: { page: printers } }
+  p_x1c_feed: !include { file: ../feed/printer.sensors.yaml, vars: { uid: p_x1c, printer: x1c } }
+  p_h2c_feed: !include { file: ../feed/printer.sensors.yaml, vars: { uid: p_h2c, printer: h2c } }

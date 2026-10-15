@@ -1,0 +1,44 @@
+# Fork-only: My Home's chips for the landscape bedside layout -- the same feed
+# as 480x320-home's strip (sensor.office_panel_status chips_all, see
+# 480x320-home/feed/feed.h), drawn twice: the rail's status button (worst colour,
+# how many need a look) and, by pages/bedside.yaml, the grid under the clock.
+# Same text_sensor id as the home layout, so tools/previews/feed-*.yaml work here.
+
+text_sensor:
+  - id: chips_feed
+    platform: homeassistant
+    internal: true
+    entity_id: sensor.office_panel_status
+    attribute: chips_all
+    on_value:
+      - lambda: |-
+          feed::chips() = feed::parse_chips(x);
+          int worst = 2, need = 0;
+          for (auto &c : feed::chips()) {
+            int r = c.level == "act" ? 0 : c.level == "warn" ? 1 : 2;
+            worst = std::min(worst, r);
+            if (r < 2) need++;
+          }
+          feed::bg(id(rail_status), worst == 0 ? feed::ACT_BG : worst == 1 ? feed::WARN_BG : 0x353B4A);
+          uint32_t ink = worst == 0 ? feed::TEXT : worst == 1 ? feed::WARN_TEXT : feed::DIM;
+          feed::fg(id(rail_status_ic), ink);
+          feed::fg(id(rail_status_tx), ink);
+          feed::text(id(rail_status_tx), need ? std::to_string(need) : std::string());
+          feed::show(id(rail_status_tx), need > 0);
+      - script.execute: chips_changed
+
+script:
+  # pages/bedside.yaml appends the grid, pages/alert.yaml the takeover,
+  # pages/chips.yaml the list refresh
+  - id: chips_changed
+    then: []
+  # the rail's status button and the bedside grid; pages/chips.yaml shows the list
+  - id: open_chip_list
+    then: []
+
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          auto now = id(ha_time).now();
+          if (now.is_valid() && feed::set_now(now.timestamp)) feed::tick();

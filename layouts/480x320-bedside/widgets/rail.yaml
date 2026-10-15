@@ -1,0 +1,71 @@
+# Fork-only: the landscape navigation rail, down the right edge in place of the
+# footer. Keeps the footer's ids (navbar, home_btn): features/idle hangs the
+# Home hold (go home, then sleep) on home_btn, and the sleep clock hides navbar.
+# Top to bottom: previous, home, next, and the status button -- coloured by the
+# most serious chip, a tap opens the full list (pages/chips.yaml).
+
+# widgets:
+  obj:
+    id: navbar
+    align: TOP_RIGHT
+    width: 64
+    height: 100%
+    border_width: 0
+    radius: 0
+    pad_all: 0
+    bg_color: 0x353B4A
+    layout: { type: FLEX, flex_flow: COLUMN, pad_row: 1 }
+    widgets:
+      - button: # previous page
+          width: 100%
+          flex_grow: 1
+          bg_color: 0x353B4A
+          border_width: 0
+          radius: 0
+          on_press:
+            - lvgl.page.previous:
+          widgets:
+            - label: { align: CENTER, text: "\U000F0143", text_font: mdi_lg }
+      - button: # home
+          id: home_btn
+          width: 100%
+          flex_grow: 1
+          bg_color: 0x353B4A
+          border_width: 0
+          radius: 0
+          on_press:
+            - script.execute: go_home
+          widgets:
+            - label: { align: CENTER, text: "\U000F02DC", text_font: mdi_lg }
+      - button: # next page
+          width: 100%
+          flex_grow: 1
+          bg_color: 0x353B4A
+          border_width: 0
+          radius: 0
+          on_press:
+            - lvgl.page.next:
+          widgets:
+            - label: { align: CENTER, text: "\U000F0140", text_font: mdi_lg }
+      - button: # status: the worst chip's colour, how many need a look
+          id: rail_status
+          width: 100%
+          flex_grow: 1
+          bg_color: 0x353B4A
+          border_width: 0
+          radius: 0
+          on_click:
+            - script.execute: open_chip_list
+          widgets:
+            - obj:
+                align: CENTER
+                width: SIZE_CONTENT
+                height: SIZE_CONTENT
+                bg_opa: TRANSP
+                border_width: 0
+                pad_all: 0
+                clickable: false
+                layout: { type: FLEX, flex_flow: COLUMN, flex_align_cross: CENTER, pad_row: 0 }
+                widgets:
+                  - label: { id: rail_status_ic, text: "\U000F0026", text_font: mdi_md, text_color: 0x9AA0AE }
+                  - label: { id: rail_status_tx, text: "", text_font: roboto_sm, text_color: 0x9AA0AE }

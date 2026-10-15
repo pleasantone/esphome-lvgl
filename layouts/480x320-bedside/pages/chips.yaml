@@ -1,0 +1,207 @@
+# Chip list, landscape (fork-only exercise, from 480x320-home/pages/chips.yaml):
+# every chip in full words, two columns. Opened by the rail's status button or a
+# tap on the bedside grid. The strip itself stays one line: compact routine chips plus a "+N"
+# chip (feed.h fit_chips). Not in the page switcher. Needs the chip strip package
+# (open_chip_list, chips_changed, feed::chips). Include it from the top-level config.
+
+lvgl:
+  pages:
+    - id: chip_list
+      skip: true
+      <<: !include ../vars/page.yaml
+      bg_color: 0x42495A # a page keeps LVGL's near-white otherwise
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Alerts & status
+        - lambda: |-
+            feed::list_showing() = true;
+            lv_obj_t *b[] = {id(cl_1), id(cl_2), id(cl_3), id(cl_4), id(cl_5), id(cl_6), id(cl_7), id(cl_8)};
+            lv_obj_t *ic[] = {id(cl_1_ic), id(cl_2_ic), id(cl_3_ic), id(cl_4_ic), id(cl_5_ic), id(cl_6_ic), id(cl_7_ic), id(cl_8_ic)};
+            lv_obj_t *tx[] = {id(cl_1_tx), id(cl_2_tx), id(cl_3_tx), id(cl_4_tx), id(cl_5_tx), id(cl_6_tx), id(cl_7_tx), id(cl_8_tx)};
+            feed::set_list(feed::chips(), b, ic, tx, 8);
+      on_unload:
+        - lambda: feed::list_showing() = false;
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout:
+              type: FLEX
+              flex_flow: ROW_WRAP
+              flex_align_main: SPACE_BETWEEN
+              pad_row: 6
+              pad_column: 6
+            widgets:
+              - obj:
+                  id: cl_1
+                  hidden: true
+                  clickable: false
+                  scrollable: false
+                  width: 49%
+                  height: 44
+                  radius: 12
+                  border_width: 0
+                  bg_color: 0x5A6173
+                  pad_top: 4
+                  pad_bottom: 4
+                  pad_left: 10
+                  pad_right: 10
+                  layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 8 }
+                  widgets:
+                    - label: { id: cl_1_ic, text: "", text_font: mdi_sm }
+                    - label: { id: cl_1_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+              - obj:
+                  id: cl_2
+                  hidden: true
+                  clickable: false
+                  scrollable: false
+                  width: 49%
+                  height: 44
+                  radius: 12
+                  border_width: 0
+                  bg_color: 0x5A6173
+                  pad_top: 4
+                  pad_bottom: 4
+                  pad_left: 10
+                  pad_right: 10
+                  layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 8 }
+                  widgets:
+                    - label: { id: cl_2_ic, text: "", text_font: mdi_sm }
+                    - label: { id: cl_2_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+              - obj:
+                  id: cl_3
+                  hidden: true
+                  clickable: false
+                  scrollable: false
+                  width: 49%
+                  height: 44
+                  radius: 12
+                  border_width: 0
+                  bg_color: 0x5A6173
+                  pad_top: 4
+                  pad_bottom: 4
+                  pad_left: 10
+                  pad_right: 10
+                  layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 8 }
+                  widgets:
+                    - label: { id: cl_3_ic, text: "", text_font: mdi_sm }
+                    - label: { id: cl_3_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+              - obj:
+                  id: cl_4
+                  hidden: true
+                  clickable: false
+                  scrollable: false
+                  width: 49%
+                  height: 44
+                  radius: 12
+                  border_width: 0
+                  bg_color: 0x5A6173
+                  pad_top: 4
+                  pad_bottom: 4
+                  pad_left: 10
+                  pad_right: 10
+                  layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 8 }
+                  widgets:
+                    - label: { id: cl_4_ic, text: "", text_font: mdi_sm }
+                    - label: { id: cl_4_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+              - obj:
+                  id: cl_5
+                  hidden: true
+                  clickable: false
+                  scrollable: false
+                  width: 49%
+                  height: 44
+                  radius: 12
+                  border_width: 0
+                  bg_color: 0x5A6173
+                  pad_top: 4
+                  pad_bottom: 4
+                  pad_left: 10
+                  pad_right: 10
+                  layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 8 }
+                  widgets:
+                    - label: { id: cl_5_ic, text: "", text_font: mdi_sm }
+                    - label: { id: cl_5_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+              - obj:
+                  id: cl_6
+                  hidden: true
+                  clickable: false
+                  scrollable: false
+                  width: 49%
+                  height: 44
+                  radius: 12
+                  border_width: 0
+                  bg_color: 0x5A6173
+                  pad_top: 4
+                  pad_bottom: 4
+                  pad_left: 10
+                  pad_right: 10
+                  layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 8 }
+                  widgets:
+                    - label: { id: cl_6_ic, text: "", text_font: mdi_sm }
+                    - label: { id: cl_6_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+              - obj:
+                  id: cl_7
+                  hidden: true
+                  clickable: false
+                  scrollable: false
+                  width: 49%
+                  height: 44
+                  radius: 12
+                  border_width: 0
+                  bg_color: 0x5A6173
+                  pad_top: 4
+                  pad_bottom: 4
+                  pad_left: 10
+                  pad_right: 10
+                  layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 8 }
+                  widgets:
+                    - label: { id: cl_7_ic, text: "", text_font: mdi_sm }
+                    - label: { id: cl_7_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+              - obj:
+                  id: cl_8
+                  hidden: true
+                  clickable: false
+                  scrollable: false
+                  width: 49%
+                  height: 44
+                  radius: 12
+                  border_width: 0
+                  bg_color: 0x5A6173
+                  pad_top: 4
+                  pad_bottom: 4
+                  pad_left: 10
+                  pad_right: 10
+                  layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 8 }
+                  widgets:
+                    - label: { id: cl_8_ic, text: "", text_font: mdi_sm }
+                    - label: { id: cl_8_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+              - button:
+                  width: 100%
+                  height: 44
+                  radius: 44
+                  bg_color: 0x5A6173
+                  widgets:
+                    - label: { align: CENTER, text: Done, text_font: roboto_lg }
+                  on_click:
+                    - lambda: id(main_lvgl)->show_page(id(chip_list_origin), LV_SCREEN_LOAD_ANIM_NONE, 0);
+
+globals:
+  - id: chip_list_origin # page index to go back to on Done
+    type: int
+    restore_value: false
+    initial_value: '0'
+
+script:
+  - id: !extend open_chip_list
+    then:
+      - lambda: id(chip_list_origin) = id(main_lvgl)->get_current_page();
+      - lvgl.page.show: chip_list
+  - id: !extend chips_changed
+    then:
+      - lambda: |-
+          if (!feed::list_showing()) return;
+          lv_obj_t *b[] = {id(cl_1), id(cl_2), id(cl_3), id(cl_4), id(cl_5), id(cl_6), id(cl_7), id(cl_8)};
+          lv_obj_t *ic[] = {id(cl_1_ic), id(cl_2_ic), id(cl_3_ic), id(cl_4_ic), id(cl_5_ic), id(cl_6_ic), id(cl_7_ic), id(cl_8_ic)};
+          lv_obj_t *tx[] = {id(cl_1_tx), id(cl_2_tx), id(cl_3_tx), id(cl_4_tx), id(cl_5_tx), id(cl_6_tx), id(cl_7_tx), id(cl_8_tx)};
+          feed::set_list(feed::chips(), b, ic, tx, 8);

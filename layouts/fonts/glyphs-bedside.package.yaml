@@ -1,0 +1,6 @@
+# Fork-only: the one icon the landscape bedside layout adds -- the rail's
+# "previous page" chevron. The rail's icons are mdi_lg only.
+font:
+  - id: !extend mdi_lg
+    glyphs:
+      - "\U000F0143" # chevron-up

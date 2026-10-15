@@ -1,0 +1,169 @@
+# Alert, landscape (fork-only exercise, from 480x320-home/pages/alert.yaml):
+# the alert on the left, a full-height OK on the right, easy to hit half awake.
+# The urgent takeover (2026-10-13). A red chip -- smoke,
+# flood, the alarm going off or tampered, the garage open after dark or for
+# 30 min, a red weather alert -- wakes the panel and puts this page up, from
+# any page, the sleep clock or a dark screen. OK acknowledges what is on it;
+# only an alert not already acknowledged takes over again (feed.h).
+#
+# Brightness: life safety (smoke, flood, alarm) at the full ceiling; the
+# garage and weather at the sleep clock's level at night, so the bedroom is
+# told without being lit up. While an alert is unacknowledged the idle timer
+# cannot put the screen to sleep or send it home.
+#
+# Needs: the chip strip package (chips_changed, feed::chips), features/idle
+# (sleep_handler, active_brightness, ambient_night, idle_hold_page) and
+# features/sleep_clock (sleep_clock, sleep_clock_origin,
+# sleep_clock_brightness). Include it after them. Not in the page switcher.
+
+lvgl:
+  pages:
+    - id: alert
+      skip: true
+      <<: !include ../vars/page.yaml
+      bg_color: 0x42495A # a page keeps LVGL's near-white; it showed above the card
+      on_load:
+        - lvgl.label.update:
+            id: page_title
+            text: Alert
+        - lambda: feed::alert_showing() = true;
+      on_unload:
+        - lambda: |-
+            feed::alert_showing() = false;
+            id(idle_hold_page) = false;
+      widgets:
+        - obj:
+            <<: !include ../vars/container.yaml
+            layout:
+              type: FLEX
+              flex_flow: ROW
+              pad_column: 8
+            widgets:
+              - obj:
+                  id: alert_card
+                  clickable: false
+                  scrollable: false
+                  height: 100%
+                  flex_grow: 1
+                  radius: 20
+                  border_width: 0
+                  bg_color: 0xD32F2F
+                  pad_all: 12
+                  layout:
+                    type: FLEX
+                    flex_flow: COLUMN
+                    flex_align_main: CENTER
+                    flex_align_cross: CENTER
+                    flex_align_track: CENTER
+                    pad_row: 6
+                  widgets:
+                    - label: { id: alert_icon, text: "\U000F0026", text_font: mdi_xxl }
+                    - label:
+                        id: alert_text
+                        width: 100%
+                        long_mode: WRAP
+                        text_align: CENTER
+                        text_font: roboto_xl
+                        text: ""
+                    - label: { id: alert_since, text: "", text_font: roboto_sm, text_color: 0xFFE0DE }
+                    - label:
+                        id: alert_more
+                        hidden: true
+                        width: 100%
+                        long_mode: WRAP
+                        text_align: CENTER
+                        text_font: roboto_sm
+                        text: ""
+              - button:
+                  id: alert_ok
+                  width: 110
+                  height: 100%
+                  radius: 20
+                  bg_color: 0x5A6173
+                  widgets:
+                    - label: { id: alert_ok_lbl, align: CENTER, text: OK, text_font: roboto_lg }
+                  on_click:
+                    - lambda: |-
+                        feed::ack(feed::act_chips(feed::chips()));
+                        id(main_lvgl)->show_page(id(alert_origin), LV_SCREEN_LOAD_ANIM_NONE, 0);
+
+globals:
+  - id: alert_origin # page index to go back to on OK
+    type: int
+    restore_value: false
+    initial_value: '0'
+
+esphome:
+  on_boot:
+    # after sleep_clock registers its sleep_handler: while an alert is up and
+    # unacknowledged, the idle sleep is declined, so the alert stays on screen
+    - priority: -150
+      then:
+        - lambda: |-
+            auto prev = id(sleep_handler);
+            id(sleep_handler) = [prev](const std::string &reason) {
+              if (reason == "idle" && feed::alert_showing() &&
+                  feed::has_unacked(feed::act_chips(feed::chips())))
+                return true;
+              return prev ? prev(reason) : false;
+            };
+
+script:
+  - id: !extend chips_changed
+    then:
+      - lambda: |-
+          auto act = feed::act_chips(feed::chips());
+          if (act.empty()) {
+            feed::acked().clear();  // all clear: the next alert takes over again
+            if (feed::alert_showing()) {
+              // say so rather than vanish; normal idle resumes
+              feed::bg(id(alert_card), feed::GREEN_BG);
+              feed::text(id(alert_icon), "\U000F012C");
+              feed::text(id(alert_text), "All clear");
+              feed::show(id(alert_more), false);
+              feed::text(id(alert_ok_lbl), "Done");
+              id(idle_hold_page) = false;
+            }
+            return;
+          }
+          auto &a = act.front();
+          feed::bg(id(alert_card), feed::ACT_BG);
+          feed::text(id(alert_icon), feed::glyph(a.icon));
+          feed::text(id(alert_text), a.text);
+          feed::text(id(alert_ok_lbl), "OK");
+          std::string more;
+          for (size_t i = 1; i < act.size(); i++) more += (i > 1 ? "\n" : "Also: ") + act[i].text;
+          feed::text(id(alert_more), more);
+          feed::show(id(alert_more), !more.empty());
+      - if:
+          condition:
+            - lambda: return feed::has_unacked(feed::act_chips(feed::chips()));
+          then:
+            - script.execute: alert_take
+
+  - id: alert_take
+    then:
+      - if:
+          condition:
+            - lvgl.is_paused:
+          then:
+            - lvgl.resume:
+      - lambda: |-
+          if (!feed::alert_showing()) {
+            id(alert_origin) = id(sleep_clock)->is_showing() ? id(sleep_clock_origin)
+                                                             : id(main_lvgl)->get_current_page();
+            auto now = id(ha_time).now();
+            std::string t = now.is_valid() ? now.strftime(id(clock_24h).state ? "%H:%M" : "%I:%M %p") : "";
+            if (!t.empty() && t[0] == '0') t.erase(0, 1);
+            feed::text(id(alert_since), t.empty() ? "" : "Since " + t);
+          }
+      - lvgl.page.show: alert
+      # after the show: leaving the sleep clock clears the hold
+      - lambda: id(idle_hold_page) = true;
+      - light.turn_on:
+          id: backlight
+          brightness: !lambda |-
+            bool life = false;
+            for (auto &c : feed::act_chips(feed::chips())) life |= feed::life_safety(c);
+            return (life || !id(ambient_night)) ? id(active_brightness)
+                                                : id(active_brightness) * id(sleep_clock_brightness).state / 100.0f;

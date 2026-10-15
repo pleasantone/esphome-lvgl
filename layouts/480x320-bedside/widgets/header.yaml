@@ -1,0 +1,40 @@
+# Fork-only: the landscape titlebar. Same ids as widgets/header/widget.yaml
+# (titlebar, page_title, nav_link_lost, nav_clock), so the header sensors and
+# every feature that hides it keep working; it stops where the rail starts.
+
+# widgets:
+  obj:
+    id: titlebar
+    x: 0
+    y: 0
+    width: 416
+    height: 36
+    border_width: 0
+    radius: 0
+    pad_all: 0
+    widgets:
+      - label:
+          id: page_title
+          align: LEFT_MID
+          x: 10
+          text: " "
+      - obj:
+          align: RIGHT_MID
+          x: -10
+          width: SIZE_CONTENT
+          height: SIZE_CONTENT
+          pad_all: 0
+          border_width: 0
+          bg_opa: 0
+          layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, pad_column: 6 }
+          widgets:
+            - label:
+                id: nav_link_lost
+                text: "\U000F0319"
+                text_font: mdi_sm
+                text_color: 0xFF6B60
+                hidden: true
+            - label:
+                id: nav_clock
+                text: " "
+                text_color: 0xC9CED8

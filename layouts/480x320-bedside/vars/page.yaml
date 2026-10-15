@@ -1,0 +1,8 @@
+# 480x320-bedside: a page's padding. Titlebar 36 + 4 on top, the rail's 64 on
+# the right (widgets/rail.yaml), nothing below.
+<<: !include ../../styles/page_styles.yaml
+pad_top: 40
+pad_bottom: 6
+pad_left: 0
+pad_right: 64
+bg_color: 0x42495A # a page keeps LVGL's near-white otherwise
