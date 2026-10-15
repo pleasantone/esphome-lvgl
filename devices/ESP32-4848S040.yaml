@@ -55,6 +55,9 @@ display:
 touchscreen:
   - id: main_touchscreen
     platform: gt911
+    transform: # the GT911 reads upside down against the panel's picture (checked by hand 2026-10-15)
+      mirror_x: true
+      mirror_y: true
     # on_touch:
     #   - lambda: |-
     #         ESP_LOGI("cal", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
