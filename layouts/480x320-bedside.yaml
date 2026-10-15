@@ -6,6 +6,17 @@
 # rather than in a strip. Pages in 480x320-bedside/pages/; the feed drawing is
 # 480x320-home's feed.h.
 
+substitutions:
+  # Sizes a taller canvas overrides (sdl-square.yaml, the 480x480 4848S040
+  # mockup); these defaults are the 480x320 landscape panel's.
+  bedside_tile_height: "84"   # tiles, three rows of them under the titlebar
+  bedside_chip_height: "44"   # chips on the bedside grid and the chip list
+  bedside_chip_slots: "6"     # chips on the bedside grid: 6 or 8
+  outside_top_height: "56"    # Outside: clock | verdict
+  outside_temp_height: "94"   #          temperature
+  outside_sun_height: "44"    #          sunrise .. sunset
+  outside_index_height: "90"  #          air / pollen / dust | rain
+
 esphome:
   includes:
     - 480x320-home/feed/feed.h # chip strip, printer cards, alert takeover from HA's panel feeds (fork-only)

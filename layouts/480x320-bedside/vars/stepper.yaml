@@ -1,5 +1,5 @@
 # 480x320-bedside: a full-width stepper tile, and its - / + buttons and value.
 width: 100%
-height: 84
+height: ${bedside_tile_height}
 button_width: 64
 value_width: 80

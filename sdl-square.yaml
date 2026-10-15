@@ -1,0 +1,57 @@
+# Fork-only: the bedside layout on a 480x480 canvas, a mockup for the Guition
+# ESP32-S3-4848S040 (4in square, wall-box mount; 2026-10-15) -- no hardware, no
+# secrets, no WiFi. Same pages and rail as the 480x320 landscape panel; the
+# square's extra 160px goes to bigger tiles, a bigger clock, two more chips and
+# a taller Outside page.
+
+esphome:
+  name: sdl-square
+  friendly_name: sdl-square
+
+substitutions:
+  home_page: bedside
+  sdl_width: "480"
+  sdl_height: "480"
+  # the full-screen sleep clock, sized for 480 wide; the bedside page's
+  # cards share its digit font (card.yaml), so this sets both
+  sleep_clock_card_width: "96"
+  sleep_clock_card_height: "140"
+  sleep_clock_card_gap: "8"
+  sleep_clock_pair_gap: "24"
+  sleep_clock_digit_size: "96" # shared with the bedside page's cards, so sized for those
+  # the bedside page's clock: 4 x 88 + 2 x 6 + 20 = 384 of the 404 beside the rail
+  bedside_card_width: "88"
+  bedside_card_height: "132"
+  bedside_card_gap: "6"
+  bedside_pair_gap: "20"
+  # 434px under the titlebar: three rows of tiles, eight chips
+  bedside_tile_height: "136"
+  bedside_chip_height: "60"
+  bedside_chip_slots: "8"
+  # Outside: 468px with the titlebar hidden
+  outside_top_height: "72"
+  outside_temp_height: "130"
+  outside_sun_height: "56"
+  outside_index_height: "186"
+
+packages:
+  device: !include devices/SDL.yaml
+  layout: !include layouts/480x320-bedside.yaml
+  # pages, in the rail's up/down order
+  bedside: !include layouts/480x320-bedside/pages/bedside.yaml
+  printers: !include layouts/480x320-bedside/pages/printers.yaml
+  printer_control: !include layouts/480x320-bedside/pages/printer_control.yaml
+  lighting_second: !include layouts/480x320-bedside/pages/lighting_second.yaml
+  lighting_main: !include layouts/480x320-bedside/pages/lighting_main.yaml
+  lighting_ground: !include layouts/480x320-bedside/pages/lighting_ground.yaml
+  lighting_outside: !include layouts/480x320-bedside/pages/lighting_outside.yaml
+  living_room: !include layouts/480x320-bedside/pages/living_room.yaml
+  climate: !include layouts/480x320-bedside/pages/climate.yaml
+  outside: !include layouts/480x320-bedside/pages/outside.yaml
+  idle: !include features/idle/idle.yaml
+  ceiling: !include features/idle/sun.yaml
+  sleep_clock: !include features/sleep_clock/sleep_clock.yaml
+  # the urgent takeover: after idle and sleep_clock, whose hooks it uses
+  alert: !include layouts/480x320-bedside/pages/alert.yaml
+  # the full chip list: the rail's status button and the bedside grid open it
+  chip_list: !include layouts/480x320-bedside/pages/chips.yaml

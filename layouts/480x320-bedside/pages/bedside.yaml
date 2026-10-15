@@ -1,11 +1,11 @@
 # Bedside (fork-only, landscape exercise 2026-10-14): the resting page. A
 # split-flap clock across the top -- the sleep clock's cards (features/
 # sleep_clock/card.yaml, flip_clock.h), awake and full size -- the date under
-# it, and My Home's chips as a 2x3 grid in full words, red and amber first.
-# More than six: the sixth slot says "+N more" in the colour of the worst one
-# it hides. A tap on the grid opens the full list. No titlebar: the clock is
-# the title. Night still goes to the dim sleep clock (features/sleep_clock).
-
+# it, and My Home's chips as a grid in full words, red and amber first: 2x3 on
+# the 480x320 panel, 2x4 on the square 4848 mockup (bedside_chip_slots). More
+# than fit: the last slot says "+N more" in the colour of the worst one it
+# hides. A tap on the grid opens the full list. No titlebar: the clock is the
+# title. Night still goes to the dim sleep clock (features/sleep_clock).
 substitutions:
   bedside_card_width: "80"
   bedside_card_height: "118"
@@ -106,7 +106,7 @@ lvgl:
                         clickable: false
                         scrollable: false
                         width: 198
-                        height: 44
+                        height: ${bedside_chip_height}
                         radius: 12
                         border_width: 0
                         bg_color: 0x5A6173
@@ -124,7 +124,7 @@ lvgl:
                         clickable: false
                         scrollable: false
                         width: 198
-                        height: 44
+                        height: ${bedside_chip_height}
                         radius: 12
                         border_width: 0
                         bg_color: 0x5A6173
@@ -142,7 +142,7 @@ lvgl:
                         clickable: false
                         scrollable: false
                         width: 198
-                        height: 44
+                        height: ${bedside_chip_height}
                         radius: 12
                         border_width: 0
                         bg_color: 0x5A6173
@@ -160,7 +160,7 @@ lvgl:
                         clickable: false
                         scrollable: false
                         width: 198
-                        height: 44
+                        height: ${bedside_chip_height}
                         radius: 12
                         border_width: 0
                         bg_color: 0x5A6173
@@ -178,7 +178,7 @@ lvgl:
                         clickable: false
                         scrollable: false
                         width: 198
-                        height: 44
+                        height: ${bedside_chip_height}
                         radius: 12
                         border_width: 0
                         bg_color: 0x5A6173
@@ -196,7 +196,7 @@ lvgl:
                         clickable: false
                         scrollable: false
                         width: 198
-                        height: 44
+                        height: ${bedside_chip_height}
                         radius: 12
                         border_width: 0
                         bg_color: 0x5A6173
@@ -208,6 +208,42 @@ lvgl:
                         widgets:
                           - label: { id: bs_chip_6_ic, text: "", text_font: mdi_sm }
                           - label: { id: bs_chip_6_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+                    - obj:
+                        id: bs_chip_7
+                        hidden: true
+                        clickable: false
+                        scrollable: false
+                        width: 198
+                        height: ${bedside_chip_height}
+                        radius: 12
+                        border_width: 0
+                        bg_color: 0x5A6173
+                        pad_top: 2
+                        pad_bottom: 2
+                        pad_left: 8
+                        pad_right: 8
+                        layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 6 }
+                        widgets:
+                          - label: { id: bs_chip_7_ic, text: "", text_font: mdi_sm }
+                          - label: { id: bs_chip_7_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
+                    - obj:
+                        id: bs_chip_8
+                        hidden: true
+                        clickable: false
+                        scrollable: false
+                        width: 198
+                        height: ${bedside_chip_height}
+                        radius: 12
+                        border_width: 0
+                        bg_color: 0x5A6173
+                        pad_top: 2
+                        pad_bottom: 2
+                        pad_left: 8
+                        pad_right: 8
+                        layout: { type: FLEX, flex_flow: ROW, flex_align_cross: CENTER, flex_align_track: CENTER, pad_column: 6 }
+                        widgets:
+                          - label: { id: bs_chip_8_ic, text: "", text_font: mdi_sm }
+                          - label: { id: bs_chip_8_tx, flex_grow: 1, height: 20, long_mode: DOT, text: "", text_font: roboto_sm }
 
 script:
   - id: bedside_clock_refresh
@@ -240,26 +276,28 @@ script:
   - id: !extend chips_changed
     then:
       - lambda: |-
-          lv_obj_t *b[] = {id(bs_chip_1), id(bs_chip_2), id(bs_chip_3), id(bs_chip_4), id(bs_chip_5), id(bs_chip_6)};
-          lv_obj_t *ic[] = {id(bs_chip_1_ic), id(bs_chip_2_ic), id(bs_chip_3_ic), id(bs_chip_4_ic), id(bs_chip_5_ic), id(bs_chip_6_ic)};
-          lv_obj_t *tx[] = {id(bs_chip_1_tx), id(bs_chip_2_tx), id(bs_chip_3_tx), id(bs_chip_4_tx), id(bs_chip_5_tx), id(bs_chip_6_tx)};
+          lv_obj_t *b[] = {id(bs_chip_1), id(bs_chip_2), id(bs_chip_3), id(bs_chip_4), id(bs_chip_5), id(bs_chip_6), id(bs_chip_7), id(bs_chip_8)};
+          lv_obj_t *ic[] = {id(bs_chip_1_ic), id(bs_chip_2_ic), id(bs_chip_3_ic), id(bs_chip_4_ic), id(bs_chip_5_ic), id(bs_chip_6_ic), id(bs_chip_7_ic), id(bs_chip_8_ic)};
+          lv_obj_t *tx[] = {id(bs_chip_1_tx), id(bs_chip_2_tx), id(bs_chip_3_tx), id(bs_chip_4_tx), id(bs_chip_5_tx), id(bs_chip_6_tx), id(bs_chip_7_tx), id(bs_chip_8_tx)};
+          const int slots = ${bedside_chip_slots};  // 6 on 480x320, 8 on the square; the rest stay hidden
           auto &c = feed::chips();
           int n = c.size();
-          if (n <= 6) {
-            feed::set_list(c, b, ic, tx, 6);
+          if (n <= slots) {
+            feed::set_list(c, b, ic, tx, slots);
           } else {
-            std::vector<feed::Chip> head(c.begin(), c.begin() + 5);
-            feed::set_list(head, b, ic, tx, 6);
+            std::vector<feed::Chip> head(c.begin(), c.begin() + slots - 1);
+            feed::set_list(head, b, ic, tx, slots);
             int worst = 2;  // the "+N" slot takes the colour of the worst chip it hides
-            for (int i = 5; i < n; i++)
+            for (int i = slots - 1; i < n; i++)
               worst = std::min(worst, c[i].level == "act" ? 0 : c[i].level == "warn" ? 1 : 2);
-            feed::bg(b[5], worst == 0 ? feed::ACT_BG : worst == 1 ? feed::WARN_BG : feed::INFO_BG);
+            lv_obj_t *more = b[slots - 1];
+            feed::bg(more, worst == 0 ? feed::ACT_BG : worst == 1 ? feed::WARN_BG : feed::INFO_BG);
             uint32_t ink = worst == 1 ? feed::WARN_TEXT : feed::TEXT;
-            feed::fg(ic[5], ink);
-            feed::fg(tx[5], ink);
-            feed::text(ic[5], "\U000F0026");
-            feed::text(tx[5], "+" + std::to_string(n - 5) + " more");
-            feed::show(b[5], true);
+            feed::fg(ic[slots - 1], ink);
+            feed::fg(tx[slots - 1], ink);
+            feed::text(ic[slots - 1], "\U000F0026");
+            feed::text(tx[slots - 1], "+" + std::to_string(n - slots + 1) + " more");
+            feed::show(more, true);
           }
           feed::show(id(bs_quiet), n == 0);
 
