@@ -1,0 +1,61 @@
+# Fork-only: Guition ESP32-4848S040C_I -- 4in 480x480 ST7701S RGB panel, GT911
+# capacitive touch, ESP32-S3 N16R8 (2026-10-15). The plain C_I board: no relays
+# (those are the _Y_3 variant's GPIO 1/2/40). The panel's pins, timings and
+# init sequence come from ESPHome's GUITION-4848S040 model; the 3-wire SPI bus
+# below only carries that init sequence.
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      COMPILER_OPTIMIZATION_SIZE: y
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: y
+      CONFIG_ESP32S3_DATA_CACHE_64KB: y
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: y
+      CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y # RGB panels need the PSRAM bandwidth
+      CONFIG_SPIRAM_RODATA: y
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+spi:
+  - id: lcd_spi
+    clk_pin: 48
+    mosi_pin: 47
+
+i2c:
+  - sda: 19
+    scl: 45
+
+output:
+  - id: gpio_backlight_pwm
+    platform: ledc
+    pin: 38
+    frequency: 1220
+
+light:
+  - id: backlight
+    name: Backlight
+    platform: monochromatic
+    output: gpio_backlight_pwm
+    restore_mode: ALWAYS_ON
+
+display:
+  - id: main_display
+    platform: mipi_rgb
+    model: GUITION-4848S040
+    spi_id: lcd_spi
+    update_interval: never
+    auto_clear_enabled: false
+
+touchscreen:
+  - id: main_touchscreen
+    platform: gt911
+    # on_touch:
+    #   - lambda: |-
+    #         ESP_LOGI("cal", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
+    #           touch.x, touch.y, touch.x_raw, touch.y_raw);
