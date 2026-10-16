@@ -49,6 +49,13 @@ display:
     platform: mipi_rgb
     model: GUITION-4848S040
     spi_id: lcd_spi
+    # The controller's vertical back porch (C1) 13 -> 14 lines (2026-10-15). This
+    # board revision draws the picture 9 rows high with the model's 13 (top cut off,
+    # blank band at the bottom); host porches have no effect, the panel runs in DE
+    # mode. C1 only moves the picture with the model's vertical flip on, which is kept.
+    # https://github.com/esphome/esphome/issues/17810
+    init_sequence:
+      - [0xC1, 0x0E, 0x02]
     update_interval: never
     auto_clear_enabled: false
 
@@ -62,3 +69,4 @@ touchscreen:
     #   - lambda: |-
     #         ESP_LOGI("cal", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
     #           touch.x, touch.y, touch.x_raw, touch.y_raw);
+
