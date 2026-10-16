@@ -1,0 +1,41 @@
+# Fork-only (2026-10-16): everything a bedside panel runs apart from its board
+# and its sizes -- the layout, the pages in the rail's order, the idle, sun
+# and sleep clock features, the takeovers, and the HA controls. bedside35,
+# bedside48 and both previews include this one list, so a page or feature added
+# here reaches every panel (before, four hand-kept copies drifted apart).
+# required vars:
+#   printers_page: printers (half-width cards, 480x320) or printers_lanes (stacked lanes, square)
+
+packages:
+  layout: !include ../480x320-bedside.yaml
+  # pages, in the rail's up/down order
+  bedside: !include pages/bedside.yaml
+  printers: !include pages/${printers_page}.yaml
+  printer_control: !include pages/printer_control.yaml
+  lighting_second: !include pages/lighting_second.yaml
+  lighting_main: !include pages/lighting_main.yaml
+  lighting_ground: !include pages/lighting_ground.yaml
+  lighting_outside: !include pages/lighting_outside.yaml
+  living_room: !include pages/living_room.yaml
+  climate: !include pages/climate.yaml
+  outside: !include pages/outside.yaml
+  idle: !include ../../features/idle/idle.yaml
+  ceiling: !include ../../features/idle/sun.yaml
+  sleep_clock: !include ../../features/sleep_clock/sleep_clock.yaml
+  # the urgent takeover: after idle and sleep_clock, whose hooks it uses
+  alert: !include pages/alert.yaml
+  # the full chip list: the rail's status button and the bedside grid open it
+  chip_list: !include pages/chips.yaml
+  # HA controls (Wake, Keep awake, Brightness, Page), as the office panel has;
+  # one page.yaml per page above
+  panel_control: !include ../../features/panel_control/panel_control.yaml
+  bedside_control: !include { file: ../../features/panel_control/page.yaml, vars: { page: bedside } }
+  printers_control: !include { file: ../../features/panel_control/page.yaml, vars: { page: printers } }
+  printer_control_control: !include { file: ../../features/panel_control/page.yaml, vars: { page: printer_control } }
+  lighting_second_control: !include { file: ../../features/panel_control/page.yaml, vars: { page: lighting_second } }
+  lighting_main_control: !include { file: ../../features/panel_control/page.yaml, vars: { page: lighting_main } }
+  lighting_ground_control: !include { file: ../../features/panel_control/page.yaml, vars: { page: lighting_ground } }
+  lighting_outside_control: !include { file: ../../features/panel_control/page.yaml, vars: { page: lighting_outside } }
+  living_room_control: !include { file: ../../features/panel_control/page.yaml, vars: { page: living_room } }
+  climate_control: !include { file: ../../features/panel_control/page.yaml, vars: { page: climate } }
+  outside_control: !include { file: ../../features/panel_control/page.yaml, vars: { page: outside } }

@@ -11,44 +11,14 @@ esphome:
 
 substitutions:
   home_page: bedside
-  sleep_clock_card_width: "96"
-  sleep_clock_card_height: "140"
-  sleep_clock_card_gap: "8"
-  sleep_clock_pair_gap: "24"
-  sleep_clock_digit_size: "104"
 
 packages:
   common: !include common.yaml
   device: !include devices/JC3248W535.yaml
-  layout: !include layouts/480x320-bedside.yaml
-  # pages, in the rail's up/down order
-  bedside: !include layouts/480x320-bedside/pages/bedside.yaml
-  printers: !include layouts/480x320-bedside/pages/printers.yaml
-  printer_control: !include layouts/480x320-bedside/pages/printer_control.yaml
-  lighting_second: !include layouts/480x320-bedside/pages/lighting_second.yaml
-  lighting_main: !include layouts/480x320-bedside/pages/lighting_main.yaml
-  lighting_ground: !include layouts/480x320-bedside/pages/lighting_ground.yaml
-  lighting_outside: !include layouts/480x320-bedside/pages/lighting_outside.yaml
-  living_room: !include layouts/480x320-bedside/pages/living_room.yaml
-  climate: !include layouts/480x320-bedside/pages/climate.yaml
-  outside: !include layouts/480x320-bedside/pages/outside.yaml
-  idle: !include features/idle/idle.yaml
-  ceiling: !include features/idle/sun.yaml
-  sleep_clock: !include features/sleep_clock/sleep_clock.yaml
-  alert: !include layouts/480x320-bedside/pages/alert.yaml
-  chip_list: !include layouts/480x320-bedside/pages/chips.yaml
-  # HA controls (Wake, Keep awake, Brightness, Page), as the office panel has
-  panel_control: !include features/panel_control/panel_control.yaml
-  bedside_control: !include { file: features/panel_control/page.yaml, vars: { page: bedside } }
-  printers_control: !include { file: features/panel_control/page.yaml, vars: { page: printers } }
-  printer_control_control: !include { file: features/panel_control/page.yaml, vars: { page: printer_control } }
-  lighting_second_control: !include { file: features/panel_control/page.yaml, vars: { page: lighting_second } }
-  lighting_main_control: !include { file: features/panel_control/page.yaml, vars: { page: lighting_main } }
-  lighting_ground_control: !include { file: features/panel_control/page.yaml, vars: { page: lighting_ground } }
-  lighting_outside_control: !include { file: features/panel_control/page.yaml, vars: { page: lighting_outside } }
-  living_room_control: !include { file: features/panel_control/page.yaml, vars: { page: living_room } }
-  climate_control: !include { file: features/panel_control/page.yaml, vars: { page: climate } }
-  outside_control: !include { file: features/panel_control/page.yaml, vars: { page: outside } }
+  # the layout, every page and feature, the HA controls: shared by every bedside panel
+  panel: !include { file: layouts/480x320-bedside/panel.yaml, vars: { printers_page: printers } }
+  # after panel: a package listed later wins, so these beat the features' defaults
+  sizes: !include layouts/480x320-bedside/sizes/landscape.yaml
   memory: !include features/diagnostics/memory.yaml
   psram: !include features/diagnostics/psram.yaml
   ble_proxy: !include features/ble_proxy/ble_proxy.yaml

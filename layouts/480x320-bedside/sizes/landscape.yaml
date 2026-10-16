@@ -1,0 +1,10 @@
+# Fork-only: bedside sizes for the 480x320 landscape canvas (bedside35,
+# sdl-bedside*). The layout's own defaults cover the tiles, chips and Outside;
+# this adds the full-screen sleep clock, sized for 480 wide.
+
+substitutions:
+  sleep_clock_card_width: "96"
+  sleep_clock_card_height: "140"
+  sleep_clock_card_gap: "8"
+  sleep_clock_pair_gap: "24"
+  sleep_clock_digit_size: "104"
