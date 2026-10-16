@@ -1,0 +1,22 @@
+# Fork-only: one page's entry in panel_control.yaml's Page select.
+# required vars:
+#   page: the page's id
+
+select:
+  - id: !extend page_select
+    options:
+      - ${page}
+
+script:
+  - id: !extend page_go
+    then:
+      - if:
+          condition:
+            - lambda: return page == "${page}";
+          then:
+            - lvgl.page.show: ${page}
+  - id: !extend page_report
+    then:
+      - lambda: |-
+          if (id(${page})->is_showing() && id(page_select).current_option() != "${page}")
+            id(page_select).publish_state("${page}");

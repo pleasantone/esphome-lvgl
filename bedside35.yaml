@@ -37,6 +37,18 @@ packages:
   sleep_clock: !include features/sleep_clock/sleep_clock.yaml
   alert: !include layouts/480x320-bedside/pages/alert.yaml
   chip_list: !include layouts/480x320-bedside/pages/chips.yaml
+  # HA controls (Wake, Keep awake, Brightness, Page), as the office panel has
+  panel_control: !include features/panel_control/panel_control.yaml
+  bedside_control: !include { file: features/panel_control/page.yaml, vars: { page: bedside } }
+  printers_control: !include { file: features/panel_control/page.yaml, vars: { page: printers } }
+  printer_control_control: !include { file: features/panel_control/page.yaml, vars: { page: printer_control } }
+  lighting_second_control: !include { file: features/panel_control/page.yaml, vars: { page: lighting_second } }
+  lighting_main_control: !include { file: features/panel_control/page.yaml, vars: { page: lighting_main } }
+  lighting_ground_control: !include { file: features/panel_control/page.yaml, vars: { page: lighting_ground } }
+  lighting_outside_control: !include { file: features/panel_control/page.yaml, vars: { page: lighting_outside } }
+  living_room_control: !include { file: features/panel_control/page.yaml, vars: { page: living_room } }
+  climate_control: !include { file: features/panel_control/page.yaml, vars: { page: climate } }
+  outside_control: !include { file: features/panel_control/page.yaml, vars: { page: outside } }
   memory: !include features/diagnostics/memory.yaml
   psram: !include features/diagnostics/psram.yaml
   ble_proxy: !include features/ble_proxy/ble_proxy.yaml

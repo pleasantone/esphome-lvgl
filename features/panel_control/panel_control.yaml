@@ -1,0 +1,150 @@
+# Fork-only (2026-10-16): Home Assistant controls for the screen, the same set
+# the office desk panel has -- Wake screen, Keep awake, Brightness and Page.
+# Restart, Sleep now and the diagnostics already come from common.yaml and
+# features/idle. Opt in from a top-level config, after idle, its ceiling and
+# sleep_clock:
+#
+#   packages:
+#     ...
+#     panel_control: !include features/panel_control/panel_control.yaml
+#     printers_control: !include { file: features/panel_control/page.yaml, vars: { page: printers } }
+#     ...one page.yaml per navigable page, the same list as page_access.yaml
+#
+# Needs: features/idle (sleep_note, active_brightness), features/sleep_clock
+# (sleep_clock, sleep_clock_origin, sleep_clock_backlight), main_lvgl, backlight.
+#
+# The backlight light is hidden from Home Assistant: idle owns it and puts it
+# back on the next touch or timer, so a slider there only fought it. Brightness
+# replaces it.
+
+globals:
+  - id: bl_override # -1 = Auto (the ceiling feature decides), else the fixed ceiling
+    type: float
+    restore_value: false
+    initial_value: '-1.0'
+  - id: bl_auto # the ceiling feature's last value, for going back to Auto
+    type: float
+    restore_value: false
+    initial_value: '1.0'
+  - id: keep_until # millis() Keep awake runs to; 0 = off
+    type: uint32_t
+    restore_value: false
+    initial_value: '0'
+
+light:
+  - id: !extend backlight
+    internal: true
+
+button:
+  - id: wake_button
+    platform: template
+    name: Wake screen
+    icon: mdi:monitor
+    on_press:
+      - script.execute: panel_wake
+
+switch:
+  # an hour awake, the way the office panel's settings sheet does it
+  - id: keep_awake
+    platform: template
+    name: Keep awake
+    icon: mdi:sleep-off
+    lambda: return id(keep_until) != 0 && millis() < id(keep_until);
+    turn_on_action:
+      - lambda: id(keep_until) = millis() + 3600000;
+      - script.execute: panel_wake
+    turn_off_action:
+      - lambda: id(keep_until) = 0;
+
+select:
+  - id: bl_select
+    platform: template
+    name: Brightness
+    icon: mdi:brightness-6
+    entity_category: config
+    options: [Auto, "100%", "60%", "30%"]
+    initial_option: Auto
+    set_action:
+      - lambda: |-
+          float o = x == "Auto" ? -1.0f : x == "100%" ? 1.0f : x == "60%" ? 0.6f : 0.3f;
+          if (id(bl_override) < 0 && o >= 0)
+            id(bl_auto) = id(active_brightness);  // remember what Auto was
+          id(bl_override) = o;
+          id(active_brightness) = o < 0 ? id(bl_auto) : o;
+          id(bl_select).publish_state(x);
+      - script.execute: panel_backlight
+
+  # The page on screen. Options and the jump come from page.yaml, one per page.
+  - id: page_select
+    platform: template
+    name: Page
+    icon: mdi:page-layout-body
+    options: []
+    initial_option: ${home_page}
+    set_action:
+      - script.execute: panel_wake
+      - script.execute: { id: page_go, page: !lambda return x; }
+      - lambda: id(page_select).publish_state(x);
+
+script:
+  # Wake as a touch would: resume a paused screen, leave the sleep clock for
+  # the page it covered, light up and restart the idle timers.
+  - id: panel_wake
+    then:
+      - if:
+          condition:
+            - lvgl.is_paused:
+          then:
+            - lvgl.resume:
+      - lambda: |-
+          if (id(sleep_clock)->is_showing())
+            id(main_lvgl)->show_page(id(sleep_clock_origin), LV_SCREEN_LOAD_ANIM_NONE, 0);
+          lv_display_trigger_activity(nullptr);
+      - light.turn_on:
+          id: backlight
+          brightness: !lambda return id(active_brightness);
+      - script.execute: { id: sleep_note, event: "woken (HA)" }
+
+  # Apply a new ceiling to whatever is showing; a dark screen stays dark.
+  - id: panel_backlight
+    then:
+      - if:
+          condition:
+            - lambda: return id(sleep_clock)->is_showing();
+          then:
+            - script.execute: sleep_clock_backlight
+          else:
+            - if:
+                condition:
+                  - lambda: return id(backlight).current_values.is_on();
+                then:
+                  - light.turn_on:
+                      id: backlight
+                      brightness: !lambda return id(active_brightness);
+
+  # page.yaml adds one line each
+  - id: page_go
+    parameters:
+      page: std::string
+    then: []
+  - id: page_report
+    then: []
+
+interval:
+  - interval: 1s
+    then:
+      - script.execute: page_report
+      # A fixed Brightness outlasts the ceiling feature: it writes its own
+      # value when the sun changes band, so take it back and remember it.
+      - lambda: |-
+          if (id(bl_override) >= 0 && id(active_brightness) != id(bl_override)) {
+            id(bl_auto) = id(active_brightness);
+            id(active_brightness) = id(bl_override);
+            id(panel_backlight).execute();
+          }
+  - interval: 30s
+    then:
+      # Keep awake: count as a touch, so no idle timer reaches its timeout
+      - lambda: |-
+          if (id(keep_until) != 0 && millis() < id(keep_until))
+            lv_display_trigger_activity(nullptr);
