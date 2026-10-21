@@ -27,6 +27,10 @@ substitutions:
   sleep_clock_pair_gap: "16"
   sleep_clock_digit_size: "88"
   sleep_clock_brightness: "10" # percent of the ceiling
+  # night palette: the digits and the date/AM-PM; a panel whose backlight runs
+  # very low at night can take brighter ones
+  sleep_clock_night_ink: "0xD04028"
+  sleep_clock_night_text: "0xB03828"
 
 esphome:
   includes:
@@ -107,7 +111,7 @@ number:
     unit_of_measurement: "%"
     mode: slider
     min_value: 1
-    max_value: 50
+    max_value: 100 # a panel whose backlight only lights near its ceiling needs the top end
     step: 1
     initial_value: ${sleep_clock_brightness}
     optimistic: true
@@ -185,10 +189,10 @@ script:
           }
           id(sleep_clock_red) = red;
           // night: 4.1:1 digit on card, 4.5:1 outline and 3.4:1 date on black
-          uint32_t ink = red ? 0xD04028 : 0xD8D8D8;
+          uint32_t ink = red ? ${sleep_clock_night_ink} : 0xD8D8D8;
           uint32_t face = red ? 0x1A0A08 : 0x1E2024;
           uint32_t edge = red ? 0xD04028 : 0xFFFFFF;
-          uint32_t text = red ? 0xB03828 : 0x9AA0AE;
+          uint32_t text = red ? ${sleep_clock_night_text} : 0x9AA0AE;
           for (auto *card : {id(sleep_clock_h1), id(sleep_clock_h2), id(sleep_clock_m1), id(sleep_clock_m2)}) {
             flip::set_colors(card, ink, face, edge);
           }

@@ -8,6 +8,15 @@ esphome:
 
 substitutions:
   home_page: printers
+  # Night levels for this panel's backlight, set by eye in a dark bedroom
+  # (2026-10-18). The light's gamma 2.8 turns the shared night levels into
+  # ~5% PWM awake and ~0.4% on the clock: glaring, then black. 25% of full
+  # is ~2% duty awake; the clock at 90% of that is ~1.5%.
+  sun_night_percent: "25"
+  sleep_clock_brightness: "90"
+  # brighter red digits and date, for the clock's low backlight
+  sleep_clock_night_ink: "0xFF5034"
+  sleep_clock_night_text: "0xE04830"
 
 packages:
   common: !include common.yaml
