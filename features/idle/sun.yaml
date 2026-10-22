@@ -3,8 +3,9 @@
 #
 # Needs Home Assistant's sun integration (sun.sun). Everything else on the
 # panel is already useless without HA, and a stale elevation only matters if HA
-# stays down across a sunset. Until the first reading the ceiling is 100%, so a
-# cold boot without HA is bright rather than dark.
+# stays down across a sunset. Until the first reading the panel runs at dusk
+# levels, from the backlight's first instant: readable by day, not glaring at
+# night, and a cold boot without HA is never dark.
 #
 # Bands rather than a curve: a brightness call on every elevation update would
 # be a write every minute or two for a change nobody can see.
@@ -18,7 +19,16 @@ globals:
   - id: sun_band # 2 day, 1 dusk (sun within 6 degrees of the horizon), 0 night
     type: int
     restore_value: false
-    initial_value: '2'
+    initial_value: '1' # dusk until the first reading
+  - id: !extend active_brightness
+    initial_value: '${sun_dusk_percent} / 100.0f'
+
+# the light's own first value, so boot never flashes 100% before the ceiling
+# is applied
+light:
+  - id: !extend backlight
+    initial_state:
+      brightness: ${sun_dusk_percent}%
 
 sensor:
   - id: sun_elevation

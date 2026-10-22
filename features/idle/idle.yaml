@@ -191,12 +191,14 @@ lvgl:
     - timeout: !lambda return idle_ms(id(idle_dim_minutes).state);
       then:
         # dimming never raises the backlight, so something already lower --
-        # put up by hand before this fired, say -- stays put
+        # put up by hand before this fired, say -- stays put. A feature holding
+        # its page (the sleep clock, an alert) owns the level: a clock put up by
+        # hold or HA before this fired would otherwise be dimmed to black.
         - if:
             condition:
               - lambda: |-
                   float target = id(active_brightness) * id(idle_dim_percent).state / 100.0f;
-                  return id(backlight).current_values.is_on() &&
+                  return !id(idle_hold_page) && id(backlight).current_values.is_on() &&
                          id(backlight).current_values.get_brightness() > target;
             then:
               - light.turn_on:
