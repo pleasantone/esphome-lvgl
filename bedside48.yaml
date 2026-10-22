@@ -17,6 +17,9 @@ substitutions:
   # brighter red digits and date, for the clock's low backlight
   sleep_clock_night_ink: "0xFF5034"
   sleep_clock_night_text: "0xE04830"
+  # black faces and a half-bright outline: less glow around the digits
+  sleep_clock_night_face: "0x000000"
+  sleep_clock_night_edge: "0x682014"
 
 packages:
   common: !include common.yaml

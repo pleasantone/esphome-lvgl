@@ -31,6 +31,10 @@ substitutions:
   # very low at night can take brighter ones
   sleep_clock_night_ink: "0xD04028"
   sleep_clock_night_text: "0xB03828"
+  # the lit areas besides the digits: card faces and outlines; a panel whose
+  # black glows can take a black face and a dimmer outline
+  sleep_clock_night_face: "0x1A0A08"
+  sleep_clock_night_edge: "0xD04028"
 
 esphome:
   includes:
@@ -190,8 +194,8 @@ script:
           id(sleep_clock_red) = red;
           // night: 4.1:1 digit on card, 4.5:1 outline and 3.4:1 date on black
           uint32_t ink = red ? ${sleep_clock_night_ink} : 0xD8D8D8;
-          uint32_t face = red ? 0x1A0A08 : 0x1E2024;
-          uint32_t edge = red ? 0xD04028 : 0xFFFFFF;
+          uint32_t face = red ? ${sleep_clock_night_face} : 0x1E2024;
+          uint32_t edge = red ? ${sleep_clock_night_edge} : 0xFFFFFF;
           uint32_t text = red ? ${sleep_clock_night_text} : 0x9AA0AE;
           for (auto *card : {id(sleep_clock_h1), id(sleep_clock_h2), id(sleep_clock_m1), id(sleep_clock_m2)}) {
             flip::set_colors(card, ink, face, edge);
