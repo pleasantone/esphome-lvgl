@@ -3,13 +3,15 @@
 # tiles, a bigger clock, two more chips and a taller Outside page.
 
 substitutions:
-  # the full-screen sleep clock, sized for 480 wide; the bedside page's
-  # cards share its digit font (card.yaml), so this sets both
-  sleep_clock_card_width: "96"
-  sleep_clock_card_height: "140"
-  sleep_clock_card_gap: "8"
-  sleep_clock_pair_gap: "24"
-  sleep_clock_digit_size: "96" # shared with the bedside page's cards, so sized for those
+  # the full-screen sleep clock, sized for 480 wide: 4 x 108 + 2 x 6 + 20 + 4
+  # = 468. Its digits get their own font (below); the bedside page's cards
+  # share flip_digits (card.yaml), so that one stays sized for those.
+  sleep_clock_card_width: "108"
+  sleep_clock_card_height: "184"
+  sleep_clock_card_gap: "6"
+  sleep_clock_pair_gap: "20"
+  sleep_clock_digit_size: "96" # flip_digits: the bedside page's cards
+  sleep_clock_big_digit_size: "156" # the sleep clock's own
   # the bedside page's clock: 4 x 88 + 2 x 6 + 20 = 384 of the 404 beside the rail
   bedside_card_width: "88"
   bedside_card_height: "132"
@@ -24,3 +26,25 @@ substitutions:
   outside_temp_height: "130"
   outside_sun_height: "56"
   outside_index_height: "186"
+
+# The sleep clock's cards take a bigger font than the bedside page's, swapped
+# onto their labels at boot: card.yaml names flip_digits for every card, and
+# flip_clock.h finds the labels by child index, so this is the same path.
+font:
+  - id: flip_digits_big
+    file:
+      type: gfonts
+      family: Roboto Condensed
+      weight: bold
+    size: ${sleep_clock_big_digit_size}
+    glyphs: "0123456789"
+    bpp: 4
+
+esphome:
+  on_boot:
+    - priority: -100
+      then:
+        - lambda: |-
+            for (auto *card : {id(sleep_clock_h1), id(sleep_clock_h2), id(sleep_clock_m1), id(sleep_clock_m2)})
+              for (uint32_t i = 0; i < 4; i++)  // the card's four halves
+                lv_obj_set_style_text_font(flip::label_of(lv_obj_get_child(card, i)), id(flip_digits_big)->get_lv_font(), 0);
