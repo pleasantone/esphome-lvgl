@@ -9,17 +9,28 @@ esphome:
 substitutions:
   home_page: printers
   # Night levels for this panel's backlight, set by eye in a dark bedroom
-  # (2026-10-18). The light's gamma 2.8 turns the shared night levels into
-  # ~5% PWM awake and ~0.4% on the clock: glaring, then black. 25% of full
-  # is ~2% duty awake; the clock at 90% of that is ~1.5%.
-  sun_night_percent: "25"
-  sleep_clock_brightness: "90"
+  # (2026-10-23, with live controls). Its backlight shows nothing below 0.34%
+  # PWM duty at 1220Hz (lower frequencies don't help, 5kHz is worse), so the
+  # output's floor below starts there. With the light's gamma 2.8 on top, 19%
+  # is ~1.3% duty awake and on the clock, and the dim (25%) ~0.36%, just lit.
+  sun_night_percent: "19"
+  # Between night and day the level follows the sun in a straight line instead
+  # of the shared bands' 60% dusk step, which glared before sunrise (10-24):
+  # 19% at -6 degrees up to 100% at +10. Dusk's 35% is only the boot level now,
+  # until HA sends the first elevation.
+  sun_dusk_percent: "35"
+  sun_ramp_low: "-6.0f"
+  sun_ramp_high: "10.0f"
+  sleep_clock_brightness: "100"
+  # ...but never above 24% of full (~2.2% duty): at 100% of the dusk and day
+  # ceilings the clock was as bright as the awake screen (10-24)
+  sleep_clock_max_percent: "24"
   # brighter red digits and date, for the clock's low backlight
   sleep_clock_night_ink: "0xFF5034"
   sleep_clock_night_text: "0xE04830"
-  # black faces and a half-bright outline: less glow around the digits
+  # black faces and an outline at ~half the ink (10-24: up from 0x682014): less glow around the digits
   sleep_clock_night_face: "0x000000"
-  sleep_clock_night_edge: "0x682014"
+  sleep_clock_night_edge: "0x8A2B1B"
 
 packages:
   common: !include common.yaml
@@ -31,6 +42,91 @@ packages:
   memory: !include features/diagnostics/memory.yaml
   psram: !include features/diagnostics/psram.yaml
   ble_proxy: !include features/ble_proxy/ble_proxy.yaml
+
+# Sleep clock max: a cap on the clock's level, whatever the band. Night (19% x
+# 100%) sits under it; dusk and day stop at it. Appended to the shared
+# sleep_clock_backlight, so it replaces that call's level before the light
+# writes -- every path that sets the clock's level goes through there.
+number:
+  - id: sleep_clock_max
+    platform: template
+    name: Sleep clock max
+    icon: mdi:brightness-4
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: slider
+    min_value: 1
+    max_value: 100
+    step: 1
+    initial_value: ${sleep_clock_max_percent}
+    optimistic: true
+    restore_value: true
+    on_value:
+      - if:
+          condition:
+            - lambda: return id(sleep_clock)->is_showing();
+          then:
+            - script.execute: sleep_clock_backlight
+
+script:
+  - id: !extend sleep_clock_backlight
+    then:
+      - lambda: |-
+          float b = std::min(id(active_brightness) * id(sleep_clock_brightness).state / 100.0f,
+                             id(sleep_clock_max).state / 100.0f);
+          auto call = id(backlight).turn_on();
+          call.set_brightness(b);
+          call.perform();
+
+# The sun ramp. Runs after sun.yaml's own on_value, so on a change of band it
+# replaces that step's level before the light writes. Night colours still
+# switch at sun.yaml's -6 degrees.
+globals:
+  - id: sun_ramp_prev # the ramp's last level, to tell awake from dimmed
+    type: float
+    restore_value: false
+    initial_value: '${sun_dusk_percent} / 100.0f'
+
+sensor:
+  - id: !extend sun_elevation
+    on_value:
+      - lambda: |-
+          if (std::isnan(x)) {
+            return;
+          }
+          float t = std::min(std::max((x - ${sun_ramp_low}) / (${sun_ramp_high} - ${sun_ramp_low}), 0.0f), 1.0f);
+          float b = (${sun_night_percent} + t * (${sun_day_percent} - ${sun_night_percent})) / 100.0f;
+          float prev = id(sun_ramp_prev);
+          id(sun_ramp_prev) = b;
+          if (id(bl_override) >= 0) {  // a fixed Brightness wins; Auto comes back to the ramp
+            id(bl_auto) = b;
+            id(active_brightness) = id(bl_override);
+            return;
+          }
+          id(active_brightness) = b;
+          if (id(sleep_clock)->is_showing()) {
+            id(sleep_clock_backlight).execute();  // under Sleep clock max
+            return;
+          }
+          auto &light = *id(backlight);
+          if (!light.current_values.is_on()) {
+            return;  // dark: the next touch picks up the new level
+          }
+          // awake follows the ramp, and a dimmed screen follows it at the dim level
+          float target = light.current_values.get_brightness() >= prev * 0.75f
+                             ? b : b * id(idle_dim_percent).state / 100.0f;
+          if (fabsf(light.remote_values.get_brightness() - target) < 0.002f) {
+            return;
+          }
+          auto call = light.turn_on();
+          call.set_brightness(target);
+          call.perform();
+
+# the lowest duty this panel's backlight still shows; off stays off
+output:
+  - id: !extend gpio_backlight_pwm
+    min_power: 0.34%
+    zero_means_zero: true
 
 # passive: listen for advertisements without sending scan requests (as home35)
 esp32_ble_tracker:
