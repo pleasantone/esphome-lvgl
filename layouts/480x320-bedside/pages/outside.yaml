@@ -238,6 +238,7 @@ lvgl:
                               text_font: roboto_md
                               align: RIGHT_MID
                     - obj: # pollen
+                        id: out_pollen_row
                         <<: *index_row
                         widgets:
                           - label: { text: "Pollen", text_font: roboto_md, align: LEFT_MID }
@@ -575,20 +576,23 @@ text_sensor:
     platform: homeassistant
     entity_id: sensor.pollen_summary
     on_value:
-      - lvgl.label.update:
-          id: out_pollen_val
-          text: !lambda |-
-            if (x.empty()) return std::string("--");
-            return x;
       - lambda: |-
-          // Google's five categories, spread across the bar
+          // Hide the row while there is no reading (off season with IQVIA
+          // down leaves pollen_summary unavailable), rather than print it.
+          bool none = x.empty() || x == "unavailable" || x == "unknown";
+          if (none) { lv_obj_add_flag(id(out_pollen_row), LV_OBJ_FLAG_HIDDEN); return; }
+          lv_obj_clear_flag(id(out_pollen_row), LV_OBJ_FLAG_HIDDEN);
+          lv_label_set_text(id(out_pollen_val), x.c_str());
+          // Google's five categories, plus pollen_summary's IQVIA fallback words
           int v = 0;
           uint32_t c = 0x34C759;
-          if (x == "Very Low")       { v = 10; c = 0x34C759; }
-          else if (x == "Low")       { v = 30; c = 0x34C759; }
-          else if (x == "Moderate")  { v = 55; c = 0xFFD60A; }
-          else if (x == "High")      { v = 78; c = 0xFF9F0A; }
-          else if (x == "Very High") { v = 95; c = 0xFF3B30; }
+          if (x == "Very Low")              { v = 10; c = 0x34C759; }
+          else if (x == "Low")              { v = 30; c = 0x34C759; }
+          else if (x == "Low\u2013medium")   { v = 42; c = 0x34C759; }
+          else if (x == "Moderate" || x == "Medium") { v = 55; c = 0xFFD60A; }
+          else if (x == "Medium\u2013high")  { v = 66; c = 0xFF9F0A; }
+          else if (x == "High")             { v = 78; c = 0xFF9F0A; }
+          else if (x == "Very High")        { v = 95; c = 0xFF3B30; }
           lv_bar_set_value(id(out_pollen_bar), v, LV_ANIM_OFF);
           lv_obj_set_style_bg_color(id(out_pollen_bar), lv_color_hex(c), LV_PART_INDICATOR);
 
