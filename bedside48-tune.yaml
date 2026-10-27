@@ -1,0 +1,615 @@
+# Backlight tuning build for home48 (the 4in bedroom panel). NOT part of the
+# normal build: nothing builds it by default. Flash it only to re-tune the
+# backlight or the night colours, then flash bedside48.yaml again:
+#
+#   tools/flash.sh bedside48-tune.yaml     # tune
+#   tools/flash.sh bedside48.yaml          # back to normal
+#
+# It is bedside48.yaml (included below, so it can't drift from it) plus
+# "Tune ..." controls in Home Assistant that apply at once -- no 1s fade, no
+# waiting for a timer or the sun. Every control starts at bedside48.yaml's own
+# value, so with nothing touched it behaves like the normal build. The
+# Bluetooth proxy is stopped at boot (~70KB of internal RAM back), without
+# touching its switch, so the normal build comes back with the proxy on.
+#
+# What it found so far: 2026-10-23 the night levels and the floor (0.34% duty
+# at 1220Hz); 2026-10-26 the move to 200Hz, which stopped an audible buzz and
+# needed ~1.9x the duty for the same light (2.5% matched 1.3%).
+#
+# - Tune band: Auto / Day / Dusk / Night. Auto follows the sun ramp (Tune
+#   night ceiling at -6 degrees up to Tune day ceiling at +10), as
+#   bedside48.yaml does; the others force a fixed level,
+#   and night colours with Night, at any time of day.
+# - Tune day / dusk / night ceiling: the levels, % before gamma. Dusk only
+#   applies when forced: the ramp replaced the dusk step.
+# - Tune state: Live (the timers run) / Awake / Dimmed / Sleep clock / Test
+#   pattern. Anything but Live holds that state and freezes the idle timers.
+#   The sleep clock stays under Sleep clock max, as in the normal build.
+# - Tune backlight: Firmware (ceiling x Dim level or Sleep clock brightness,
+#   gamma 2.8, then the floor) / Raw duty (Tune duty straight to the PWM).
+# - Tune duty: % PWM duty in Raw mode.
+# - Tune floor: the output's min_power, the duty the light's lowest step lands
+#   on. Firmware mode only.
+# - Tune PWM frequency: Hz. ESPHome picks the bit depth from it: 14 bits up to
+#   ~4.8kHz, fewer above. The same duty gives less light at lower frequencies.
+# - Tune overlay: black over the whole screen, % opacity -- dims the pixels
+#   and not the backlight, so black stays as bright as the backlight makes it.
+# - Tune palette: Firmware / Custom, with Tune ink / text / face / edge as hex
+#   (0xFF5034 or #FF5034), applied to the sleep clock and the test pattern.
+# - Tune readout: band, state, ceiling, effective duty, frequency and overlay,
+#   top-left on screen and as the "Tune readout" sensor.
+#
+# Nothing is restored: a reboot comes back with the tune controls at
+# bedside48.yaml's values. To keep a result, put it in bedside48.yaml's
+# substitutions. The test pattern's greys are RGB565: red and blue step every
+# 8 codes, so its bars are multiples of 8. Touching the pattern goes back to
+# Awake; touching the sleep clock goes back to Live.
+
+packages:
+  home48: !include bedside48.yaml
+
+esphome:
+  on_boot:
+    # after ble_proxy.yaml's own on_boot (300) has started it from the switch
+    - priority: -100
+      then:
+        - ble.disable:
+
+light:
+  - id: !extend backlight
+    default_transition_length: 0s
+
+globals:
+  - id: tune_origin # page index the test pattern returns to
+    type: int
+    restore_value: false
+    initial_value: '0'
+  - id: tune_pal_dirty # the palette needs applying again
+    type: bool
+    restore_value: false
+    initial_value: 'true'
+  - id: tune_pal_seen # sleep_clock_red when the custom palette was last applied
+    type: int
+    restore_value: false
+    initial_value: '-2'
+
+select:
+  - id: tune_band
+    platform: template
+    name: Tune band
+    icon: mdi:weather-sunset
+    entity_category: config
+    options: [Auto, Day, Dusk, Night]
+    initial_option: Auto
+    set_action:
+      - lambda: id(tune_band).publish_state(x);
+      - script.execute: tune_sync
+  - id: tune_state
+    platform: template
+    name: Tune state
+    icon: mdi:sleep
+    entity_category: config
+    options: [Live, Awake, Dimmed, Sleep clock, Test pattern]
+    initial_option: Live
+    set_action:
+      - lambda: id(tune_state).publish_state(x);
+      - script.execute: tune_show
+  - id: tune_backlight
+    platform: template
+    name: Tune backlight
+    icon: mdi:brightness-percent
+    entity_category: config
+    options: [Firmware, Raw duty]
+    initial_option: Firmware
+    set_action:
+      - lambda: id(tune_backlight).publish_state(x);
+      - script.execute: { id: tune_apply, force: true }
+  - id: tune_palette
+    platform: template
+    name: Tune palette
+    icon: mdi:palette
+    entity_category: config
+    options: [Firmware, Custom]
+    initial_option: Firmware
+    set_action:
+      - lambda: |-
+          id(tune_palette).publish_state(x);
+          id(sleep_clock_red) = -1;  // Firmware: the clock restyles on its next second
+          id(tune_pal_dirty) = true;
+
+number:
+  - id: tune_day
+    platform: template
+    name: Tune day ceiling
+    icon: mdi:white-balance-sunny
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: box
+    min_value: 1
+    max_value: 100
+    step: 0.5
+    initial_value: ${sun_day_percent}
+    optimistic: true
+    restore_value: false
+    on_value:
+      - script.execute: tune_sync
+  - id: tune_dusk
+    platform: template
+    name: Tune dusk ceiling
+    icon: mdi:weather-sunset
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: box
+    min_value: 1
+    max_value: 100
+    step: 0.5
+    initial_value: ${sun_dusk_percent}
+    optimistic: true
+    restore_value: false
+    on_value:
+      - script.execute: tune_sync
+  - id: tune_night
+    platform: template
+    name: Tune night ceiling
+    icon: mdi:weather-night
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: box
+    min_value: 1
+    max_value: 100
+    step: 0.5
+    initial_value: ${sun_night_percent}
+    optimistic: true
+    restore_value: false
+    on_value:
+      - script.execute: tune_sync
+  - id: tune_duty
+    platform: template
+    name: Tune duty
+    icon: mdi:sine-wave
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: box
+    min_value: 0
+    max_value: 100
+    step: 0.01
+    initial_value: 1.5
+    optimistic: true
+    restore_value: false
+    on_value:
+      - script.execute: { id: tune_apply, force: true }
+  - id: tune_floor
+    platform: template
+    name: Tune floor
+    icon: mdi:arrow-collapse-down
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: box
+    min_value: 0
+    max_value: 20
+    step: 0.01
+    initial_value: ${backlight_floor_percent}
+    optimistic: true
+    restore_value: false
+    on_value:
+      - script.execute: { id: tune_apply, force: true }
+  - id: tune_freq
+    platform: template
+    name: Tune PWM frequency
+    icon: mdi:sine-wave
+    entity_category: config
+    unit_of_measurement: Hz
+    mode: box
+    min_value: 100
+    max_value: 40000
+    step: 1
+    initial_value: ${backlight_pwm_frequency}
+    optimistic: true
+    restore_value: false
+    on_value:
+      - lambda: id(gpio_backlight_pwm).update_frequency(x);
+      - script.execute: { id: tune_apply, force: true }
+  - id: tune_overlay
+    platform: template
+    name: Tune overlay
+    icon: mdi:square-opacity
+    entity_category: config
+    unit_of_measurement: "%"
+    mode: slider
+    min_value: 0
+    max_value: 100
+    step: 1
+    initial_value: 0
+    optimistic: true
+    restore_value: false
+    on_value:
+      - lambda: |-
+          lv_obj_set_style_bg_opa(id(tune_overlay_obj), (lv_opa_t) lroundf(x * 2.55f), 0);
+          if (x > 0) lv_obj_remove_flag(id(tune_overlay_obj), LV_OBJ_FLAG_HIDDEN);
+          else lv_obj_add_flag(id(tune_overlay_obj), LV_OBJ_FLAG_HIDDEN);
+
+text:
+  - id: tune_ink
+    platform: template
+    name: Tune ink
+    icon: mdi:palette
+    entity_category: config
+    mode: text
+    max_length: 8
+    initial_value: "${sleep_clock_night_ink}"
+    optimistic: true
+    on_value:
+      - lambda: id(tune_pal_dirty) = true;
+  - id: tune_text
+    platform: template
+    name: Tune text
+    icon: mdi:palette
+    entity_category: config
+    mode: text
+    max_length: 8
+    initial_value: "${sleep_clock_night_text}"
+    optimistic: true
+    on_value:
+      - lambda: id(tune_pal_dirty) = true;
+  - id: tune_face
+    platform: template
+    name: Tune face
+    icon: mdi:palette
+    entity_category: config
+    mode: text
+    max_length: 8
+    initial_value: "${sleep_clock_night_face}"
+    optimistic: true
+    on_value:
+      - lambda: id(tune_pal_dirty) = true;
+  - id: tune_edge
+    platform: template
+    name: Tune edge
+    icon: mdi:palette
+    entity_category: config
+    mode: text
+    max_length: 8
+    initial_value: "${sleep_clock_night_edge}"
+    optimistic: true
+    on_value:
+      - lambda: id(tune_pal_dirty) = true;
+
+switch:
+  - id: tune_readout_on
+    platform: template
+    name: Tune readout
+    icon: mdi:numeric
+    entity_category: config
+    optimistic: true
+    restore_mode: ALWAYS_ON
+    turn_on_action:
+      - lvgl.widget.show: tune_readout_label
+    turn_off_action:
+      - lvgl.widget.hide: tune_readout_label
+
+text_sensor:
+  - id: tune_readout
+    platform: template
+    name: Tune readout
+    icon: mdi:numeric
+    entity_category: diagnostic
+
+# after sun.yaml's own on_value in the same call, so a forced band wins before
+# the light writes: no flash of the real band's level
+sensor:
+  - id: !extend sun_elevation
+    on_value:
+      - script.execute: tune_sync
+
+script:
+  # The band (forced or from the sun) and the level from the tune numbers:
+  # Auto follows bedside48.yaml's sun ramp between the night and day ceilings.
+  # Runs after the ramp's own on_value, so it has the last word.
+  - id: tune_sync
+    then:
+      - lambda: |-
+          int forced = id(tune_band).active_index().value_or(0);  // 0 Auto, 1 Day, 2 Dusk, 3 Night
+          int band = id(sun_band);
+          float e = id(sun_elevation).state;
+          if (forced > 0)
+            band = 3 - forced;  // sun_band: 2 day, 1 dusk, 0 night
+          else if (!std::isnan(e))
+            band = e > 6.0f ? 2 : (e > -6.0f ? 1 : 0);
+          if (band != id(sun_band) || id(ambient_night) != (band == 0)) {
+            id(sun_band) = band;
+            id(ambient_night) = band == 0;
+            id(tune_pal_dirty) = true;
+          }
+          float ceiling;
+          if (forced == 0 && !std::isnan(e)) {
+            float t = std::min(std::max((e - ${sun_ramp_low}) / (${sun_ramp_high} - ${sun_ramp_low}), 0.0f), 1.0f);
+            ceiling = (id(tune_night).state + t * (id(tune_day).state - id(tune_night).state)) / 100.0f;
+          } else {
+            ceiling = (band == 2 ? id(tune_day).state : band == 1 ? id(tune_dusk).state : id(tune_night).state) / 100.0f;
+          }
+          if (id(bl_override) >= 0) {  // a fixed Brightness still wins, as in panel_control
+            id(bl_auto) = ceiling;
+            ceiling = id(bl_override);
+          }
+          if (fabsf(ceiling - id(active_brightness)) < 0.0005f)
+            return;
+          // as sun.yaml: Live follows a new ceiling only while awake or on the clock
+          bool awake = id(backlight).current_values.is_on() &&
+                       id(backlight).current_values.get_brightness() > id(active_brightness) * 0.5f;
+          id(active_brightness) = ceiling;
+          if (id(tune_state).active_index().value_or(0) != 0)
+            id(tune_apply).execute(false);
+          else if (awake || id(sleep_clock)->is_showing())
+            id(panel_backlight).execute();
+
+  # The backlight for the held state, or the raw duty. Only writes on a change,
+  # unless forced.
+  - id: tune_apply
+    parameters:
+      force: bool
+    then:
+      - lambda: |-
+          auto *out = id(gpio_backlight_pwm);
+          if (id(tune_backlight).active_index().value_or(0) == 1) {  // Raw duty
+            out->set_min_power(0.0f);
+            out->set_level(id(tune_duty).state / 100.0f);
+            return;
+          }
+          out->set_min_power(id(tune_floor).state / 100.0f);
+          auto &light = *id(backlight);
+          int st = id(tune_state).active_index().value_or(0);
+          float b;
+          if (st == 0) {  // Live: the firmware decides; rewrite only for a new floor
+            if (!force)
+              return;
+            if (!light.remote_values.is_on()) {
+              out->set_level(0.0f);
+              return;
+            }
+            b = light.remote_values.get_brightness();
+          } else {
+            b = id(active_brightness);
+            if (st == 2)
+              b *= id(idle_dim_percent).state / 100.0f;
+            else if (st == 3)  // under Sleep clock max, as sleep_clock_backlight
+              b = std::min(b * id(sleep_clock_brightness).state / 100.0f, id(sleep_clock_max).state / 100.0f);
+            if (!force && light.remote_values.is_on() && fabsf(light.remote_values.get_brightness() - b) < 0.0005f)
+              return;
+          }
+          // the same brightness again still writes, which is what puts a new floor out
+          auto call = light.turn_on();
+          call.set_brightness(b);
+          call.set_transition_length(0);
+          call.perform();
+
+  # Put up what Tune state asks for.
+  - id: tune_show
+    then:
+      - if:
+          condition:
+            - lvgl.is_paused:
+          then:
+            - lvgl.resume:
+      - if:
+          condition:
+            - lambda: return id(tune_state).active_index().value_or(0) == 3;
+          then:
+            - lambda: |-
+                if (id(tune_pattern)->is_showing())
+                  id(main_lvgl)->show_page(id(tune_origin), LV_SCREEN_LOAD_ANIM_NONE, 0);
+            - script.execute: { id: sleep_clock_show, reason: tune }
+          else:
+            - if:
+                condition:
+                  - lambda: return id(tune_state).active_index().value_or(0) == 4;
+                then:
+                  - lambda: |-
+                      if (!id(tune_pattern)->is_showing())
+                        id(tune_origin) = id(sleep_clock)->is_showing() ? id(sleep_clock_origin)
+                                                                         : id(main_lvgl)->get_current_page();
+                      id(tune_pal_dirty) = true;
+                  - lvgl.page.show: tune_pattern
+                  - light.turn_on:
+                      id: backlight
+                      brightness: !lambda return id(active_brightness);
+                else:
+                  - lambda: |-
+                      if (id(tune_pattern)->is_showing())
+                        id(main_lvgl)->show_page(id(tune_origin), LV_SCREEN_LOAD_ANIM_NONE, 0);
+                  - script.execute: panel_wake # leaves the clock, lights up to the ceiling
+      - script.execute: { id: tune_apply, force: true }
+
+  # The custom palette on the clock, and the palette in force on the pattern's sample.
+  - id: tune_palette_apply
+    then:
+      - lambda: |-
+          auto hex = [](const std::string &s, uint32_t fallback) -> uint32_t {
+            const char *p = s.c_str();
+            if (*p == '#') p++;
+            char *end;
+            unsigned long v = strtoul(p, &end, 16);
+            return (end != p && *end == 0 && v <= 0xFFFFFF) ? (uint32_t) v : fallback;
+          };
+          bool custom = id(tune_palette).active_index().value_or(0) == 1;
+          int mode = id(sleep_clock_night_colours).active_index().value_or(0);  // At night, Always, Never
+          bool red = mode == 1 || (mode == 0 && id(ambient_night));
+          uint32_t ink = custom ? hex(id(tune_ink).state, ${sleep_clock_night_ink}) : red ? ${sleep_clock_night_ink} : 0xD8D8D8;
+          uint32_t text = custom ? hex(id(tune_text).state, ${sleep_clock_night_text}) : red ? ${sleep_clock_night_text} : 0x9AA0AE;
+          uint32_t face = custom ? hex(id(tune_face).state, ${sleep_clock_night_face}) : red ? ${sleep_clock_night_face} : 0x1E2024;
+          uint32_t edge = custom ? hex(id(tune_edge).state, ${sleep_clock_night_edge}) : red ? ${sleep_clock_night_edge} : 0xFFFFFF;
+          if (custom && id(sleep_clock)->is_showing()) {
+            for (auto *card : {id(sleep_clock_h1), id(sleep_clock_h2), id(sleep_clock_m1), id(sleep_clock_m2)})
+              flip::set_colors(card, ink, face, edge);
+            lv_obj_set_style_text_color(id(sleep_clock_ampm), lv_color_hex(text), 0);
+            lv_obj_set_style_text_color(id(sleep_clock_date), lv_color_hex(text), 0);
+          }
+          lv_obj_set_style_bg_color(id(tune_sample), lv_color_hex(face), 0);
+          lv_obj_set_style_outline_color(id(tune_sample), lv_color_hex(edge), 0);
+          lv_obj_set_style_text_color(id(tune_sample_ink), lv_color_hex(ink), 0);
+          lv_obj_set_style_text_color(id(tune_sample_text), lv_color_hex(text), 0);
+          id(tune_pal_seen) = id(sleep_clock_red);
+          id(tune_pal_dirty) = false;
+
+interval:
+  # Raw duty: take the output back from the light, which writes on a touch
+  - interval: 250ms
+    then:
+      - lambda: |-
+          if (id(tune_backlight).active_index().value_or(0) == 1)
+            id(gpio_backlight_pwm).set_level(id(tune_duty).state / 100.0f);
+  - interval: 1s
+    then:
+      - script.execute: tune_sync
+      - lambda: |-
+          int st = id(tune_state).active_index().value_or(0);
+          bool clock = id(sleep_clock)->is_showing();
+          bool pattern = id(tune_pattern)->is_showing();
+          // a touch left the clock or pattern: back to Live
+          if ((st == 3 && !clock) || (st == 4 && !pattern)) {
+            id(tune_state).publish_state("Live");
+            st = 0;
+          }
+          if (st != 0) {
+            lv_display_trigger_activity(nullptr);  // hold the state: no timer fires
+            id(tune_apply).execute(false);  // and put back what a touch changed
+          }
+          if (pattern) {  // the clock's on_unload can land after the pattern's on_load
+            lv_obj_add_flag(id(titlebar), LV_OBJ_FLAG_HIDDEN);
+            lv_obj_add_flag(id(navbar), LV_OBJ_FLAG_HIDDEN);
+          }
+          bool custom = id(tune_palette).active_index().value_or(0) == 1;
+          if (id(tune_pal_dirty) || (custom && clock && id(sleep_clock_red) != id(tune_pal_seen)))
+            id(tune_palette_apply).execute();
+
+          // readout
+          static const char *const bands[] = {"night", "dusk", "day"};
+          static const char *const states[] = {"live", "awake", "dimmed", "clock", "pattern"};
+          bool raw = id(tune_backlight).active_index().value_or(0) == 1;
+          auto &light = *id(backlight);
+          float b = light.current_values.is_on() ? light.current_values.get_brightness() : 0.0f;
+          float floor = id(tune_floor).state / 100.0f;
+          float duty = raw ? id(tune_duty).state / 100.0f
+                           : (b > 0 ? floor + (1.0f - floor) * powf(b, 2.8f) : 0.0f);
+          char buf[128];
+          snprintf(buf, sizeof(buf), "%s %s  ceil %.1f%%  light %.1f%%\n%s duty %.3f%%  %.0f Hz  overlay %.0f%%",
+                   bands[id(sun_band) < 0 || id(sun_band) > 2 ? 1 : id(sun_band)], states[st],
+                   id(active_brightness) * 100.0f, b * 100.0f, raw ? "RAW" : "fw", duty * 100.0f,
+                   id(tune_freq).state, id(tune_overlay).state);
+          if (id(tune_readout).state != buf) {
+            id(tune_readout).publish_state(buf);
+            lv_label_set_text(id(tune_readout_label), buf);
+          }
+
+lvgl:
+  top_layer:
+    widgets:
+      # after the layout's header and rail, so these draw over them
+      - obj:
+          id: tune_overlay_obj
+          x: 0
+          y: 0
+          width: 100%
+          height: 100%
+          bg_color: 0x000000
+          bg_opa: TRANSP
+          border_width: 0
+          radius: 0
+          pad_all: 0
+          clickable: false
+          scrollable: false
+          hidden: true
+      - label:
+          id: tune_readout_label
+          align: TOP_LEFT
+          x: 4
+          y: 4
+          text: ""
+          text_font: roboto_sm
+          text_color: 0x808080
+          bg_color: 0x000000
+          bg_opa: COVER
+          pad_all: 2
+  pages:
+    - id: tune_pattern
+      skip: true
+      bg_color: 0x000000
+      pad_all: 0
+      scrollable: false
+      on_load:
+        - lvgl.widget.hide: [titlebar, navbar]
+        - lambda: id(idle_hold_page) = true;
+      on_unload:
+        - lvgl.widget.show: [titlebar, navbar]
+        - lambda: id(idle_hold_page) = false;
+      on_press:
+        - lambda: lv_indev_wait_release(lv_indev_active());
+        - select.set: { id: tune_state, option: Awake }
+      widgets:
+        # grey steps, codes 0..255 left to right, labelled underneath
+        - obj:
+            align: TOP_MID
+            y: 60
+            width: 480
+            height: 200
+            bg_opa: TRANSP
+            border_width: 0
+            radius: 0
+            pad_all: 0
+            clickable: false
+            scrollable: false
+            layout:
+              type: FLEX
+              flex_flow: ROW
+              pad_column: 0
+            widgets:
+              - obj: { <<: &bar { width: 40, height: 100%, border_width: 0, radius: 0, pad_all: 0, clickable: false, scrollable: false }, bg_color: 0x000000 }
+              - obj: { <<: *bar, bg_color: 0x080808 }
+              - obj: { <<: *bar, bg_color: 0x101010 }
+              - obj: { <<: *bar, bg_color: 0x181818 }
+              - obj: { <<: *bar, bg_color: 0x202020 }
+              - obj: { <<: *bar, bg_color: 0x303030 }
+              - obj: { <<: *bar, bg_color: 0x404040 }
+              - obj: { <<: *bar, bg_color: 0x606060 }
+              - obj: { <<: *bar, bg_color: 0x808080 }
+              - obj: { <<: *bar, bg_color: 0xA0A0A0 }
+              - obj: { <<: *bar, bg_color: 0xD0D0D0 }
+              - obj: { <<: *bar, bg_color: 0xFFFFFF }
+        - label:
+            align: TOP_LEFT
+            x: 0
+            y: 266
+            width: 480
+            text: "  0     8    16   24   32   48   64   96  128 160 208 255"
+            text_font: roboto_sm
+            text_color: 0x808080
+        # the clock's palette on one card, with a date line
+        - obj:
+            id: tune_sample
+            align: TOP_MID
+            y: 300
+            width: 150
+            height: 112
+            bg_color: 0x000000
+            bg_opa: COVER
+            border_width: 0
+            outline_width: 1
+            outline_pad: 0
+            outline_color: ${sleep_clock_night_edge}
+            radius: 6
+            pad_all: 0
+            clickable: false
+            scrollable: false
+            widgets:
+              - label:
+                  id: tune_sample_ink
+                  align: CENTER
+                  text: "88"
+                  text_font: flip_digits
+                  text_color: 0xFF5034
+        - label:
+            id: tune_sample_text
+            align: TOP_MID
+            y: 424
+            text: "Thursday, October 23"
+            text_font: roboto_sm
+            text_color: 0xE04830

@@ -15,6 +15,8 @@ substitutions:
   # (0.34% x 1.9, not yet re-checked in the dark). With the light's gamma 2.8
   # on top, 24% is ~2.5% duty awake and on the clock, the dim (25%) ~0.69%.
   sun_night_percent: "24"
+  backlight_pwm_frequency: "200"
+  backlight_floor_percent: "0.65"
   # Between night and day the level follows the sun in a straight line instead
   # of the shared bands' 60% dusk step, which glared before sunrise (10-24):
   # 19% at -6 degrees up to 100% at +10. Dusk's 35% is only the boot level now,
@@ -129,8 +131,8 @@ sensor:
 # min_power: the lowest duty this panel's backlight still shows; off stays off
 output:
   - id: !extend gpio_backlight_pwm
-    frequency: 200Hz
-    min_power: 0.65%
+    frequency: ${backlight_pwm_frequency}Hz
+    min_power: ${backlight_floor_percent}%
     zero_means_zero: true
 
 # passive: listen for advertisements without sending scan requests (as home35)
