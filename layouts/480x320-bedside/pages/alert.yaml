@@ -11,6 +11,12 @@
 # told without being lit up. While an alert is unacknowledged the idle timer
 # cannot put the screen to sleep or send it home.
 #
+# All clear: the card turns green for a minute. An alert that woke the panel
+# from the sleep clock or a dark screen then puts it back to rest; one that
+# came up while the panel was in use restarts the idle clock instead. Either
+# way it can't stay up: the idle timers fire once per stretch of inactivity,
+# and an alert raised at rest finds them all spent.
+#
 # Needs: the chip strip package (chips_changed, feed::chips), features/idle
 # (sleep_handler, active_brightness, ambient_night, idle_hold_page) and
 # features/sleep_clock (sleep_clock, sleep_clock_origin,
@@ -92,6 +98,10 @@ globals:
     type: int
     restore_value: false
     initial_value: '0'
+  - id: alert_from_rest # the alert woke the panel from the sleep clock or dark
+    type: bool
+    restore_value: false
+    initial_value: 'false'
 
 esphome:
   on_boot:
@@ -123,9 +133,12 @@ script:
               feed::show(id(alert_more), false);
               feed::text(id(alert_ok_lbl), "Done");
               id(idle_hold_page) = false;
+              if (!id(alert_from_rest)) lv_display_trigger_activity(nullptr);
+              id(alert_clear).execute();
             }
             return;
           }
+          id(alert_clear).stop();
           auto &a = act.front();
           feed::bg(id(alert_card), feed::ACT_BG);
           feed::text(id(alert_icon), feed::glyph(a.icon));
@@ -141,8 +154,26 @@ script:
           then:
             - script.execute: alert_take
 
+  # the green card's minute; back to rest if the alert came from there
+  - id: alert_clear
+    mode: restart
+    then:
+      - delay: 60s
+      - if:
+          condition:
+            - lambda: |-
+                return feed::alert_showing() && id(alert_from_rest) &&
+                       feed::act_chips(feed::chips()).empty();
+          then:
+            - lambda: id(main_lvgl)->show_page(id(alert_origin), LV_SCREEN_LOAD_ANIM_NONE, 0);
+            - script.execute: { id: sleep_now, reason: idle }
+
   - id: alert_take
     then:
+      # before the resume below, which would hide a dark screen
+      - lambda: |-
+          if (!feed::alert_showing())
+            id(alert_from_rest) = id(main_lvgl)->is_paused() || id(sleep_clock)->is_showing();
       - if:
           condition:
             - lvgl.is_paused:
