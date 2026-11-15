@@ -114,7 +114,7 @@ packages:
 
   doorbell_widget_sensors: !include { file: ../../widgets/status/binary/sensors.yaml, vars: {
     uid: doorbell,
-    entity_id: binary_sensor.front_porch_ringing
+    entity_id: binary_sensor.front_porch_doorbell
   }}
 
   package_widget_sensors: !include { file: ../../widgets/status/binary/sensors.yaml, vars: {
